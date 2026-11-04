@@ -196,6 +196,14 @@ ALL_COMPANIES = {
         "flyer": "미래에셋_11월.png",
         "recommendations": ["M-케어건강 20만", "M-케어건강 10만", "M-케어건강 30만", "변액연금 20만"]
     },
+    "메트라이프": {
+        "category": "생명보험",
+        "aliases": ["메트라이프", "메트"],
+        "default_prod": "달러종신Plus",
+        "default_term": "10년납",
+        "flyer": "메트라이프_11월.jpg",
+        "recommendations": ["달러종신Plus 20만 10년납", "달러종신Plus 20만 5년납", "달러종신Plus 20만 20년납", "변액리치 정기 20만"]
+    },
     "동양생명": {
         "category": "생명보험",
         "aliases": ["동양생명", "동양"],
@@ -227,14 +235,6 @@ ALL_COMPANIES = {
         "default_term": "10년납",
         "flyer": "KDB생명_11월.jpg",
         "recommendations": ["버팀목 20만", "버팀목 10만"]
-    },
-    "메트라이프": {
-        "category": "생명보험",
-        "aliases": ["메트라이프", "메트"],
-        "default_prod": "백만인을위한",
-        "default_term": "20년납",
-        "flyer": "메트라이프_11월.jpg",
-        "recommendations": ["백만인을위한 20만", "달러종신 20만"]
     },
     "ABL생명": {
         "category": "생명보험",
@@ -316,6 +316,24 @@ def find_companies_in_text(text: str) -> List[str]:
     return found
 
 
+def pick_best_term_product(candidates: List[Dict[str, Any]], term: str, default_term: str = "10년납") -> Dict[str, Any]:
+    target_term = term if term else default_term
+    m = re.search(r'(\d+)\s*년', target_term)
+    target_years = m.group(1) if m else ""
+    
+    # 1. Regex boundary match: e.g. 5년 does not match 15년 or 25년
+    if target_years:
+        pattern = rf'(?<!\d){target_years}년'
+        for p in candidates:
+            if re.search(pattern, p.get('term', '')):
+                return p
+                
+    for p in candidates:
+        if default_term in p.get('term', ''):
+            return p
+    return candidates[0]
+
+
 def search_life_product(company: str, query: str, term: str = "") -> Optional[Dict[str, Any]]:
     """생보사 조견표에서 가장 근접한 상품 검색"""
     comp_cleaned = company.replace('생명', '').replace('라이프', '').strip()
@@ -330,7 +348,20 @@ def search_life_product(company: str, query: str, term: str = "") -> Optional[Di
     
     q_norm = query.replace(" ", "").replace("-", "")
     
-    if comp_cleaned == "DB":
+    if comp_cleaned == "메트":
+        if "달러" in q_norm or "백만인" in q_norm or "종신" in q_norm:
+            matched = [p for p in candidates if "백만인" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+        elif "360" in q_norm or "종합" in q_norm:
+            matched = [p for p in candidates if "360" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년납이상")
+        elif "오늘의" in q_norm or "vip" in q_norm:
+            matched = [p for p in candidates if "오늘의종신" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납이상")
+    elif comp_cleaned == "DB":
         if "알행플" in q_norm:
             matched = [p for p in candidates if "알행플" in p['product']]
             if matched:
@@ -391,8 +422,9 @@ def search_life_product(company: str, query: str, term: str = "") -> Optional[Di
         for token in q_norm:
             if token in p_name:
                 score += 1
-        if term and term in p.get('term', ''):
-            score += 10
+        m_y = re.search(r'(\d+)\s*년', term)
+        if m_y and re.search(rf'(?<!\d){m_y.group(1)}년', p.get('term', '')):
+            score += 15
         scored.append((score, p))
         
     scored.sort(key=lambda x: x[0], reverse=True)
@@ -401,31 +433,45 @@ def search_life_product(company: str, query: str, term: str = "") -> Optional[Di
     return candidates[0]
 
 
-def pick_best_term_product(candidates: List[Dict[str, Any]], term: str, default_term: str = "10년납") -> Dict[str, Any]:
-    target_term = term if term else default_term
-    for p in candidates:
-        if target_term in p.get('term', ''):
-            return p
-    for p in candidates:
-        if default_term in p.get('term', ''):
-            return p
-    return candidates[0]
-
-
 def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none") -> Dict[str, Any]:
-    """17개 생보사 11월 공식 시책표 정밀 판정 (흥국생명 2종 연속시상, 신한라이프 3~7번 연계, 미래에셋 구간시상, 라이나 완벽 반영)"""
+    """17개 생보사 11월 공식 시책표 정밀 판정 (메트라이프 납기별 차이, 흥국 2종 연속, 신한 3~7번 연계, 라이나, 미래에셋 완벽 반영)"""
     comp = comp_name.replace('생명', '').replace('라이프', '').strip().lower()
     prod = product_name.replace(" ", "").lower()
     
-    # 1. 흥국생명 (사용자 지시: 10~11월 연속가동 & 핑크멤버스 2종 연속시상 정밀 처리)
-    if '흥국' in comp:
+    # 1. 메트라이프생명 (사용자 지시: 납입기간에 따라 s환산차이 크고 시책도 상이)
+    if '메트' in comp:
+        if '달러' in prod or '백만인' in prod or '종신' in prod:
+            m_y = re.search(r'(\d+)\s*년', term)
+            years = int(m_y.group(1)) if m_y else 10
+            if years <= 5:
+                return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (달러종신Plus 5년납 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif years in [7, 10]:
+                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": f"익월 400% (달러종신Plus {years}년납 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif '3년내고' in prod or years == 3:
+                return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (3년내고 만족하는 달러종신 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": f"익월 400% (달러종신Plus {years}년납 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '정기' in prod or '변액리치' in prod:
+            return {"next_month": 2.0, "split": 2.5, "total": 4.5, "basis": "익월 200% + 15차월 250% (변액리치 정기 450%)", "cont_bonus": 0.3, "cont_desc": "전략상품 1건 이상 가동 시 15차월 추가 +30%"}
+        elif '연금' in prod:
+            return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (오로지연금을위한 달러연금 300%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '무해약' in prod or '해약' in prod:
+            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (간편 360 종합 무해약환급형 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '암' in prod:
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (360 암보험 100%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '간편' in prod or '종합' in prod or '360' in prod:
+            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (간편 360 종합 갱신형 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (메트라이프 전략 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+    # 2. 흥국생명 (10~11월 연속가동 & 핑크멤버스 2종 연속시상)
+    elif '흥국' in comp:
         is_strat = (incentive_type == "전략" or any(k in prod for k in ['오튼튼', '다사랑', '치매', '암', '건강', '3.10.5']))
         base_next = 4.0
         sky_next = 2.0 if (premium >= 200000 and is_strat) else 0.0
         install_period = 6.0
         install_strat = 2.0 if is_strat else 0.0
         
-        # 10~11월 연속가동 (10.26~31 및 11.1~6 양 기간 동일구간 달성 시)
         c1_amount = 0
         if premium >= 1000000: c1_amount = 10000000
         elif premium >= 700000: c1_amount = 7000000
@@ -435,7 +481,6 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         elif premium >= 100000: c1_amount = 600000
         elif premium >= 50000: c1_amount = 300000
         
-        # 핑크멤버스 (전월 10월 10만 이상 달성 시)
         c2_amount = 0
         if premium >= 1000000: c2_amount = 5000000
         elif premium >= 700000: c2_amount = 3500000
@@ -477,7 +522,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             "continuous_mode": continuous_mode
         }
 
-    # 2. 한화생명
+    # 3. 한화생명
     elif '한화' in comp:
         if '건강더한' in prod:
             if '7년' in term:
@@ -505,7 +550,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         else:
             return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (한화생명 주력 500%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 3. DB생명
+    # 4. DB생명
     elif 'db' in comp or '디비' in comp or '동부' in comp:
         if '알행플' in prod:
             if '7년' in term:
@@ -519,7 +564,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         else:
             return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "익월 400% + 13회차 200% (DB생명 종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 4. 신한라이프 (사용자 지시: 2번째장 3~7번 연계는 연속포함 시에만 합산)
+    # 5. 신한라이프 (2번째장 3~7번 연계는 연속포함 시에만 합산)
     elif '신한' in comp:
         if '모아더드림plus' in prod or '모아더드림플러스' in prod:
             return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 13회차 100% (모아더드림Plus 500%)", "cont_bonus": 0.0, "cont_desc": ""}
@@ -574,7 +619,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 "cont_desc": cont_desc
             }
 
-    # 5. 라이나생명 (새로담는건강, 브레인케어, 치아/치매, 종신 완벽 판정)
+    # 6. 라이나생명 (새로담는건강, 브레인케어, 치아/치매, 종신 완벽 판정)
     elif '라이나' in comp:
         if '새로담는' in prod or '브레인' in prod or ('건강' in prod and '종신' not in prod):
             next_m = 3.0
@@ -635,7 +680,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             else:
                 return {"next_month": 2.5, "split": 1.0, "total": 3.5, "basis": "익월 250% + 13회차 100% (THE건강/착한간편종신 350%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 6. 미래에셋생명 (건강파트 익월 250% + 구간시상)
+    # 7. 미래에셋생명 (건강파트 익월 250% + 구간시상)
     elif '미래' in comp:
         if '연금' in prod:
             rate = 2.0 if premium >= 200000 else (1.0 if premium >= 100000 else 0.0)
@@ -664,53 +709,49 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             basis = f"익월 250%({int(premium*next_m):,}원) + 13회차 구간시상 {split_amount//10000}만 원({int(split_rate*100)}%) = 총 {int(tot_rate*100)}%"
             return {"next_month": next_m, "split": split_rate, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 7. KB라이프
+    # 8. KB라이프
     elif 'kb' in comp:
         if '연금' in prod:
             return {"next_month": 2.0, "split": 5.0, "total": 7.0, "basis": "익월 200% + 13회차 500% (100세 든든 연금 700%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
             return {"next_month": 3.0, "split": 22.5, "total": 25.5, "basis": "익월 300% + 13회차 2,250% (딱좋은 건강군 최대 2,550%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 8. 동양생명
+    # 9. 동양생명
     elif '동양' in comp:
         if '알뜰' in prod:
             return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (알뜰플러스 400%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
             return {"next_month": 2.0, "split": 3.0, "total": 5.0, "basis": "익월 200% + 13회차 300% (우리WON 500%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 9. 푸본현대생명
+    # 10. 푸본현대생명
     elif '푸본' in comp:
         if '원픽' in prod:
             return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (MAX 원픽종신 500%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
             return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (마이픽 건강 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 10. KDB생명
+    # 11. KDB생명
     elif 'kdb' in comp:
         return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (버팀목종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 11. ABL생명
+    # 12. ABL생명
     elif 'abl' in comp:
         return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (우리WON더채움종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 12. 농협생명
+    # 13. 농협생명
     elif '농협' in comp:
         if '종신' in prod:
             return {"next_month": 4.5, "split": 1.5, "total": 6.0, "basis": "익월 450% + 13회차 150% (투스텝NH종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
             return {"next_month": 5.0, "split": 12.0, "total": 17.0, "basis": "익월 500% + 13회차 1,200% (건강플러스통합 1,700%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 13. 교보생명
+    # 14. 교보생명
     elif '교보' in comp:
         return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (모두지킴종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 14. 하나생명
+    # 15. 하나생명
     elif '하나' in comp:
         return {"next_month": 5.0, "split": 19.0, "total": 24.0, "basis": "익월 500% + 13회차 1,900% (하나로라이트 최대 2,400%)", "cont_bonus": 0.0, "cont_desc": ""}
-
-    # 15. 메트라이프
-    elif '메트' in comp:
-        return {"next_month": 2.0, "split": 2.5, "total": 4.5, "basis": "익월 200% + 13회차 250% (변액리치 450%)", "cont_bonus": 0.0, "cont_desc": ""}
 
     return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (기본 전략 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
@@ -724,7 +765,6 @@ def calculate_life(
     incentive_type: str = "전략",
     continuous_mode: str = "none"
 ) -> Dict[str, Any]:
-    """생명보험 수수료 및 시책 계산"""
     comp_clean = company.replace('생명', '').replace('라이프', '').strip()
     
     conversion_rate = s_factor / 10.0
@@ -811,7 +851,6 @@ def calculate_nonlife(
     incentive_type: str = "주력",
     continuous_mode: str = "none"
 ) -> Dict[str, Any]:
-    """손해보험 수수료 및 시책 계산"""
     comp_matched = "현대해상"
     for c in NONLIFE_RULES['companies']:
         if c in company or company in c:
@@ -937,6 +976,8 @@ FLYER_MAP = {
     "푸본": "푸본현대_11월.png",
     "미래에셋": "미래에셋_11월.png",
     "미래": "미래에셋_11월.png",
+    "메트라이프": "메트라이프_11월.jpg",
+    "메트": "메트라이프_11월.jpg",
     "ABL생명": "ABL생명_11월.png",
     "ABL": "ABL생명_11월.png",
     "하나생명": "하나생명_11월.png",
@@ -975,6 +1016,8 @@ def find_flyer(comp_name: str) -> Tuple[str, str]:
         return "미래에셋", "미래에셋_11월.png"
     if "라이나" in c_norm:
         return "라이나생명", "라이나생명_11월.png"
+    if "메트" in c_norm:
+        return "메트라이프", "메트라이프_11월.jpg"
 
     for k, v in FLYER_MAP.items():
         if k == comp_name or k.replace(" ", "").lower() == c_norm:
@@ -1027,53 +1070,45 @@ def build_flyer_response(comp_name: str) -> Dict[str, Any]:
 
 
 # ==========================================
-# 3. 대화형 되묻기 인터랙션 (회사만 / 금액누락 / 납기질의 / 흥국연속질의)
+# 3. 대화형 되묻기 인터랙션 (회사만 / 금액누락 / 생보사 납기질의 / 흥국연속질의)
 # ==========================================
-TERM_REQUIRED_PRODUCTS = {
-    "건강더한": ["7년납", "10년납"],
-    "하나로": ["10년납", "15년납", "20년납"],
-    "필요할때": ["10년납", "12년납"],
-    "밸류플러스": ["5년납", "7년납", "10년납"],
-    "치매담은": ["10년납", "15년납", "20년납"],
-    "간병플러스": ["10년납", "15년납", "20년납"],
-    "h종신": ["5년납", "7년납"],
-    "알행플": ["7년납", "10년납", "20년납"],
-    "알행리턴": ["5년납", "7년납", "10년납", "20년납"],
-    "올케어": ["10년납", "15년납", "20년납"],
-    "채우는": ["10년납 일반(950%)", "10년납 간편(450%)", "7년납(500%)"],
-    "착한간편": ["10년납(350%)", "15년납", "20년납"],
-    "라이나종신": ["10년납 일반(950%)", "10년납 간편(450%)", "7년납(500%)", "착한간편종신(350%)"]
-}
-
-def check_term_required(product_name: str, user_text: str) -> Optional[List[str]]:
-    p_norm = product_name.replace(" ", "").lower()
-    t_norm = user_text.replace(" ", "").lower()
+def get_suggested_terms_for_life(comp: str, prod_name: str) -> List[str]:
+    """생보사 상품별 최적화된 추천 납기 목록 생성 (사용자 지시: 납기 질의 및 메트라이프 납기별 차이 완벽 지원)"""
+    c = comp.replace("생명", "").replace("라이프", "").strip()
+    p = prod_name.replace(" ", "").lower()
     
-    if '라이나' in t_norm and ('종신' in t_norm or '종신' in p_norm):
-        if not re.search(r'\d+\s*년', user_text):
-            return ["10년납 일반", "10년납 간편", "7년납", "착한간편종신"]
-            
-    if re.search(r'\d+\s*년', user_text):
-        return None
-        
-    for k, terms in TERM_REQUIRED_PRODUCTS.items():
-        if k in p_norm:
-            return terms
-    return None
+    if c == "메트" or "달러" in p or "백만인" in p:
+        return ["5년납(250%)", "7년납(400%)", "10년납(400%)", "15년납", "20년납"]
+    elif "라이나" in c and ("종신" in p or "채우는" in p):
+        return ["10년납 일반(950%)", "10년납 간편(450%)", "7년납(500%)", "착한간편종신(350%)"]
+    elif "건강더한" in p:
+        return ["7년납", "10년납", "15년납", "20년납"]
+    elif "하나로" in p:
+        return ["10년납", "15년납", "20년납"]
+    elif "필요할때" in p:
+        return ["10년납", "12년납", "15년납", "20년납"]
+    elif "알행플" in p:
+        return ["7년납", "10년납", "15년납", "20년납"]
+    elif "쑥쑥" in p or "어린이" in p:
+        return ["15년납", "20년납", "30년납"]
+    elif "연금" in p:
+        return ["10년납", "15년납", "20년납", "전기납"]
+    else:
+        return ["10년납", "15년납", "20년납", "30년납"]
 
 
 def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str]) -> Dict[str, Any]:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
     
-    quick_replies = [
-        {
-            "messageText": f"{comp} {prod_name} {prem_str} {t}",
+    quick_replies = []
+    for t in terms:
+        clean_t = re.sub(r'\(.*?\)', '', t).strip()
+        quick_replies.append({
+            "messageText": f"{comp} {prod_name} {prem_str} {clean_t}",
             "action": "message",
             "label": t
-        }
-        for t in terms
-    ]
+        })
     quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
     
     return {
@@ -1082,7 +1117,7 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
             "outputs": [
                 {
                     "simpleText": {
-                        "text": f"📋 {comp} · {prod_name} ({prem_str})\n\n납입기간에 따라 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n아래 버튼을 누르시거나 직접 입력해 주세요!"
+                        "text": f"📋 {comp} · {prod_name} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
                     }
                 }
             ],
@@ -1143,7 +1178,6 @@ def build_ask_amount_response(comp: str, prod_name: str, term: str = "") -> Dict
 
 
 def build_heungkuk_continuous_inquiry_response(premium: Optional[int] = None) -> Dict[str, Any]:
-    """흥국생명 연속시상 질의 카드 (10월 실적 조건 판정 안내)"""
     p_man = (premium // 10000) if premium else 20
     text_desc = (
         "🌸 흥국생명 10~11월 연속시상 안내\n\n"
@@ -1189,8 +1223,10 @@ def calculate_company_for_compare(comp_name: str, premium: int, text: str, conti
             continuous_mode=continuous_mode
         )
     else:
-        m_term = re.search(r'(\d+)\s*년\s*납?', text)
-        term = f"{m_term.group(1)}년납" if m_term else default_term
+        m_term = re.search(r'(\d+)\s*년\s*납?|전기납', text)
+        term = m_term.group(0) if m_term else default_term
+        if term and not term.endswith("납"):
+            term += "납"
         
         matched = search_life_product(comp_name, text, term=term)
         s_factor = matched['s_factor'] if matched else 1000.0
@@ -1286,6 +1322,7 @@ def build_fallback_response() -> Dict[str, Any]:
             "quickReplies": [
                 {"messageText": "한화생명 건강더한종신 100만", "action": "message", "label": "한화 건강더한 100만"},
                 {"messageText": "흥국생명 오튼튼 20만 20년납", "action": "message", "label": "흥국 오튼튼 20만"},
+                {"messageText": "메트라이프 달러종신 20만 10년납", "action": "message", "label": "메트 달러종신 20만"},
                 {"messageText": "현대해상 주력 20만", "action": "message", "label": "현대 주력 20만"},
                 {"messageText": "DB손보 10만원", "action": "message", "label": "DB손보 10만"},
                 {"messageText": "신한라이프 통합건강 20만", "action": "message", "label": "신한 통합건강 20만"},
@@ -1297,7 +1334,6 @@ def build_fallback_response() -> Dict[str, Any]:
 
 
 def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
-    """카카오 i 오픈빌더 ItemCard 영수증 포맷 응답 생성 (흥국생명 2종 연속시상 전용 퀵버튼 지원)"""
     cat = calc_result.get("category", "")
     comp = calc_result.get("company", "")
     prod = calc_result.get("product_name", "")
@@ -1352,7 +1388,6 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
         {"messageText": "사용법", "action": "message", "label": "💡 사용법 (회사 상품 금액)"}
     ]
     
-    # 흥국생명 전용 퀵리플라이 (연속 2종 버튼 분리)
     if is_heungkuk:
         c1_man = c1_amount // 10000
         c2_man = c2_amount // 10000
@@ -1381,7 +1416,6 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                 "label": f"💎 둘다포함 (+{c1_man+c2_man}만)"
             })
     else:
-        # 일반 보험사 연속가동 퀵리플라이
         if cont_bonus_rate > 0:
             if c_mode != "none":
                 quick_replies.append({
@@ -1450,7 +1484,8 @@ def build_help_response() -> Dict[str, Any]:
         "회사명, 상품명, 금액을 입력하시면 익월/분급 수수료와 11월 공식 시상금을 즉시 계산해 드립니다.\n\n"
         "📌 [단건 계산 예시]\n"
         "• DB손보 10만원\n"
-        "• 한화생명 건강더한종신 50만원\n"
+        "• 한화생명 건강더한종신 50만원 10년납\n"
+        "• 메트라이프 달러종신 20만 10년납\n"
         "• 신한라이프 통합건강 20만 (연속포함)\n"
         "• 라이나 새로담는건강 20만\n"
         "• 흥국생명 오튼튼 20만 10-11월 연속\n"
@@ -1460,7 +1495,7 @@ def build_help_response() -> Dict[str, Any]:
         "• 흥국 vs 현대 20만 비교\n"
         "• 흥국생명 현대해상 DB손보 20만 비교\n"
         "• 한화 vs 흥국 20만 비교\n\n"
-        "💡 전월 연속가동 시책을 합산하시려면 뒤에 '연속포함'을 붙여주세요!"
+        "💡 생명보험사는 금액 입력 시 납기(*년납)를 퀵버튼으로 먼저 여쭤봅니다!"
     )
     return {
         "version": "2.0",
@@ -1469,6 +1504,7 @@ def build_help_response() -> Dict[str, Any]:
             "quickReplies": [
                 {"messageText": "DB손보 10만원", "action": "message", "label": "DB손보 10만"},
                 {"messageText": "한화생명 건강더한종신 50만원", "action": "message", "label": "한화 건강더한 50만"},
+                {"messageText": "메트라이프 달러종신 20만", "action": "message", "label": "메트 달러종신 20만"},
                 {"messageText": "신한라이프 통합건강 20만", "action": "message", "label": "신한 통합건강 20만"},
                 {"messageText": "라이나 새로담는건강 20만", "action": "message", "label": "라이나 새로담는 20만"},
                 {"messageText": "흥국 vs 현대 20만 비교", "action": "message", "label": "흥국 vs 현대 20만 비교"}
@@ -1482,7 +1518,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "스카이블루에셋 카카오 챗봇 스킬 서버",
-        "version": "2.3.0",
+        "version": "2.4.0",
         "total_life_products": len(LIFE_PRODUCTS)
     }
 
@@ -1666,8 +1702,8 @@ async def kakao_skill_calculate(request: Request):
             # Case 4-B: 상품명은 있으나 금액이 없는 경우 -> 금액만 되묻기
             if premium is None:
                 info = ALL_COMPANIES[comp]
-                m_term = re.search(r'(\d+)\s*년\s*납?', utterance)
-                term = f"{m_term.group(1)}년납" if m_term else info.get("default_term", "")
+                m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+                term = m_term.group(0) if m_term else info.get("default_term", "")
                 prod_name = cleaned_tokens if cleaned_tokens else info.get("default_prod", "주력")
                 return build_ask_amount_response(comp, prod_name, term)
                 
@@ -1675,6 +1711,7 @@ async def kakao_skill_calculate(request: Request):
             calc_prem = premium
             info = ALL_COMPANIES[comp]
             
+            # 손해보험: 92% 고정 및 1주차 시책 즉시 계산
             if info['category'] == "손해보험":
                 prod_name = "주력보종"
                 for p in ['퍼펙트', '간편', '굿앤굿', '주력', '종합', '자녀', '나에게맞춘', '참좋은', '훼밀리', '아이러브', '행복플러스']:
@@ -1683,60 +1720,76 @@ async def kakao_skill_calculate(request: Request):
                         break
                 calc_res = calculate_nonlife(comp, prod_name, calc_prem, incentive_type="주력", continuous_mode=continuous_mode)
                 return build_kakao_response(calc_res)
-            else:
-                m_term = re.search(r'(\d+)\s*년\s*납?', utterance)
-                term = f"{m_term.group(1)}년납" if m_term else ""
                 
-                if '라이나' in comp and ('종신' in utterance or '채우는' in utterance):
-                    if not term:
-                        return build_ask_term_response("라이나생명", "THE채우는종신", calc_prem, ["10년납 일반(950%)", "10년납 간편(450%)", "7년납(500%)", "착한간편종신(350%)"])
-
+            # 생명보험: 사용자 명확 지침 ("생명보험사는 금액을 적고나면 납입기간을 확인해서 답을 주도록 해줘")
+            else:
+                m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+                term = m_term.group(0) if m_term else ""
+                if term and not term.endswith("납"):
+                    term += "납"
+                    
                 matched = search_life_product(comp, utterance, term=term)
-                if matched:
-                    needed_terms = check_term_required(matched['product'], utterance)
-                    if needed_terms:
-                        return build_ask_term_response(comp, matched['product'], calc_prem, needed_terms)
-                    calc_res = calculate_life(
-                        company=comp,
-                        product_name=matched['product'],
-                        premium=calc_prem,
-                        s_factor=matched['s_factor'],
-                        term=matched.get('term', term or info.get("default_term", "20년납")),
-                        incentive_type="전략",
-                        continuous_mode=continuous_mode
-                    )
-                    return build_kakao_response(calc_res)
-                else:
-                    calc_res = calculate_life(
-                        company=comp,
-                        product_name=info.get("default_prod", "보장성"),
-                        premium=calc_prem,
-                        s_factor=1000.0,
-                        term=term or info.get("default_term", "20년납"),
-                        incentive_type="전략",
-                        continuous_mode=continuous_mode
-                    )
-                    return build_kakao_response(calc_res)
+                prod_name = matched['product'] if matched else info.get("default_prod", "보장성")
+
+                # 납입기간이 지정되지 않은 경우 -> 사용자 지시대로 납기 먼저 질의!
+                if not term:
+                    suggested_terms = get_suggested_terms_for_life(comp, prod_name)
+                    return build_ask_term_response(comp, prod_name, calc_prem, suggested_terms)
+                    
+                # 납입기간이 지정된 경우 -> 해당 납기로 정확히 즉시 계산!
+                s_factor = matched['s_factor'] if matched else 1000.0
+                calc_res = calculate_life(
+                    company=comp,
+                    product_name=prod_name,
+                    premium=calc_prem,
+                    s_factor=s_factor,
+                    term=term,
+                    incentive_type="전략",
+                    continuous_mode=continuous_mode
+                )
+                return build_kakao_response(calc_res)
 
         # 5. 회사명은 없지만 대표 상품명이 직접 들어온 경우 (예: 오튼튼 20만)
         if premium is not None:
+            m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+            term = m_term.group(0) if m_term else ""
+            if term and not term.endswith("납"):
+                term += "납"
+
             if any(k in utterance for k in ['오튼튼', '다사랑']):
-                calc_res = calculate_life("흥국생명", "다사랑·오튼튼(종합)", premium, 1100.0, "20년납", "전략", continuous_mode)
+                if not term:
+                    return build_ask_term_response("흥국생명", "다사랑·오튼튼(종합)", premium, ["10년납", "15년납", "20년납", "30년납"])
+                calc_res = calculate_life("흥국생명", "다사랑·오튼튼(종합)", premium, 1100.0, term, "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['달러종신', '백만인']):
+                if not term:
+                    return build_ask_term_response("메트라이프", "백만인을 위한 달러종신보험 Plus", premium, ["5년납(250%)", "7년납(400%)", "10년납(400%)", "15년납", "20년납"])
+                matched = search_life_product("메트라이프", "달러종신", term=term)
+                s_factor = matched['s_factor'] if matched else 647.55
+                calc_res = calculate_life("메트라이프", matched['product'], premium, s_factor, term, "전략", continuous_mode)
                 return build_kakao_response(calc_res)
             elif any(k in utterance for k in ['건강더한', '하나로H']):
-                calc_res = calculate_life("한화생명", "건강더한종신", premium, 1100.0, "10년납", "전략", continuous_mode)
+                if not term:
+                    return build_ask_term_response("한화생명", "건강더한종신", premium, ["7년납", "10년납", "15년납", "20년납"])
+                calc_res = calculate_life("한화생명", "건강더한종신", premium, 1100.0, term, "전략", continuous_mode)
                 return build_kakao_response(calc_res)
             elif any(k in utterance for k in ['알행플']):
-                calc_res = calculate_life("DB생명", "알행플종신", premium, 1020.0, "10년납", "전략", continuous_mode)
+                if not term:
+                    return build_ask_term_response("DB생명", "알행플종신", premium, ["7년납", "10년납", "15년납", "20년납"])
+                calc_res = calculate_life("DB생명", "알행플종신", premium, 1020.0, term, "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['새로담는', '브레인케어']):
+                if not term:
+                    return build_ask_term_response("라이나생명", "새로담는건강보험", premium, ["10년납", "15년납", "20년납", "30년납"])
+                calc_res = calculate_life("라이나생명", "새로담는건강보험", premium, 1000.0, term, "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['m케어', '엠케어']):
+                if not term:
+                    return build_ask_term_response("미래에셋", "M-케어건강보험", premium, ["10년납", "15년납", "20년납", "30년납"])
+                calc_res = calculate_life("미래에셋", "M-케어건강보험", premium, 825.0, term, "전략", continuous_mode)
                 return build_kakao_response(calc_res)
             elif any(k in utterance for k in ['퍼펙트', '간편', '굿앤굿', '주력']):
                 calc_res = calculate_nonlife("현대해상", "주력보종", premium, "주력", continuous_mode)
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['새로담는', '브레인케어']):
-                calc_res = calculate_life("라이나생명", "새로담는건강보험", premium, 1000.0, "20년납", "전략", continuous_mode)
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['m케어', '엠케어']):
-                calc_res = calculate_life("미래에셋", "M-케어건강보험", premium, 825.0, "20년납", "전략", continuous_mode)
                 return build_kakao_response(calc_res)
 
         # 6. 해석 불가 질문 -> 사용자 지정 표준 폴백 메시지 반환
