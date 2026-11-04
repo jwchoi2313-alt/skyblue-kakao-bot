@@ -279,16 +279,37 @@ ALL_COMPANIES = {
 }
 
 
+def clean_product_display_name(prod_name: str) -> str:
+    cleaned = re.sub(r'\(.*?\)', '', prod_name)
+    cleaned = re.sub(r'가입금액\s*[:：]?\s*.*', '', cleaned)
+    cleaned = re.sub(r'[,\/].*', '', cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned if cleaned else prod_name
+
+
 def parse_premium(text: str) -> Optional[int]:
-    """텍스트에서 보험료(원 단위)를 추출"""
-    m = re.search(r'(\d+[\d,]*)\s*만\s*원?', text)
-    if m:
-        num = int(m.group(1).replace(',', ''))
-        return num * 10000
-    m2 = re.search(r'(\d+[\d,]{3,})\s*원?', text)
+    """텍스트에서 보험료(원 단위)를 추출 (외화 가입금액 및 달러/불 제외)"""
+    # 1. 외화 및 가입금액 마스킹
+    cleaned = re.sub(r'\d+[\d,]*\s*만?\s*(?:달러|불|USD)', '', text, flags=re.IGNORECASE)
+    cleaned = re.sub(r'가입금액\s*[:：]?\s*\S+', '', cleaned)
+    
+    # 2. 'X만원' 또는 'X만 원' 우선 매칭
+    m_won = re.search(r'(\d+[\d,]*)\s*만\s*원', cleaned)
+    if m_won:
+        return int(m_won.group(1).replace(',', '')) * 10000
+        
+    # 3. 'X만' 매칭 (뒤에 년/회/세/차/건/대/달러 등이 오지 않는 경우)
+    m_man = re.search(r'(\d+[\d,]*)\s*만(?!\s*(?:년|회|세|차|건|대|달러|불|USD))', cleaned)
+    if m_man:
+        return int(m_man.group(1).replace(',', '')) * 10000
+        
+    # 4. 'X,000원' 또는 'X원'
+    m2 = re.search(r'(\d+[\d,]{3,})\s*원', cleaned)
     if m2:
         return int(m2.group(1).replace(',', ''))
-    m3 = re.search(r'\b(\d{1,4})\b', text)
+        
+    # 5. 고립된 숫자
+    m3 = re.search(r'\b(\d{1,4})\b', cleaned)
     if m3:
         val = int(m3.group(1))
         if val in [5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 100, 150, 200, 300, 500]:
@@ -1100,12 +1121,13 @@ def get_suggested_terms_for_life(comp: str, prod_name: str) -> List[str]:
 def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str]) -> Dict[str, Any]:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    clean_prod = clean_product_display_name(prod_name)
     
     quick_replies = []
     for t in terms:
         clean_t = re.sub(r'\(.*?\)', '', t).strip()
         quick_replies.append({
-            "messageText": f"{comp} {prod_name} {prem_str} {clean_t}",
+            "messageText": f"{comp} {clean_prod} {prem_str} {clean_t}",
             "action": "message",
             "label": t
         })
@@ -1117,7 +1139,7 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
             "outputs": [
                 {
                     "simpleText": {
-                        "text": f"📋 {comp} · {prod_name} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
+                        "text": f"📋 {comp} · {clean_prod} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
                     }
                 }
             ],
@@ -1450,7 +1472,7 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                     "itemCard": {
                         "imageTitle": {
                             "title": f"[{cat}] {comp}",
-                            "description": f"{prod} · {term}" if term else prod
+                            "description": f"{clean_product_display_name(prod)} · {term}" if term else clean_product_display_name(prod)
                         },
                         "title": f"총 수령액 {grand_total:,}원",
                         "itemList": item_list,
@@ -1518,7 +1540,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "스카이블루에셋 카카오 챗봇 스킬 서버",
-        "version": "2.4.0",
+        "version": "2.5.0",
         "total_life_products": len(LIFE_PRODUCTS)
     }
 
