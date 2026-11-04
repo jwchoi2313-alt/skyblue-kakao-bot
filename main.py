@@ -70,6 +70,214 @@ NONLIFE_RULES['incentives']['KB손보']['주력']['basis'] = "익월 360%(기본
 NONLIFE_RULES['incentives']['한화손보']['주력']['basis'] = "익월 150%(기본100+전략50) + 13회차 600%(주차400+주력200)"
 NONLIFE_RULES['incentives']['메리츠']['주력']['basis'] = "익월 150%(기본100+전략50) + 13회차 600%(주차400+주력200)"
 
+# ==========================================
+# 1. 26개 보험사 마스터 정보 (동의어, 대표상품, 시책지 등)
+# ==========================================
+ALL_COMPANIES = {
+    # 손해보험사 (9개사)
+    "현대해상": {
+        "category": "손해보험",
+        "aliases": ["현대해상", "현대"],
+        "default_prod": "주력보종",
+        "flyer": "현대해상_1주.png",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원", "퍼펙트 20만원"]
+    },
+    "DB손보": {
+        "category": "손해보험",
+        "aliases": ["DB손해보험", "DB손보", "디비손보", "디비손", "동부화재"],
+        "default_prod": "주력보종",
+        "flyer": "DB손보_1주.jpg",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원", "주력보종 20만원 연속포함"]
+    },
+    "KB손보": {
+        "category": "손해보험",
+        "aliases": ["KB손해보험", "KB손보", "케이비손보"],
+        "default_prod": "주력보종",
+        "flyer": "KB손보_1주차.jpg",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원"]
+    },
+    "한화손보": {
+        "category": "손해보험",
+        "aliases": ["한화손해보험", "한화손보"],
+        "default_prod": "주력보종",
+        "flyer": "한화손보_1주.jpg",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원"]
+    },
+    "메리츠": {
+        "category": "손해보험",
+        "aliases": ["메리츠화재", "메리츠"],
+        "default_prod": "인보험",
+        "flyer": "메리츠_11월_1주.jpg",
+        "recommendations": ["인보험 20만원", "인보험 10만원"]
+    },
+    "롯데손보": {
+        "category": "손해보험",
+        "aliases": ["롯데손해보험", "롯데손보", "롯데"],
+        "default_prod": "주력보종",
+        "flyer": "롯데손보_1주.jpg",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원"]
+    },
+    "흥국화재": {
+        "category": "손해보험",
+        "aliases": ["흥국화재"],
+        "default_prod": "주력보종",
+        "flyer": "흥국화재_1주.jpg",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원"]
+    },
+    "농협손보": {
+        "category": "손해보험",
+        "aliases": ["농협손해보험", "농협손보"],
+        "default_prod": "주력보종",
+        "flyer": "농협손보_1주.jpg",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원"]
+    },
+    "하나손보": {
+        "category": "손해보험",
+        "aliases": ["하나손해보험", "하나손보"],
+        "default_prod": "주력보종",
+        "flyer": "하나손보_1주.jpg",
+        "recommendations": ["주력보종 20만원", "주력보종 10만원"]
+    },
+
+    # 생명보험사 (17개사)
+    "흥국생명": {
+        "category": "생명보험",
+        "aliases": ["흥국생명", "흥국"],
+        "default_prod": "오튼튼",
+        "default_term": "20년납",
+        "flyer": "흥국생명_11월.png",
+        "recommendations": ["오튼튼 20만 20년납", "오튼튼 20만 10-11월 연속포함", "오튼튼 20만 핑크멤버스 포함", "다사랑 20만 20년납"]
+    },
+    "한화생명": {
+        "category": "생명보험",
+        "aliases": ["한화생명", "한화"],
+        "default_prod": "건강더한종신",
+        "default_term": "10년납",
+        "flyer": "한화생명_11월.png",
+        "recommendations": ["건강더한종신 50만 10년납", "건강더한종신 100만 10년납", "하나로H종신 50만 15년납"]
+    },
+    "DB생명": {
+        "category": "생명보험",
+        "aliases": ["DB생명", "디비생명", "동부생명"],
+        "default_prod": "알행플종신",
+        "default_term": "10년납",
+        "flyer": "DB생명_11월.jpg",
+        "recommendations": ["알행플종신 10만 10년납", "알행플종신 20만 10년납"]
+    },
+    "신한라이프": {
+        "category": "생명보험",
+        "aliases": ["신한라이프", "신한생명", "신한"],
+        "default_prod": "신한통합건강 원",
+        "default_term": "20년납",
+        "flyer": "신한라이프_11월_p2.png",
+        "recommendations": ["신한통합건강 원 20만", "신한통합건강 원 20만 연속포함", "모아더드림종신 20만"]
+    },
+    "KB라이프": {
+        "category": "생명보험",
+        "aliases": ["KB라이프", "KB생명", "케이비라이프", "케이비생명"],
+        "default_prod": "딱좋은건강",
+        "default_term": "20년납",
+        "flyer": "KB라이프_11월.png",
+        "recommendations": ["딱좋은건강 20만", "100세든든연금 20만"]
+    },
+    "라이나생명": {
+        "category": "생명보험",
+        "aliases": ["라이나생명", "라이나"],
+        "default_prod": "새로담는건강보험",
+        "default_term": "20년납",
+        "flyer": "라이나생명_11월.png",
+        "recommendations": ["새로담는건강 20만", "브레인케어 10만", "THE채우는종신 10년납 일반 20만", "THE채우는종신 7년납 20만"]
+    },
+    "미래에셋": {
+        "category": "생명보험",
+        "aliases": ["미래에셋생명", "미래에셋", "미래"],
+        "default_prod": "M-케어건강",
+        "default_term": "20년납",
+        "flyer": "미래에셋_11월.png",
+        "recommendations": ["M-케어건강 20만", "M-케어건강 10만", "M-케어건강 30만", "변액연금 20만"]
+    },
+    "동양생명": {
+        "category": "생명보험",
+        "aliases": ["동양생명", "동양"],
+        "default_prod": "쑥쑥어린이",
+        "default_term": "15년납",
+        "flyer": "동양생명_11월.png",
+        "recommendations": ["쑥쑥어린이 20만 15년납", "수호천사 20만"]
+    },
+    "교보생명": {
+        "category": "생명보험",
+        "aliases": ["교보생명", "교보"],
+        "default_prod": "보장성",
+        "default_term": "20년납",
+        "flyer": "교보생명_11월.png",
+        "recommendations": ["보장성 20만", "보장성 10만"]
+    },
+    "농협생명": {
+        "category": "생명보험",
+        "aliases": ["농협생명"],
+        "default_prod": "건강플러스",
+        "default_term": "20년납",
+        "flyer": "농협생명_11월.png",
+        "recommendations": ["건강플러스 20만", "투스텝종신 20만"]
+    },
+    "KDB생명": {
+        "category": "생명보험",
+        "aliases": ["KDB생명", "KDB"],
+        "default_prod": "버팀목",
+        "default_term": "10년납",
+        "flyer": "KDB생명_11월.jpg",
+        "recommendations": ["버팀목 20만", "버팀목 10만"]
+    },
+    "메트라이프": {
+        "category": "생명보험",
+        "aliases": ["메트라이프", "메트"],
+        "default_prod": "백만인을위한",
+        "default_term": "20년납",
+        "flyer": "메트라이프_11월.jpg",
+        "recommendations": ["백만인을위한 20만", "달러종신 20만"]
+    },
+    "ABL생명": {
+        "category": "생명보험",
+        "aliases": ["ABL생명", "ABL"],
+        "default_prod": "우리WON더채움",
+        "default_term": "20년납",
+        "flyer": "ABL생명_11월.png",
+        "recommendations": ["우리WON더채움 20만", "우리WON세븐 20만"]
+    },
+    "하나생명": {
+        "category": "생명보험",
+        "aliases": ["하나생명"],
+        "default_prod": "하나로라이트",
+        "default_term": "20년납",
+        "flyer": "하나생명_11월.png",
+        "recommendations": ["하나로라이트 20만", "연결된종신 20만"]
+    },
+    "푸본현대": {
+        "category": "생명보험",
+        "aliases": ["푸본현대", "푸본"],
+        "default_prod": "MAX원픽",
+        "default_term": "20년납",
+        "flyer": "푸본현대_11월.png",
+        "recommendations": ["MAX원픽 20만", "마이픽 20만"]
+    },
+    "IM라이프": {
+        "category": "생명보험",
+        "aliases": ["IM라이프", "IM"],
+        "default_prod": "당당한인생",
+        "default_term": "7년납",
+        "flyer": "IM라이프_11월.png",
+        "recommendations": ["당당한인생 20만", "트래블PRO 20만"]
+    },
+    "IBK연금": {
+        "category": "생명보험",
+        "aliases": ["IBK연금", "IBK"],
+        "default_prod": "프리미엄연금",
+        "default_term": "10년납",
+        "flyer": "IBK연금_11월.png",
+        "recommendations": ["프리미엄연금 20만", "하이브리드연금 20만"]
+    }
+}
+
 
 def parse_premium(text: str) -> Optional[int]:
     """텍스트에서 보험료(원 단위)를 추출"""
@@ -80,292 +288,431 @@ def parse_premium(text: str) -> Optional[int]:
     m2 = re.search(r'(\d+[\d,]{3,})\s*원?', text)
     if m2:
         return int(m2.group(1).replace(',', ''))
-    m3 = re.search(r'(\d{1,4})', text)
+    m3 = re.search(r'\b(\d{1,4})\b', text)
     if m3:
         val = int(m3.group(1))
-        if val in [5, 10, 15, 20, 25, 30, 40, 50, 100, 200, 300, 500]:
+        if val in [5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 100, 150, 200, 300, 500]:
             return val * 10000
     return None
 
 
-def search_life_product(company: str, query: str, term: str = "") -> Optional[Dict[str, Any]]:
-    """생보사 조견표에서 가장 근접한 상품 검색 (별칭 및 하이픈 정규화 지원)"""
-    comp_cleaned = company.replace('생명', '').strip()
-    candidates = [p for p in LIFE_PRODUCTS if p['company'] == comp_cleaned or comp_cleaned in p['company']]
+def find_companies_in_text(text: str) -> List[str]:
+    """문장에서 언급된 보험사 목록을 정확하고 중복 없이 추출 (긴 별칭 우선)"""
+    alias_map = []
+    for comp, data in ALL_COMPANIES.items():
+        for alias in data['aliases']:
+            alias_map.append((alias, comp))
+    alias_map.sort(key=lambda x: len(x[0]), reverse=True)
     
+    found = []
+    used_spans = []
+    for alias, comp in alias_map:
+        for m in re.finditer(re.escape(alias), text, re.IGNORECASE):
+            span = m.span()
+            if not any(s <= span[0] < e or s < span[1] <= e for s, e in used_spans):
+                used_spans.append(span)
+                if comp not in found:
+                    found.append(comp)
+    return found
+
+
+def search_life_product(company: str, query: str, term: str = "") -> Optional[Dict[str, Any]]:
+    """생보사 조견표에서 가장 근접한 상품 검색"""
+    comp_cleaned = company.replace('생명', '').replace('라이프', '').strip()
+    if comp_cleaned in ['KB', '케이비']:
+        comp_cleaned = 'KB'
+    elif comp_cleaned in ['신한']:
+        comp_cleaned = '신한'
+        
+    candidates = [p for p in LIFE_PRODUCTS if p['company'] == comp_cleaned or comp_cleaned in p['company']]
     if not candidates:
         return None
     
     q_norm = query.replace(" ", "").replace("-", "")
     
-    # 대표 별칭 매핑
     if comp_cleaned == "DB":
         if "알행플" in q_norm:
             matched = [p for p in candidates if "알행플" in p['product']]
-            if term:
-                t_matched = [p for p in matched if term in p.get('term', '')]
-                if t_matched: return t_matched[0]
-            m10 = [p for p in matched if "10년" in p.get('term', '')]
-            if m10: return m10[0]
-            if matched: return matched[0]
-        elif "알행" in q_norm or "리턴" in q_norm:
-            matched = [p for p in candidates if "알차고" in p['product'] or "리턴" in p['product']]
-            if matched: return matched[0]
-        elif "올케어" in q_norm or "암종신" in q_norm:
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+        elif "알행리턴" in q_norm:
+            matched = [p for p in candidates if "리턴" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+        elif "올케어" in q_norm:
             matched = [p for p in candidates if "올케어" in p['product']]
-            if matched: return matched[0]
-            
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
     elif comp_cleaned == "한화":
         if "건강더한" in q_norm:
             matched = [p for p in candidates if "건강더한" in p['product']]
-            if term:
-                t_matched = [p for p in matched if term in p.get('term', '')]
-                if t_matched: return t_matched[0]
-            if matched: return matched[0]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
         elif "하나로" in q_norm:
             matched = [p for p in candidates if "하나로" in p['product']]
-            if term:
-                t_matched = [p for p in matched if term in p.get('term', '')]
-                if t_matched: return t_matched[0]
-            if matched: return matched[0]
-        elif "제로백" in q_norm:
-            matched = [p for p in candidates if "H종신" in p['product'] or "제로백" in p['product']]
-            if term:
-                t_matched = [p for p in matched if term in p.get('term', '')]
-                if t_matched: return t_matched[0]
-            if matched: return matched[0]
-
+            if matched:
+                return pick_best_term_product(matched, term, default_term="15년납")
+        elif "필요할때" in q_norm:
+            matched = [p for p in candidates if "필요할때" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+        elif "밸류플러스" in q_norm:
+            matched = [p for p in candidates if "밸류플러스" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+        elif "h종신" in q_norm:
+            matched = [p for p in candidates if p['product'].replace(" ", "") == "H종신"]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="7년납")
     elif comp_cleaned == "동양":
         if "쑥쑥" in q_norm or "어린이" in q_norm:
             matched = [p for p in candidates if "쑥쑥" in p['product']]
-            if term:
-                t_matched = [p for p in matched if term in p.get('term', '')]
-                if t_matched: return t_matched[0]
-            if matched: return matched[0]
-
-    elif comp_cleaned == "흥국":
-        if "오튼튼" in q_norm or "다사랑" in q_norm or "5튼튼" in q_norm:
-            matched = [p for p in candidates if "다사랑" in p['product'] or "오튼튼" in p['product'] or "통합" in p['product']]
-            if matched: return matched[0]
-
-    keywords = [k for k in re.split(r'\s+', query) if k and k not in [comp_cleaned, '생명', '생보']]
-    scored_candidates = []
+            if matched:
+                return pick_best_term_product(matched, term, default_term="15년납")
+    elif comp_cleaned == "미래":
+        if "m케어" in q_norm or "엠케어" in q_norm or "건강" in q_norm:
+            matched = [p for p in candidates if "M-케어" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년납이상")
+    elif comp_cleaned == "라이나":
+        if "새로담는" in q_norm:
+            matched = [p for p in candidates if "새로담는" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년납")
+        elif "채우는" in q_norm:
+            matched = [p for p in candidates if "채우는" in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+    
+    scored = []
     for p in candidates:
+        p_name = p['product'].replace(" ", "").replace("-", "")
         score = 0
-        p_name = p['product']
-        p_term = p.get('term', '')
-        p_gubun = p.get('gubun', '')
-        full_text = f"{p_name} {p_term} {p_gubun}"
+        for token in q_norm:
+            if token in p_name:
+                score += 1
+        if term and term in p.get('term', ''):
+            score += 10
+        scored.append((score, p))
         
-        for kw in keywords:
-            kw_clean = kw.replace('-', '')
-            if kw in p_name or kw_clean in p_name.replace('-', ''):
-                score += 5
-            elif kw in full_text or kw_clean in full_text.replace('-', ''):
-                score += 2
-        
-        if term:
-            if term in p_term:
-                score += 10
-            elif term.replace('년납', '').replace('년', '') in p_term:
-                score += 8
-                
-        if score > 0:
-            scored_candidates.append((score, p))
-            
-    scored_candidates.sort(key=lambda x: x[0], reverse=True)
-    if scored_candidates:
-        return scored_candidates[0][1]
-    
-    return None
+    scored.sort(key=lambda x: x[0], reverse=True)
+    if scored and scored[0][0] > 0:
+        return scored[0][1]
+    return candidates[0]
 
 
-def get_life_incentive(company: str, product_name: str, term: str, premium: int, incentive_type: str = "전략") -> Dict[str, Any]:
-    comp = company.replace('생명', '').strip().lower()
-    prod = product_name.replace(' ', '').lower()
-    t = term.replace(' ', '')
+def pick_best_term_product(candidates: List[Dict[str, Any]], term: str, default_term: str = "10년납") -> Dict[str, Any]:
+    target_term = term if term else default_term
+    for p in candidates:
+        if target_term in p.get('term', ''):
+            return p
+    for p in candidates:
+        if default_term in p.get('term', ''):
+            return p
+    return candidates[0]
+
+
+def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none") -> Dict[str, Any]:
+    """17개 생보사 11월 공식 시책표 정밀 판정 (흥국생명 2종 연속시상, 신한라이프 3~7번 연계, 미래에셋 구간시상, 라이나 완벽 반영)"""
+    comp = comp_name.replace('생명', '').replace('라이프', '').strip().lower()
+    prod = product_name.replace(" ", "").lower()
     
-    # 1. 한화생명
-    if '한화' in comp:
+    # 1. 흥국생명 (사용자 지시: 10~11월 연속가동 & 핑크멤버스 2종 연속시상 정밀 처리)
+    if '흥국' in comp:
+        is_strat = (incentive_type == "전략" or any(k in prod for k in ['오튼튼', '다사랑', '치매', '암', '건강', '3.10.5']))
+        base_next = 4.0
+        sky_next = 2.0 if (premium >= 200000 and is_strat) else 0.0
+        install_period = 6.0
+        install_strat = 2.0 if is_strat else 0.0
+        
+        # 10~11월 연속가동 (10.26~31 및 11.1~6 양 기간 동일구간 달성 시)
+        c1_amount = 0
+        if premium >= 1000000: c1_amount = 10000000
+        elif premium >= 700000: c1_amount = 7000000
+        elif premium >= 500000: c1_amount = 5000000
+        elif premium >= 300000: c1_amount = 1800000
+        elif premium >= 200000: c1_amount = 1200000
+        elif premium >= 100000: c1_amount = 600000
+        elif premium >= 50000: c1_amount = 300000
+        
+        # 핑크멤버스 (전월 10월 10만 이상 달성 시)
+        c2_amount = 0
+        if premium >= 1000000: c2_amount = 5000000
+        elif premium >= 700000: c2_amount = 3500000
+        elif premium >= 500000: c2_amount = 2500000
+        elif premium >= 300000: c2_amount = 1500000
+        elif premium >= 200000: c2_amount = 1000000
+        elif premium >= 100000: c2_amount = 500000
+
+        c1_rate = (c1_amount / premium) if premium > 0 else 0.0
+        c2_rate = (c2_amount / premium) if premium > 0 else 0.0
+
+        applied_cont_rate = 0.0
+        applied_desc = ""
+        c_mode = continuous_mode.lower()
+        if "c1" in c_mode or "10-11" in c_mode or "10월연속" in c_mode or "연속가동" in c_mode:
+            applied_cont_rate = c1_rate
+            applied_desc = f"[10~11월 연속가동 +{c1_amount//10000}만 원({int(c1_rate*100)}%) 합산]"
+        elif "c2" in c_mode or "핑크" in c_mode:
+            applied_cont_rate = c2_rate
+            applied_desc = f"[핑크멤버스 +{c2_amount//10000}만 원({int(c2_rate*100)}%) 합산]"
+        elif "both" in c_mode or "all" in c_mode or "full" in c_mode or "풀" in c_mode or "모두" in c_mode or "둘다" in c_mode or "연속포함" in c_mode or c_mode == "true":
+            applied_cont_rate = c1_rate + c2_rate
+            applied_desc = f"[연속 2종 모두포함 +{(c1_amount+c2_amount)//10000}만 원({int((c1_rate+c2_rate)*100)}%) 합산]"
+
+        basis = f"익월 {int((base_next+sky_next)*100)}%(기본400+SKY{int(sky_next*100)}) + 13회차 {int((install_period+install_strat)*100)}%(1~3주600+전략{int(install_strat*100)})"
+        if applied_desc:
+            basis += f" {applied_desc}"
+
+        return {
+            "next_month": base_next + sky_next,
+            "split": install_period + install_strat + applied_cont_rate,
+            "total": base_next + sky_next + install_period + install_strat + applied_cont_rate,
+            "basis": basis,
+            "c1_amount": c1_amount,
+            "c2_amount": c2_amount,
+            "cont_bonus": c1_rate + c2_rate,
+            "cont_desc": f"① 10~11월 연속가동(+{c1_amount//10000}만) ② 핑크멤버스(+{c2_amount//10000}만)",
+            "is_heungkuk": True,
+            "continuous_mode": continuous_mode
+        }
+
+    # 2. 한화생명
+    elif '한화' in comp:
         if '건강더한' in prod:
-            if '간편' in prod:
-                if '10년' in t:
-                    return {"next_month": 4.0, "split": 0.5, "total": 4.5, "basis": "익월 400% + 13회차 50% (10년납 간편 450%)", "cont_bonus": 0.0, "cont_desc": "연속가동 시상 별도"}
-                else:
-                    return {"next_month": 3.5, "split": 1.0, "total": 4.5, "basis": "익월 350% + 13회차 100% (7년납 간편 450%)", "cont_bonus": 0.0, "cont_desc": "연속가동 시상 별도"}
+            if '7년' in term:
+                return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 13회차 100% (건강더한종신 7년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
             else:
-                if '10년' in t:
-                    return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (10년납 일반 500%)", "cont_bonus": 0.0, "cont_desc": "연속가동 시상 별도"}
-                else:
-                    return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 13회차 100% (7년납 일반 500%)", "cont_bonus": 0.0, "cont_desc": "연속가동 시상 별도"}
+                return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (건강더한종신 10년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '하나로' in prod:
-            if '15년' in t or '20년' in t:
-                return {"next_month": 2.5, "split": 4.5, "total": 7.0, "basis": "익월 250% + 13회차 450% (15/20년납 700%, 법인 SKY지원 별도)", "cont_bonus": 0.0, "cont_desc": "월초 구간별 SKY 현금지원 연계"}
+            if '10년' in term:
+                return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (하나로H종신 10년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
             else:
-                return {"next_month": 2.5, "split": 2.5, "total": 5.0, "basis": "익월 250% + 13회차 250% (10년납 500%)", "cont_bonus": 0.0, "cont_desc": "월초 구간별 SKY 현금지원 연계"}
+                return {"next_month": 5.0, "split": 2.0, "total": 7.0, "basis": "익월 500% + 13회차 200% (하나로H종신 15/20년납 700%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '필요할때' in prod:
-            if '12년' in t:
-                return {"next_month": 3.0, "split": 5.5, "total": 8.5, "basis": "익월 300% + 13회차 550% (12년납 850%)", "cont_bonus": 0.0, "cont_desc": ""}
+            if '12년' in term:
+                return {"next_month": 6.0, "split": 2.5, "total": 8.5, "basis": "익월 600% + 13회차 250% (필요할때쓰는종신 12년납 850%)", "cont_bonus": 0.0, "cont_desc": ""}
             else:
-                return {"next_month": 3.0, "split": 3.5, "total": 6.5, "basis": "익월 300% + 13회차 350% (10년납 650%)", "cont_bonus": 0.0, "cont_desc": ""}
+                return {"next_month": 4.5, "split": 2.0, "total": 6.5, "basis": "익월 450% + 13회차 200% (필요할때쓰는종신 10년납 650%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '밸류플러스' in prod:
-            if '5년' in t:
-                return {"next_month": 4.5, "split": 0.5, "total": 5.0, "basis": "익월 450% + 13회차 50% (5년납 일반 500%)", "cont_bonus": 0.0, "cont_desc": ""}
-            else:
-                return {"next_month": 4.0, "split": 0.5, "total": 4.5, "basis": "익월 400% + 13회차 50% (7/10년납 450%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '치매담은' in prod or '간병플러스' in prod:
-            if '10년' in t:
-                return {"next_month": 4.5, "split": 3.5, "total": 8.0, "basis": "익월 450% + 13회차 350% (10년납 800%)", "cont_bonus": 0.0, "cont_desc": ""}
-            elif '15년' in t:
-                return {"next_month": 3.0, "split": 2.5, "total": 5.5, "basis": "익월 300% + 13회차 250% (15년납 550%)", "cont_bonus": 0.0, "cont_desc": ""}
-            else:
-                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (20년납 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '시그니처암' in prod:
+            return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (밸류플러스2.0 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '치매' in prod or '간병' in prod:
+            return {"next_month": 5.0, "split": 3.0, "total": 8.0, "basis": "익월 500% + 13회차 300% (치매담은 간병플러스 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '암' in prod or '시그니처' in prod:
             return {"next_month": 5.0, "split": 8.0, "total": 13.0, "basis": "익월 500% + 13회차 800% (시그니처암 1,300%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '시그니처' in prod or '실속가득' in prod or '통합' in prod:
-            return {"next_month": 4.0, "split": 7.0, "total": 11.0, "basis": "익월 400% + 13회차 700% (통합보험 기본 1,100%)", "cont_bonus": 2.0, "cont_desc": "연속가동/조기시책 달성 시 추가 합산 가능"}
-        elif 'h종신' in prod or '종신' in prod:
-            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (H종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif 'h종신' in prod or 'h' in prod:
+            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (H종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (기본 보장성 시책)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (한화생명 주력 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+    # 3. DB생명
+    elif 'db' in comp or '디비' in comp or '동부' in comp:
+        if '알행플' in prod:
+            if '7년' in term:
+                return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 13회차 100% (알행플종신 7년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "익월 400% + 13회차 200% (알행플종신 10년납 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '리턴' in prod:
+            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "익월 400% + 13회차 200% (알행리턴종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '올케어' in prod:
+            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (뉴-올케어암종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "익월 400% + 13회차 200% (DB생명 종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+    # 4. 신한라이프 (사용자 지시: 2번째장 3~7번 연계는 연속포함 시에만 합산)
+    elif '신한' in comp:
+        if '모아더드림plus' in prod or '모아더드림플러스' in prod:
+            return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 13회차 100% (모아더드림Plus 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '모아더드림' in prod or '리필' in prod or '3케어' in prod:
+            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (모아더드림/리필종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '든든한' in prod or 'the든든한' in prod:
+            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (THE든든한종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '변액' in prod:
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (ONE더드림 변액연금 강화형 100%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '연금' in prod:
+            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (ONE더라이프 연금 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            next_m = 2.5
+            base_split_amount = 0
+            if premium >= 600000: base_split_amount = 7200000
+            elif premium >= 400000: base_split_amount = 4800000
+            elif premium >= 250000: base_split_amount = 2500000
+            elif premium >= 150000: base_split_amount = 1500000
+            elif premium >= 70000: base_split_amount = 700000
+            base_split_rate = (base_split_amount / premium) if premium > 0 else 0.0
             
-    # 2. 흥국생명
-    elif '흥국' in comp:
-        if any(w in prod for w in ['오튼튼', '다사랑', '3.10.5', '3.8.5', '치매담은', '건강', '암']) or incentive_type == '전략':
+            cont_amount = 0
+            cont_desc_parts = []
+            if premium >= 250000: cont_amount += 960000; cont_desc_parts.append("연속가동① 96만")
+            elif premium >= 150000: cont_amount += 660000; cont_desc_parts.append("연속가동① 66만")
+            elif premium >= 70000: cont_amount += 420000; cont_desc_parts.append("연속가동① 42만")
+                
+            if premium >= 250000: cont_amount += 600000; cont_desc_parts.append("집중연속② 60만")
+            elif premium >= 150000: cont_amount += 400000; cont_desc_parts.append("집중연속② 40만")
+            elif premium >= 70000: cont_amount += 240000; cont_desc_parts.append("집중연속② 24만")
+                
+            if premium >= 500000: cont_amount += 1500000; cont_desc_parts.append("멤버십 150만")
+            elif premium >= 400000: cont_amount += 1200000; cont_desc_parts.append("멤버십 120만")
+            elif premium >= 300000: cont_amount += 900000; cont_desc_parts.append("멤버십 90만")
+            elif premium >= 200000: cont_amount += 600000; cont_desc_parts.append("멤버십 60만")
+            elif premium >= 100000: cont_amount += 300000; cont_desc_parts.append("멤버십 30만")
+                
+            cont_rate = (cont_amount / premium) if premium > 0 else 0.0
+            cont_desc = " + ".join(cont_desc_parts) + f" (총 +{cont_amount//10000}만 원)"
+            
+            applied_cont = cont_rate if (continuous_mode != "none" and continuous_mode != "") else 0.0
+            basis = f"익월 250%({int(premium*next_m):,}원) + 1주차가동 {base_split_amount//10000}만 원({int(base_split_rate*100)}%)"
+            if applied_cont > 0:
+                basis += f" [연계·연속 +{cont_amount//10000}만 원({int(cont_rate*100)}%) 합산]"
+                
             return {
-                "next_month": 6.0,
-                "split": 8.0,
-                "total": 14.0,
-                "basis": "익월 600%(기본400+SKY200) + 13회차 800%(1~3주가동600+전략6종200)",
-                "cont_bonus": 6.0,
-                "cont_desc": "10~11월 연속가동 달성 시 +120만 원(600%) 및 핑크멤버스 +100만 원 추가 가능"
-            }
-        else:
-            return {
-                "next_month": 4.0,
-                "split": 6.0,
-                "total": 10.0,
-                "basis": "익월 400% + 13회차 600% (일반건강 1,000%)",
-                "cont_bonus": 6.0,
-                "cont_desc": "10~11월 연속가동 달성 시 추가시상 가능"
-            }
-
-    # 3. 동양생명
-    elif '동양' in comp:
-        if '쑥쑥' in prod or '어린이' in prod:
-            return {"next_month": 5.0, "split": 20.0, "total": 25.0, "basis": "익월 500% + 주간/마감분할 2,000% (쑥쑥어린이 최대 2,500%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '알뜰' in prod or '종신' in prod:
-            return {"next_month": 5.0, "split": 1.0, "total": 6.0, "basis": "익월 500% + 13회차 100% (알뜰종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
-        else:
-            return {"next_month": 5.0, "split": 19.0, "total": 24.0, "basis": "익월 500% + 분할 1,900% (건강보험 최대 2,400%)", "cont_bonus": 0.0, "cont_desc": ""}
-
-    # 4. DB생명
-    elif 'db' in comp:
-        if any(w in prod for w in ['알행플', '플러스', 'plus', '뉴-알행플']):
-            if '7년' in t:
-                return {
-                    "next_month": 3.0,
-                    "split": 2.0,
-                    "total": 5.0,
-                    "basis": "익월 300% + 13회차 200% (7년납 500%)",
-                    "cont_bonus": 0.0,
-                    "cont_desc": "고능률 구간시상(30만↑ 50만, 50만↑ 100만) 및 본사 체증형 지원 별도"
-                }
-            else:
-                return {
-                    "next_month": 3.0,
-                    "split": 3.0,
-                    "total": 6.0,
-                    "basis": "익월 300% + 13회차 300% (10년납 600%, 7년납 시 500%)",
-                    "cont_bonus": 0.0,
-                    "cont_desc": "고능률 구간시상(30만↑ 50만, 50만↑ 100만) 및 본사 체증형 지원 별도"
-                }
-        elif any(w in prod for w in ['알행', '리턴', '알행종']):
-            if '5년' in t:
-                return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 13회차 100% (5년납 500%)", "cont_bonus": 0.0, "cont_desc": "고능률 구간시상 별도"}
-            else:
-                return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (7/10/20년납 800%, 본사 체증형 연계)", "cont_bonus": 0.0, "cont_desc": "고능률 구간시상 별도"}
-        elif any(w in prod for w in ['올케어', '암종신']):
-            if '20년' in t:
-                return {"next_month": 2.0, "split": 4.0, "total": 6.0, "basis": "익월 200% + 13회차 400% (20년납 600%)", "cont_bonus": 0.0, "cont_desc": "고능률 구간시상 별도"}
-            else:
-                return {"next_month": 4.0, "split": 6.0, "total": 10.0, "basis": "익월 400% + 13회차 600% (10/15년납 1,000%)", "cont_bonus": 0.0, "cont_desc": "고능률 구간시상 별도"}
-        else:
-            return {
-                "next_month": 4.0,
-                "split": 6.0,
-                "total": 10.0,
-                "basis": "익월 400% + 13회차 600% (건강보험 1,000%)",
-                "cont_bonus": 2.5,
-                "cont_desc": "10~11월 연속가동 팬클럽 달성 시 +50만(1구간)~150만(3구간) 추가 가능"
+                "next_month": next_m,
+                "split": base_split_rate + applied_cont,
+                "total": next_m + base_split_rate + applied_cont,
+                "basis": basis,
+                "cont_bonus": cont_rate,
+                "cont_desc": cont_desc
             }
 
-    # 5. KB라이프
+    # 5. 라이나생명 (새로담는건강, 브레인케어, 치아/치매, 종신 완벽 판정)
+    elif '라이나' in comp:
+        if '새로담는' in prod or '브레인' in prod or ('건강' in prod and '종신' not in prod):
+            next_m = 3.0
+            base_split = 1.0
+            split_amount = 0
+            if premium >= 300000: split_amount = 5400000
+            elif premium >= 200000: split_amount = 3400000
+            elif premium >= 100000: split_amount = 1600000
+            elif premium >= 50000: split_amount = 500000
+                
+            split_rate_from_amount = (split_amount / premium) if premium > 0 else 0.0
+            core_rate = 4.0 if premium >= 100000 else 0.0
+            
+            cont_amount = 0
+            if premium >= 300000: cont_amount = 900000
+            elif premium >= 200000: cont_amount = 600000
+            elif premium >= 100000: cont_amount = 200000
+            elif premium >= 50000: cont_amount = 100000
+            cont_rate = (cont_amount / premium) if premium > 0 else 0.0
+            
+            applied_cont = cont_rate if (continuous_mode != "none" and continuous_mode != "") else 0.0
+            tot_split_rate = base_split + split_rate_from_amount + core_rate + applied_cont
+            tot_rate = next_m + tot_split_rate
+            
+            basis = f"익월 300%({int(premium*next_m):,}원) + 13회차 {int((base_split+split_rate_from_amount+core_rate)*100)}%(기본100+구간{split_amount//10000}만+핵심담보{int(core_rate*100)}%)"
+            if applied_cont > 0:
+                basis += f" [10~11월 연속가동 +{cont_amount//10000}만 원({int(cont_rate*100)}%) 합산]"
+                
+            return {
+                "next_month": next_m,
+                "split": tot_split_rate,
+                "total": tot_rate,
+                "basis": basis,
+                "cont_bonus": cont_rate,
+                "cont_desc": f"10~11월 연속가동 +{cont_amount//10000}만 원({int(cont_rate*100)}%) 추가 합산 가능"
+            }
+        elif '치아' in prod or '치매' in prod or '암' in prod:
+            next_m = 3.0
+            split_amount = 0
+            if premium >= 300000: split_amount = 1800000
+            elif premium >= 200000: split_amount = 1000000
+            elif premium >= 100000: split_amount = 400000
+            elif premium >= 50000: split_amount = 150000
+            split_rate = (split_amount / premium) if premium > 0 else 0.0
+            tot_rate = next_m + split_rate
+            basis = f"익월 300% + 13회차 구간 {split_amount//10000}만 원({int(split_rate*100)}%)"
+            return {"next_month": next_m, "split": split_rate, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            if '7년' in term:
+                return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (THE채우는종신 7년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif '간편' in term or '간편' in prod:
+                if '10년' in term:
+                    return {"next_month": 3.0, "split": 1.5, "total": 4.5, "basis": "익월 300% + 13회차 150% (THE채우는종신 10년납 간편 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+                else:
+                    return {"next_month": 2.5, "split": 1.0, "total": 3.5, "basis": "익월 250% + 13회차 100% (THE착한간편종신 350%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif '10년' in term:
+                return {"next_month": 3.0, "split": 6.5, "total": 9.5, "basis": "익월 300% + 13회차 650% (THE채우는종신 10년납 일반심사 950%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 2.5, "split": 1.0, "total": 3.5, "basis": "익월 250% + 13회차 100% (THE건강/착한간편종신 350%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+    # 6. 미래에셋생명 (건강파트 익월 250% + 구간시상)
+    elif '미래' in comp:
+        if '연금' in prod:
+            rate = 2.0 if premium >= 200000 else (1.0 if premium >= 100000 else 0.0)
+            return {"next_month": rate, "split": 0.0, "total": rate, "basis": f"익월 {int(rate*100)}% (변액연금 강화형)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '변액' in prod or '약속' in prod:
+            return {"next_month": 1.0, "split": 2.8, "total": 3.8, "basis": "익월 100% + 13회차 280% (변액종신 미래의약속 380%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '상속' in prod or '헤리티지' in prod:
+            return {"next_month": 2.0, "split": 4.5, "total": 6.5, "basis": "익월 200% + 13회차 450% (상속종신 헤리티지 650%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '치아' in prod:
+            return {"next_month": 1.0, "split": 1.0, "total": 2.0, "basis": "익월 100% + 13회차 100% (치아보험 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            next_m = 2.5
+            split_amount = 0
+            if premium >= 2000000: split_amount = 35700000
+            elif premium >= 1500000: split_amount = 20700000
+            elif premium >= 1000000: split_amount = 10700000
+            elif premium >= 700000: split_amount = 9200000
+            elif premium >= 500000: split_amount = 8200000
+            elif premium >= 300000: split_amount = 5700000
+            elif premium >= 200000: split_amount = 3600000
+            elif premium >= 100000: split_amount = 1500000
+            elif premium >= 50000: split_amount = 150000
+            
+            split_rate = (split_amount / premium) if premium > 0 else 0.0
+            tot_rate = next_m + split_rate
+            basis = f"익월 250%({int(premium*next_m):,}원) + 13회차 구간시상 {split_amount//10000}만 원({int(split_rate*100)}%) = 총 {int(tot_rate*100)}%"
+            return {"next_month": next_m, "split": split_rate, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
+
+    # 7. KB라이프
     elif 'kb' in comp:
         if '연금' in prod:
             return {"next_month": 2.0, "split": 5.0, "total": 7.0, "basis": "익월 200% + 13회차 500% (100세 든든 연금 700%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
             return {"next_month": 3.0, "split": 22.5, "total": 25.5, "basis": "익월 300% + 13회차 2,250% (딱좋은 건강군 최대 2,550%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 6. 신한라이프
-    elif '신한' in comp:
-        if '종신' in prod or '모아' in prod:
-            return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 분할 100% (모아더드림 종신 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+    # 8. 동양생명
+    elif '동양' in comp:
+        if '알뜰' in prod:
+            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (알뜰플러스 400%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 2.5, "split": 22.0, "total": 24.5, "basis": "익월 250% + 13회차 2,200% (통합건강 원 최대 2,450%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 2.0, "split": 3.0, "total": 5.0, "basis": "익월 200% + 13회차 300% (우리WON 500%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 7. 푸본현대
+    # 9. 푸본현대생명
     elif '푸본' in comp:
-        if '연금' in prod:
-            return {"next_month": 3.0, "split": 4.0, "total": 7.0, "basis": "익월 300% + 13회차 400% (MAX연금다운 700%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '5년' in t:
-            return {"next_month": 4.1, "split": 3.9, "total": 8.0, "basis": "익월 410% + 13회차 390% (MAX종신 5년납 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '원픽' in prod:
+            return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (MAX 원픽종신 500%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 3.0, "split": 2.0, "total": 5.0, "basis": "익월 300% + 13회차 200% (MAX종신 7년납 500%, 법인 SKY지원 별도)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (마이픽 건강 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 8. KDB생명
+    # 10. KDB생명
     elif 'kdb' in comp:
-        if '종신' in prod:
-            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (더!행복플러스종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '연금' in prod:
-            return {"next_month": 2.0, "split": 2.5, "total": 4.5, "basis": "익월 200% + 13회차 250% (더!행복플러스UP연금 450%)", "cont_bonus": 0.0, "cont_desc": ""}
-        else:
-            return {"next_month": 5.0, "split": 7.0, "total": 12.0, "basis": "익월 500% + 13회차 700% (라이프핏/암 1,200%)", "cont_bonus": 0.0, "cont_desc": ""}
+        return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (버팀목종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 9. ABL생명
+    # 11. ABL생명
     elif 'abl' in comp:
-        if '종신' in prod:
-            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (우리WON더채움종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
-        else:
-            return {"next_month": 2.5, "split": 8.0, "total": 10.5, "basis": "익월 250% + 13회차 800% (우리WON건강 1,050%)", "cont_bonus": 0.0, "cont_desc": ""}
+        return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (우리WON더채움종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 10. 농협생명
+    # 12. 농협생명
     elif '농협' in comp:
         if '종신' in prod:
             return {"next_month": 4.5, "split": 1.5, "total": 6.0, "basis": "익월 450% + 13회차 150% (투스텝NH종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
             return {"next_month": 5.0, "split": 12.0, "total": 17.0, "basis": "익월 500% + 13회차 1,200% (건강플러스통합 1,700%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 11. 교보생명
+    # 13. 교보생명
     elif '교보' in comp:
         return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (모두지킴종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 12. 하나생명
+    # 14. 하나생명
     elif '하나' in comp:
         return {"next_month": 5.0, "split": 19.0, "total": 24.0, "basis": "익월 500% + 13회차 1,900% (하나로라이트 최대 2,400%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 13. 미래에셋
-    elif '미래' in comp:
-        return {"next_month": 2.5, "split": 19.0, "total": 21.5, "basis": "익월 250% + 13회차 1,900% (M-케어 건강/암 최대 2,150%)", "cont_bonus": 0.0, "cont_desc": ""}
-
-    # 14. 메트라이프
+    # 15. 메트라이프
     elif '메트' in comp:
-        if '달러' in prod:
-            return {"next_month": 2.0, "split": 2.0, "total": 4.0, "basis": "익월 200% + 13회차 200% (달러종신Plus 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-        else:
-            return {"next_month": 2.0, "split": 2.5, "total": 4.5, "basis": "익월 200% + 13회차 250% (변액리치 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+        return {"next_month": 2.0, "split": 2.5, "total": 4.5, "basis": "익월 200% + 13회차 250% (변액리치 450%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    return {"next_month": 0.0, "split": 0.0, "total": 0.0, "basis": "전단지별 시책 추가 확인 필요", "cont_bonus": 0.0, "cont_desc": ""}
+    return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (기본 전략 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
 
 def calculate_life(
@@ -375,20 +722,18 @@ def calculate_life(
     s_factor: float = 1000.0,
     term: str = "20년납",
     incentive_type: str = "전략",
-    include_continuous: bool = False
+    continuous_mode: str = "none"
 ) -> Dict[str, Any]:
     """생명보험 수수료 및 시책 계산"""
-    comp_clean = company.replace('생명', '').strip()
+    comp_clean = company.replace('생명', '').replace('라이프', '').strip()
     
-    # 1. S환산 성적 산출: P * (S환산 / 1000)
     conversion_rate = s_factor / 10.0
     s_grade = round(premium * (s_factor / 1000.0))
     
-    # 2. 수수료 계산
-    next_month_rate = LIFE_RULES['next_month_rate']  # 3.32 (332%)
+    next_month_rate = LIFE_RULES['next_month_rate']
     
     comp_inst_dict = LIFE_RULES.get('company_installments', {}).get(comp_clean, {})
-    inst_rate = 1.32  # 기본값
+    inst_rate = 1.32
     if isinstance(comp_inst_dict, dict):
         inst_rate = comp_inst_dict.get('default', 1.32)
         prod_lower = product_name.lower()
@@ -403,18 +748,16 @@ def calculate_life(
     installment_comm = round(s_grade * inst_rate)
     total_comm = next_month_comm + installment_comm
     
-    # 3. 시책 계산
-    inc_info = get_life_incentive(comp_clean, product_name, term, premium, incentive_type)
+    inc_info = get_life_incentive(comp_clean, product_name, term, premium, incentive_type, continuous_mode)
     next_month_inc_rate = inc_info.get("next_month", 0.0)
     split_inc_rate = inc_info.get("split", 0.0)
     basis_desc = inc_info.get("basis", "")
     cont_bonus_rate = inc_info.get("cont_bonus", 0.0)
     cont_desc = inc_info.get("cont_desc", "")
+    c1_amount = inc_info.get("c1_amount", 0)
+    c2_amount = inc_info.get("c2_amount", 0)
+    is_heungkuk = inc_info.get("is_heungkuk", False)
     
-    if include_continuous and cont_bonus_rate > 0:
-        split_inc_rate += cont_bonus_rate
-        basis_desc += f" [연속가동 +{int(cont_bonus_rate*100)}% 합산]"
-        
     next_month_inc = round(premium * next_month_inc_rate)
     split_inc = round(premium * split_inc_rate)
     total_inc = next_month_inc + split_inc
@@ -424,14 +767,18 @@ def calculate_life(
     total_split = installment_comm + split_inc
     grand_total = total_comm + total_inc
     
+    display_comp = company
+    if not display_comp.endswith("생명") and not display_comp.endswith("라이프"):
+        display_comp += "생명"
+        
     return {
         "category": "생명보험",
-        "company": comp_clean + "생명",
+        "company": display_comp,
         "product_name": product_name,
         "term": term,
         "premium": premium,
         "s_factor": s_factor,
-        "conversion_rate": round(conversion_rate, 1),
+        "conversion_rate": conversion_rate,
         "s_grade": s_grade,
         "next_month_comm": next_month_comm,
         "next_month_comm_rate": round(next_month_rate * 100, 1),
@@ -450,7 +797,10 @@ def calculate_life(
         "basis_desc": basis_desc,
         "cont_bonus_rate": cont_bonus_rate,
         "cont_desc": cont_desc,
-        "include_continuous": include_continuous
+        "c1_amount": c1_amount,
+        "c2_amount": c2_amount,
+        "is_heungkuk": is_heungkuk,
+        "continuous_mode": continuous_mode
     }
 
 
@@ -459,67 +809,58 @@ def calculate_nonlife(
     product_name: str,
     premium: int,
     incentive_type: str = "주력",
-    include_continuous: bool = False
+    continuous_mode: str = "none"
 ) -> Dict[str, Any]:
     """손해보험 수수료 및 시책 계산"""
-    comp_clean = company.replace('손해보험', '').replace('손보', '').replace('화재', '').replace('해상', '').strip()
-    
-    # 1. S환산 성적: 보험료의 92% 고정
-    conv_rate = NONLIFE_RULES['conversion_rate']  # 0.92
-    s_grade = round(premium * conv_rate)
-    
-    # 2. 수수료 계산
-    next_month_rate = NONLIFE_RULES['next_month_rate']  # 6.10 (610%)
-    inst_rate = NONLIFE_RULES['installment_rate']  # 1.32 (132%)
-    next_month_comm = round(s_grade * next_month_rate)
-    installment_comm = round(s_grade * inst_rate)
-    total_comm = round(s_grade * NONLIFE_RULES['total_commission_rate'])
-    
-    # 3. 시책 계산
-    inc_companies = NONLIFE_RULES['incentives']
-    matched_comp = None
-    for k in inc_companies.keys():
-        if comp_clean in k or k in comp_clean:
-            matched_comp = k
+    comp_matched = "현대해상"
+    for c in NONLIFE_RULES['companies']:
+        if c in company or company in c:
+            comp_matched = c
             break
             
-    if matched_comp:
-        comp_inc_dict = inc_companies[matched_comp]
-        inc_rule = comp_inc_dict.get(incentive_type) or comp_inc_dict.get('주력') or list(comp_inc_dict.values())[0]
-        next_month_inc_rate = inc_rule.get('next_month_base', 0.0) + inc_rule.get('next_month_sky', 0.0)
-        split_inc_rate = inc_rule.get('install_week_bonus', 0.0) + inc_rule.get('install_main_bonus', 0.0) + inc_rule.get('install_sky_2nd', 0.0) + inc_rule.get('install_sky_add', 0.0)
-        basis_desc = inc_rule.get('basis', '')
-        cont_bonus_rate = inc_rule.get('cont_bonus_rate', 0.0)
-        cont_desc = inc_rule.get('cont_desc', '')
+    conv_rate = NONLIFE_RULES['conversion_rate']
+    s_grade = round(premium * conv_rate)
+    
+    next_month_rate = NONLIFE_RULES['next_month_rate']
+    inst_rate = NONLIFE_RULES['installment_rate']
+    
+    next_month_comm = round(s_grade * next_month_rate)
+    installment_comm = round(s_grade * inst_rate)
+    total_comm = next_month_comm + installment_comm
+    
+    inc_dict = NONLIFE_RULES.get('incentives', {}).get(comp_matched, {}).get(incentive_type, {})
+    if not inc_dict:
+        inc_dict = NONLIFE_RULES.get('incentives', {}).get('현대해상', {}).get('주력', {})
         
-        if include_continuous and cont_bonus_rate > 0:
-            split_inc_rate += cont_bonus_rate
-            basis_desc += f" [연속가동 +{int(cont_bonus_rate*100)}% 합산]"
-            
-        next_month_inc = round(premium * next_month_inc_rate)
-        split_inc = round(premium * split_inc_rate)
-        total_inc = next_month_inc + split_inc
-        total_inc_rate = round((next_month_inc_rate + split_inc_rate) * 100, 1)
-    else:
-        next_month_inc_rate = 1.0 + 2.6
-        split_inc_rate = 0.0
-        next_month_inc = round(premium * next_month_inc_rate)
-        split_inc = 0
-        total_inc = next_month_inc
-        basis_desc = "익월 360%(기본100+SKY260) (1주차 주간가동은 전단지 참조)"
-        cont_bonus_rate = 0.0
-        cont_desc = ""
-        total_inc_rate = 360.0
+    next_month_inc_rate = inc_dict.get('next_month_base', 1.0) + inc_dict.get('next_month_sky', 2.6)
+    split_inc_rate = (
+        inc_dict.get('install_week_bonus', 0.0) +
+        inc_dict.get('install_main_bonus', 0.0) +
+        inc_dict.get('install_sky_2nd', 0.0) +
+        inc_dict.get('install_sky_add', 0.0)
+    )
+    
+    basis_desc = inc_dict.get('basis', '')
+    cont_bonus_rate = inc_dict.get('cont_bonus_rate', 0.0)
+    cont_desc = inc_dict.get('cont_desc', '')
+    
+    include_cont = (continuous_mode != "none" and continuous_mode != "")
+    if include_cont and cont_bonus_rate > 0:
+        split_inc_rate += cont_bonus_rate
+        basis_desc += f" [전월 연속가동 +{int(round(cont_bonus_rate*100))}% 합산]"
         
+    next_month_inc = round(premium * next_month_inc_rate)
+    split_inc = round(premium * split_inc_rate)
+    total_inc = next_month_inc + split_inc
+    total_inc_rate = round((next_month_inc_rate + split_inc_rate) * 100, 1)
+    
     total_next_month = next_month_comm + next_month_inc
     total_split = installment_comm + split_inc
     grand_total = total_comm + total_inc
     
-    full_comp_name = comp_clean + "손보" if not comp_clean.endswith(('화재', '해상')) else comp_clean
-    if 'db' in comp_clean.lower() or '디비' in comp_clean:
-        full_comp_name = "DB손해보험"
-    elif '현대' in comp_clean:
-        full_comp_name = "현대해상"
+    full_comp_name = comp_matched
+    if not full_comp_name.endswith("해상") and not full_comp_name.endswith("손보") and not full_comp_name.endswith("화재"):
+        full_comp_name += "화재"
         
     return {
         "category": "손해보험",
@@ -547,18 +888,31 @@ def calculate_nonlife(
         "basis_desc": basis_desc,
         "cont_bonus_rate": cont_bonus_rate,
         "cont_desc": cont_desc,
-        "include_continuous": include_continuous
+        "is_heungkuk": False,
+        "continuous_mode": continuous_mode
     }
 
 
-
-
+# ==========================================
+# 2. 시책지 원본 매핑 및 검색 (KB라이프, 신한라이프 등 완벽 수정)
+# ==========================================
 FLYER_MAP = {
+    "신한라이프": "신한라이프_11월_p2.png",
+    "신한생명": "신한라이프_11월_p2.png",
+    "신한": "신한라이프_11월_p2.png",
+    "KB라이프": "KB라이프_11월.png",
+    "KB생명": "KB라이프_11월.png",
+    "케이비라이프": "KB라이프_11월.png",
+    "케이비생명": "KB라이프_11월.png",
+    "라이나생명": "라이나생명_11월.png",
+    "라이나": "라이나생명_11월.png",
     "한화생명": "한화생명_11월.png",
     "한화": "한화생명_11월.png",
     "흥국생명": "흥국생명_11월.png",
     "흥국": "흥국생명_11월.png",
     "DB생명": "DB생명_11월.jpg",
+    "동부생명": "DB생명_11월.jpg",
+    "디비생명": "DB생명_11월.jpg",
     "DB손해보험": "DB손보_1주.jpg",
     "DB손보": "DB손보_1주.jpg",
     "디비손보": "DB손보_1주.jpg",
@@ -570,6 +924,7 @@ FLYER_MAP = {
     "한화손보": "한화손보_1주.jpg",
     "한화손해보험": "한화손보_1주.jpg",
     "메리츠": "메리츠_11월_1주.jpg",
+    "메리츠화재": "메리츠_11월_1주.jpg",
     "동양생명": "동양생명_11월.png",
     "동양": "동양생명_11월.png",
     "교보생명": "교보생명_11월.png",
@@ -580,13 +935,13 @@ FLYER_MAP = {
     "KDB": "KDB생명_11월.jpg",
     "푸본현대": "푸본현대_11월.png",
     "푸본": "푸본현대_11월.png",
-    "라이나생명": "라이나생명_11월.png",
-    "라이나": "라이나생명_11월.png",
     "미래에셋": "미래에셋_11월.png",
     "미래": "미래에셋_11월.png",
     "ABL생명": "ABL생명_11월.png",
     "ABL": "ABL생명_11월.png",
-    "KB라이프": "KB라이프_11월.png",
+    "하나생명": "하나생명_11월.png",
+    "IBK연금": "IBK연금_11월.png",
+    "IM라이프": "IM라이프_11월.png",
     "롯데손보": "롯데손보_1주.jpg",
     "롯데": "롯데손보_1주.jpg",
     "하나손보": "하나손보_1주.jpg",
@@ -596,11 +951,42 @@ FLYER_MAP = {
     "흥국화재": "흥국화재_1주.jpg"
 }
 
-def find_flyer(comp_name: str):
+def find_flyer(comp_name: str) -> Tuple[str, str]:
+    c_norm = comp_name.replace(" ", "").lower()
+    if "kb생명" in c_norm or "kb라이프" in c_norm or "케이비생명" in c_norm or "케이비라이프" in c_norm:
+        return "KB라이프", "KB라이프_11월.png"
+    if "신한생명" in c_norm or "신한라이프" in c_norm or c_norm == "신한":
+        return "신한라이프", "신한라이프_11월_p2.png"
+    if "kb손" in c_norm:
+        return "KB손해보험", "KB손보_1주차.jpg"
+    if "db생명" in c_norm or "동부생명" in c_norm or "디비생명" in c_norm:
+        return "DB생명", "DB생명_11월.jpg"
+    if "db손" in c_norm or "동부화재" in c_norm or "디비손" in c_norm:
+        return "DB손해보험", "DB손보_1주.jpg"
+    if "흥국생명" in c_norm:
+        return "흥국생명", "흥국생명_11월.png"
+    if "흥국화재" in c_norm:
+        return "흥국화재", "흥국화재_1주.jpg"
+    if "한화생명" in c_norm:
+        return "한화생명", "한화생명_11월.png"
+    if "한화손" in c_norm:
+        return "한화손해보험", "한화손보_1주.jpg"
+    if "미래" in c_norm:
+        return "미래에셋", "미래에셋_11월.png"
+    if "라이나" in c_norm:
+        return "라이나생명", "라이나생명_11월.png"
+
     for k, v in FLYER_MAP.items():
-        if k in comp_name or comp_name in k:
+        if k == comp_name or k.replace(" ", "").lower() == c_norm:
             return k, v
+            
+    sorted_keys = sorted(FLYER_MAP.keys(), key=lambda x: len(x), reverse=True)
+    for k in sorted_keys:
+        if k in comp_name or comp_name in k:
+            return k, FLYER_MAP[k]
+            
     return comp_name, "SKY_11월.jpg"
+
 
 def build_flyer_response(comp_name: str) -> Dict[str, Any]:
     matched_k, filename = find_flyer(comp_name)
@@ -640,6 +1026,9 @@ def build_flyer_response(comp_name: str) -> Dict[str, Any]:
     }
 
 
+# ==========================================
+# 3. 대화형 되묻기 인터랙션 (회사만 / 금액누락 / 납기질의 / 흥국연속질의)
+# ==========================================
 TERM_REQUIRED_PRODUCTS = {
     "건강더한": ["7년납", "10년납"],
     "하나로": ["10년납", "15년납", "20년납"],
@@ -650,21 +1039,28 @@ TERM_REQUIRED_PRODUCTS = {
     "h종신": ["5년납", "7년납"],
     "알행플": ["7년납", "10년납", "20년납"],
     "알행리턴": ["5년납", "7년납", "10년납", "20년납"],
-    "올케어": ["10년납", "15년납", "20년납"]
+    "올케어": ["10년납", "15년납", "20년납"],
+    "채우는": ["10년납 일반(950%)", "10년납 간편(450%)", "7년납(500%)"],
+    "착한간편": ["10년납(350%)", "15년납", "20년납"],
+    "라이나종신": ["10년납 일반(950%)", "10년납 간편(450%)", "7년납(500%)", "착한간편종신(350%)"]
 }
 
 def check_term_required(product_name: str, user_text: str) -> Optional[List[str]]:
     p_norm = product_name.replace(" ", "").lower()
     t_norm = user_text.replace(" ", "").lower()
     
-    # 이미 텍스트에 n년 또는 n년납이 있으면 질문 불필요
+    if '라이나' in t_norm and ('종신' in t_norm or '종신' in p_norm):
+        if not re.search(r'\d+\s*년', user_text):
+            return ["10년납 일반", "10년납 간편", "7년납", "착한간편종신"]
+            
     if re.search(r'\d+\s*년', user_text):
         return None
         
     for k, terms in TERM_REQUIRED_PRODUCTS.items():
-        if k in p_norm or k in t_norm:
+        if k in p_norm:
             return terms
     return None
+
 
 def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str]) -> Dict[str, Any]:
     prem_man = premium // 10000
@@ -695,183 +1091,158 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
     }
 
 
-def parse_and_calculate(user_utterance: str, allow_term_inquiry: bool = False) -> Dict[str, Any]:
-    """사용자의 자연어 메시지나 파라미터를 분석해 적절한 계산 수행"""
-    text = user_utterance.strip()
+def build_ask_product_and_amount_response(comp: str) -> Dict[str, Any]:
+    info = ALL_COMPANIES.get(comp, {})
+    recs = info.get("recommendations", [f"{info.get('default_prod', '주력')} 20만", f"{info.get('default_prod', '주력')} 10만"])
     
-    # 연속/연계/브릿지 시상 포함 여부 파악
-    include_continuous = any(kw in text for kw in ['연속', '연계', '브릿지', '풀시상', '전체', '포함'])
+    quick_replies = [
+        {"messageText": f"{comp} {r}", "action": "message", "label": r}
+        for r in recs
+    ]
+    quick_replies.append({"messageText": f"{comp} 시책지", "action": "message", "label": f"📑 {comp} 시책지"})
+    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법"})
     
-    # 1. 보험료 추출
-    premium = parse_premium(text)
-    if not premium:
-        premium = 200000  # 기본값 20만원
-        
-    # 2. 납기 추출
-    m_term = re.search(r'(\d+)\s*년\s*납?', text)
-    term = f"{m_term.group(1)}년납" if m_term else ""
-    
-    # 3. 손보사 대조 (DB손보, 현대, 메리츠, KB손보 등)
-    nonlife_keywords = ['현대해상', '현대', '메리츠', 'KB손보', 'KB손', '한화손보', '한화손', 'DB손보', 'DB손', '디비손보', '디비손', '롯데손보', '롯데', '흥국화재', '농협손보', '농협손', '하나손보', '하나손', '손보', '손해보험']
-    is_nonlife = any(c in text for c in nonlife_keywords)
-    
-    if is_nonlife:
-        comp_name = "현대해상"
-        if any(w in text for w in ['db', 'DB', '디비']):
-            comp_name = "DB손보"
-        elif any(w in text for w in ['메리츠', '화재']):
-            comp_name = "메리츠"
-        elif any(w in text for w in ['kb', 'KB']):
-            comp_name = "KB손보"
-        elif any(w in text for w in ['한화']):
-            comp_name = "한화손보"
-        elif any(w in text for w in ['롯데']):
-            comp_name = "롯데손보"
-        elif any(w in text for w in ['흥국']):
-            comp_name = "흥국화재"
-            
-        prod_name = "주력보종"
-        for p in ['퍼펙트', '간편', '굿앤굿', '주력', '종합', '자녀', '나에게맞춘', '참좋은', '훼밀리', '아이러브', '행복플러스']:
-            if p in text:
-                prod_name = p
-                break
-        return calculate_nonlife(comp_name, prod_name, premium, incentive_type="주력", include_continuous=include_continuous)
-    
-    # 4. 생명보험 판정
-    life_companies = ['흥국', '한화', 'DB', '디비', '신한', 'KB', '메트', '농협', '동양', '라이나', '교보', 'KDB', 'ABL', '미래', '하나', '푸본', 'IM', 'IBK']
-    comp_name = "흥국"
-    for c in life_companies:
-        if c in text:
-            comp_name = "DB" if c in ['DB', '디비'] else c
-            break
-            
-    # 상품 검색
-    matched = search_life_product(comp_name, text, term=term)
-    if matched:
-        if allow_term_inquiry:
-            needed_terms = check_term_required(matched['product'], text)
-            if needed_terms:
-                return {
-                    "need_term_inquiry": True,
-                    "company": matched['company'] + "생명",
-                    "product_name": matched['product'],
-                    "premium": premium,
-                    "terms": needed_terms
+    example = recs[0] if recs else f"{comp} 20만"
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": f"📋 {comp}\n\n어떤 상품과 월 보험료(금액)로 계산해 드릴까요?\n\n아래 추천 항목을 누르시거나 직접 입력해 주세요!\n(예: {comp} {example})"
+                    }
                 }
-        return calculate_life(
-            company=matched['company'],
-            product_name=matched['product'],
+            ],
+            "quickReplies": quick_replies
+        }
+    }
+
+
+def build_ask_amount_response(comp: str, prod_name: str, term: str = "") -> Dict[str, Any]:
+    term_part = f" {term}" if term else ""
+    quick_replies = [
+        {"messageText": f"{comp} {prod_name}{term_part} 10만원", "action": "message", "label": "10만원"},
+        {"messageText": f"{comp} {prod_name}{term_part} 20만원", "action": "message", "label": "20만원"},
+        {"messageText": f"{comp} {prod_name}{term_part} 30만원", "action": "message", "label": "30만원"},
+        {"messageText": f"{comp} {prod_name}{term_part} 50만원", "action": "message", "label": "50만원"},
+        {"messageText": f"{comp} 시책지", "action": "message", "label": f"📑 {comp} 시책지"}
+    ]
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": f"💰 {comp} · {prod_name}\n\n월 보험료(금액)를 선택해 주세요.\n(원하시는 금액 버튼을 누르시거나 직접 입력해 주세요)"
+                    }
+                }
+            ],
+            "quickReplies": quick_replies
+        }
+    }
+
+
+def build_heungkuk_continuous_inquiry_response(premium: Optional[int] = None) -> Dict[str, Any]:
+    """흥국생명 연속시상 질의 카드 (10월 실적 조건 판정 안내)"""
+    p_man = (premium // 10000) if premium else 20
+    text_desc = (
+        "🌸 흥국생명 10~11월 연속시상 안내\n\n"
+        "흥국생명은 10월 실적 조건에 따라 2가지 연속시상이 있습니다:\n\n"
+        "1️⃣ [10~11월 연속가동]\n"
+        "• 조건: 10.26~31 및 11.1~6 양 기간 동일 구간 달성 시\n"
+        "• 시상금: 5만(30만), 10만(60만), 20만(120만), 30만(180만), 50만(500만)\n\n"
+        "2️⃣ [핑크멤버스]\n"
+        "• 조건: 10월 전체 실적 10만 이상 달성 시\n"
+        "• 시상금: 10만(50만), 20만(100만), 30만(150만), 50만(250만)\n\n"
+        "해당하시는 조건을 선택하시면 정확한 총수령액을 산출해 드립니다!"
+    )
+    quick_replies = [
+        {"messageText": f"흥국 오튼튼 {p_man}만 10-11월 연속포함", "action": "message", "label": f"🔥 10~11월 연속 (+120만)"},
+        {"messageText": f"흥국 오튼튼 {p_man}만 핑크멤버스 포함", "action": "message", "label": f"🌸 핑크멤버스 (+100만)"},
+        {"messageText": f"흥국 오튼튼 {p_man}만 둘다포함", "action": "message", "label": f"💎 둘다포함 (+220만)"},
+        {"messageText": f"흥국 오튼튼 {p_man}만", "action": "message", "label": f"단건 기본 ({p_man}만)"}
+    ]
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [{"simpleText": {"text": text_desc}}],
+            "quickReplies": quick_replies
+        }
+    }
+
+
+# ==========================================
+# 4. 2개 또는 3개 회사 비교 카드 엔진 (총합만 비교)
+# ==========================================
+def calculate_company_for_compare(comp_name: str, premium: int, text: str, continuous_mode: str) -> Dict[str, Any]:
+    info = ALL_COMPANIES.get(comp_name, {})
+    cat = info.get("category", "생명보험")
+    default_prod = info.get("default_prod", "주력")
+    default_term = info.get("default_term", "20년납")
+    
+    if cat == "손해보험":
+        return calculate_nonlife(
+            company=comp_name,
+            product_name=default_prod,
             premium=premium,
-            s_factor=matched['s_factor'],
-            term=matched.get('term', term or "10년납" if "종신" in matched['product'] else "20년납"),
-            incentive_type="전략" if "전략" in text or "오튼튼" in text or "다사랑" in text else "일반",
-            include_continuous=include_continuous
+            incentive_type="주력",
+            continuous_mode=continuous_mode
         )
     else:
-        if comp_name == "흥국":
-            s_factor = 1100.0
-            prod_name = "다사랑·오튼튼(종합)"
-        elif comp_name == "한화":
-            s_factor = 1140.0
-            prod_name = "제로백H종신"
-        elif comp_name == "동양":
-            s_factor = 735.0
-            prod_name = "우리WON하는쑥쑥어린이"
-        elif comp_name == "DB":
-            s_factor = 1020.0
-            prod_name = "백년친구 뉴-알행플종신"
-        else:
-            s_factor = 1000.0
-            prod_name = f"{comp_name}생명 일반보장"
-            
+        m_term = re.search(r'(\d+)\s*년\s*납?', text)
+        term = f"{m_term.group(1)}년납" if m_term else default_term
+        
+        matched = search_life_product(comp_name, text, term=term)
+        s_factor = matched['s_factor'] if matched else 1000.0
+        prod_name = matched['product'] if matched else default_prod
+        
         return calculate_life(
             company=comp_name,
             product_name=prod_name,
             premium=premium,
             s_factor=s_factor,
-            term=term or "10년납" if "종신" in prod_name else "20년납",
+            term=term,
             incentive_type="전략",
-            include_continuous=include_continuous
+            continuous_mode=continuous_mode
         )
 
 
-def format_money(val: int) -> str:
-    return f"{val:,}원"
-
-
-def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
-    """카카오 i 오픈빌더 규격(ItemCard + 산출근거 설명)으로 응답 JSON 생성"""
-    cat = calc_result['category']
-    comp = calc_result['company']
-    prod = calc_result['product_name']
-    term = calc_result.get('term', '')
-    premium = calc_result['premium']
+def build_compare_response(results: List[Dict[str, Any]], premium: int, continuous_mode: str = "none") -> Dict[str, Any]:
     prem_man = premium // 10000
-    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    sorted_results = sorted(results, key=lambda x: x['grand_total'], reverse=True)
+    diff = sorted_results[0]['grand_total'] - sorted_results[-1]['grand_total']
+    winner = sorted_results[0]['company']
     
-    sub_title = f"{comp} · {prod}"
-    sub_desc = f"{term} | 월납 {format_money(premium)}" if term else f"월납 {format_money(premium)}"
-    
-    inc_label = "시상 소계"
-    if calc_result.get('include_continuous'):
-        inc_label = "시상 소계 (연속포함)"
+    ranks = ["🥇 1위", "🥈 2위", "🥉 3위"]
+    item_list = []
+    for i, r in enumerate(sorted_results):
+        rank_label = ranks[i] if i < len(ranks) else f"{i+1}위"
+        p_name = r.get('product_name', '')
+        if len(p_name) > 10:
+            p_name = p_name[:9] + "…"
+        item_list.append({
+            "title": f"{rank_label} {r['company']}",
+            "description": f"{r['grand_total']:,}원"
+        })
         
-    item_list = [
-        {"title": "S환산 성적", "description": f"{format_money(calc_result['s_grade'])} ({calc_result['conversion_rate']}%)"},
-        {"title": f"익월 수수료 ({calc_result['next_month_comm_rate']}%)", "description": format_money(calc_result['next_month_comm'])},
-        {"title": f"분급 수수료 ({calc_result['installment_comm_rate']}%)", "description": format_money(calc_result['installment_comm'])},
-        {"title": "수수료 소계", "description": format_money(calc_result['total_comm'])},
-        {"title": f"익월 시상 ({calc_result['next_month_inc_rate']}%)", "description": format_money(calc_result['next_month_inc'])},
-        {"title": f"13회차/분할시상 ({calc_result['split_inc_rate']}%)", "description": format_money(calc_result['split_inc'])},
-        {"title": f"{inc_label} ({calc_result['total_inc_rate']}%)", "description": format_money(calc_result['total_inc'])},
-        {"title": "👉 익월 총수령", "description": format_money(calc_result['total_next_month'])},
-        {"title": "👉 분급·차년도 총수령", "description": format_money(calc_result['total_split'])}
-    ]
-    
-    # 산출근거 텍스트 구성
-    basis_desc = calc_result.get('basis_desc', '')
-    basis_text = '💡 시상 산출근거: ' + str(basis_desc)
-    cont_desc = calc_result.get('cont_desc', '')
-    cont_bonus_rate = calc_result.get('cont_bonus_rate', 0.0)
-    include_cont = calc_result.get('include_continuous', False)
-    
-    if include_cont:
-        basis_text += ' (전월/당월 연속·연계 가동 시상 합산됨)'
-    elif cont_desc:
-        basis_text += ' ※ 연속·연계: ' + str(cont_desc)
+    buttons = []
+    for r in sorted_results[:2]:
+        buttons.append({
+            "label": f"🔍 {r['company']} 상세 계산",
+            "action": "message",
+            "messageText": f"{r['company']} {r.get('product_name', '')} {prem_man}만원"
+        })
         
-
-
-    # 퀵리플라이 구성 (입력란 바로 위 상시 사용법 및 시책지 보기 배치)
+    comp_names = " vs ".join(r['company'] for r in sorted_results)
+    title_desc = f"{comp_names} 총합(수수료+시상) 비교"
+    
     quick_replies = [
-        {"messageText": "사용법", "action": "message", "label": "💡 사용법: 회사 상품 금액"},
-        {"messageText": comp + " 시책지", "action": "message", "label": "📑 " + comp + " 시책지"}
+        {"messageText": f"{comp_names} 10만 비교", "action": "message", "label": "10만 비교"},
+        {"messageText": f"{comp_names} 20만 비교", "action": "message", "label": "20만 비교"},
+        {"messageText": f"{comp_names} 30만 비교", "action": "message", "label": "30만 비교"},
+        {"messageText": f"{comp_names} {prem_man}만 연속포함 비교", "action": "message", "label": "🔥 연속시상 포함"},
+        {"messageText": "도움말", "action": "message", "label": "💡 사용법"}
     ]
-    if not include_cont and cont_bonus_rate > 0:
-        bonus_man = int(premium * cont_bonus_rate) // 10000
-        btn_label = f"🔥 연속포함 (+{bonus_man}만)" if bonus_man > 0 else "🔥 연속가동 포함"
-        quick_replies.append({
-            "messageText": f"{comp} {prod} {prem_str} 연속포함",
-            "action": "message",
-            "label": btn_label
-        })
-    elif include_cont:
-        quick_replies.append({
-            "messageText": f"{comp} {prod} {prem_str}",
-            "action": "message",
-            "label": "📋 단건 기준만 보기"
-        })
-        
-    if "DB손보" not in comp:
-        quick_replies.append({"messageText": f"DB손보 주력 {prem_str}", "action": "message", "label": "📊 DB손보 비교"})
-    if "현대해상" not in comp:
-        quick_replies.append({"messageText": f"현대해상 주력 {prem_str}", "action": "message", "label": "📊 현대해상 비교"})
-    if "흥국" not in comp:
-        quick_replies.append({"messageText": f"흥국 오튼튼 {prem_str} 20년납", "action": "message", "label": "📊 흥국 오튼튼 비교"})
-    if "한화" not in comp:
-        quick_replies.append({"messageText": f"한화 건강더한 {prem_str}", "action": "message", "label": "📊 한화 건강더한 비교"})
-        
-    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
     
     return {
         "version": "2.0",
@@ -880,16 +1251,178 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                 {
                     "itemCard": {
                         "imageTitle": {
-                            "title": "스카이블루에셋",
-                            "description": "2026년 11월 수수료·시책 정산 결과"
+                            "title": f"⚖️ {prem_man}만 원 판매 시 총수령액 비교",
+                            "description": title_desc
                         },
-                        "title": sub_title,
-                        "description": sub_desc,
+                        "title": f"🏆 최고: {winner} (+{diff:,}원)",
                         "itemList": item_list,
-                        "itemListAlignment": "right",
                         "itemListSummary": {
-                            "title": "🎉 최종 총수령액 합계",
-                            "description": format_money(calc_result['grand_total'])
+                            "title": "1위 vs 최하위 격차",
+                            "description": f"{diff:,}원"
+                        },
+                        "buttons": buttons
+                    }
+                }
+            ],
+            "quickReplies": quick_replies
+        }
+    }
+
+
+# ==========================================
+# 5. 미답변 질문 표준 폴백 안내 (사용자 지정 문구)
+# ==========================================
+def build_fallback_response() -> Dict[str, Any]:
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": "회사명 상품명 금액 을 입력해주세요\n(예: 한화생명 건강더한종신 100만)"
+                    }
+                }
+            ],
+            "quickReplies": [
+                {"messageText": "한화생명 건강더한종신 100만", "action": "message", "label": "한화 건강더한 100만"},
+                {"messageText": "흥국생명 오튼튼 20만 20년납", "action": "message", "label": "흥국 오튼튼 20만"},
+                {"messageText": "현대해상 주력 20만", "action": "message", "label": "현대 주력 20만"},
+                {"messageText": "DB손보 10만원", "action": "message", "label": "DB손보 10만"},
+                {"messageText": "신한라이프 통합건강 20만", "action": "message", "label": "신한 통합건강 20만"},
+                {"messageText": "라이나 새로담는건강 20만", "action": "message", "label": "라이나 새로담는 20만"},
+                {"messageText": "흥국 vs 현대 20만 비교", "action": "message", "label": "흥국 vs 현대 20만 비교"}
+            ]
+        }
+    }
+
+
+def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
+    """카카오 i 오픈빌더 ItemCard 영수증 포맷 응답 생성 (흥국생명 2종 연속시상 전용 퀵버튼 지원)"""
+    cat = calc_result.get("category", "")
+    comp = calc_result.get("company", "")
+    prod = calc_result.get("product_name", "")
+    prem = calc_result.get("premium", 0)
+    term = calc_result.get("term", "")
+    
+    prem_man = prem // 10000
+    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{prem:,}원"
+    
+    conv_rate = calc_result.get("conversion_rate", 0.0)
+    s_grade = calc_result.get("s_grade", 0)
+    
+    next_comm = calc_result.get("next_month_comm", 0)
+    next_comm_rate = calc_result.get("next_month_comm_rate", 0.0)
+    inst_comm = calc_result.get("installment_comm", 0)
+    inst_comm_rate = calc_result.get("installment_comm_rate", 0.0)
+    tot_comm = calc_result.get("total_comm", 0)
+    
+    next_inc = calc_result.get("next_month_inc", 0)
+    next_inc_rate = calc_result.get("next_month_inc_rate", 0.0)
+    split_inc = calc_result.get("split_inc", 0)
+    split_inc_rate = calc_result.get("split_inc_rate", 0.0)
+    tot_inc = calc_result.get("total_inc", 0)
+    tot_inc_rate = calc_result.get("total_inc_rate", 0.0)
+    
+    tot_next = calc_result.get("total_next_month", 0)
+    tot_split = calc_result.get("total_split", 0)
+    grand_total = calc_result.get("grand_total", 0)
+    
+    basis_desc = calc_result.get("basis_desc", "")
+    cont_bonus_rate = calc_result.get("cont_bonus_rate", 0.0)
+    c1_amount = calc_result.get("c1_amount", 0)
+    c2_amount = calc_result.get("c2_amount", 0)
+    is_heungkuk = calc_result.get("is_heungkuk", False)
+    c_mode = calc_result.get("continuous_mode", "none")
+    
+    item_list = [
+        {"title": "월 보험료 (월납)", "description": f"{prem:,}원"},
+        {"title": f"S환산성적 ({conv_rate:.1f}%)", "description": f"{s_grade:,}원"},
+        {"title": f"수수료 합계", "description": f"{tot_comm:,}원"},
+        {"title": f"  • 익월 ({next_comm_rate:.0f}%)", "description": f"{next_comm:,}원"},
+        {"title": f"  • 분급 ({inst_comm_rate:.0f}%)", "description": f"{inst_comm:,}원"},
+        {"title": f"시상금 합계 ({tot_inc_rate:.0f}%)", "description": f"{tot_inc:,}원"},
+        {"title": f"  • 익월시상 ({next_inc_rate:.0f}%)", "description": f"{next_inc:,}원"},
+        {"title": f"  • 13회차/분할 ({split_inc_rate:.0f}%)", "description": f"{split_inc:,}원"},
+        {"title": "────────────────", "description": "──────────"},
+        {"title": "⚡ 익월 총수령 (수수료+시상)", "description": f"{tot_next:,}원"},
+        {"title": "⏳ 분할/13회 총수령", "description": f"{tot_split:,}원"}
+    ]
+    
+    quick_replies = [
+        {"messageText": "사용법", "action": "message", "label": "💡 사용법 (회사 상품 금액)"}
+    ]
+    
+    # 흥국생명 전용 퀵리플라이 (연속 2종 버튼 분리)
+    if is_heungkuk:
+        c1_man = c1_amount // 10000
+        c2_man = c2_amount // 10000
+        if c_mode != "none":
+            quick_replies.append({
+                "messageText": f"흥국생명 {prod} {prem_str} {term}".strip(),
+                "action": "message",
+                "label": "↩️ 단건 시상으로 보기"
+            })
+        if "c1" not in c_mode and "both" not in c_mode and "all" not in c_mode and c1_man > 0:
+            quick_replies.append({
+                "messageText": f"흥국생명 {prod} {prem_str} 10-11월 연속포함".strip(),
+                "action": "message",
+                "label": f"🔥 10~11월연속 (+{c1_man}만)"
+            })
+        if "c2" not in c_mode and "both" not in c_mode and "all" not in c_mode and c2_man > 0:
+            quick_replies.append({
+                "messageText": f"흥국생명 {prod} {prem_str} 핑크멤버스 포함".strip(),
+                "action": "message",
+                "label": f"🌸 핑크멤버스 (+{c2_man}만)"
+            })
+        if "both" not in c_mode and "all" not in c_mode and (c1_man + c2_man) > 0:
+            quick_replies.append({
+                "messageText": f"흥국생명 {prod} {prem_str} 풀연속포함".strip(),
+                "action": "message",
+                "label": f"💎 둘다포함 (+{c1_man+c2_man}만)"
+            })
+    else:
+        # 일반 보험사 연속가동 퀵리플라이
+        if cont_bonus_rate > 0:
+            if c_mode != "none":
+                quick_replies.append({
+                    "messageText": f"{comp} {prod} {prem_str} {term}".strip(),
+                    "action": "message",
+                    "label": "↩️ 단건 시상으로 보기"
+                })
+            else:
+                quick_replies.append({
+                    "messageText": f"{comp} {prod} {prem_str} {term} 연속포함".strip(),
+                    "action": "message",
+                    "label": f"🔥 연속포함 (+{int(round(prem * cont_bonus_rate // 10000))}만)"
+                })
+            
+    quick_replies.extend([
+        {"messageText": f"{comp} {prod} 10만원 {term}".strip(), "action": "message", "label": "10만 계산"},
+        {"messageText": f"{comp} {prod} 20만원 {term}".strip(), "action": "message", "label": "20만 계산"},
+        {"messageText": f"{comp} vs 현대 20만 비교", "action": "message", "label": "비교하기"}
+    ])
+    
+    basis_text = f"💡 시상 산출근거: {basis_desc}"
+    if is_heungkuk and c_mode == "none":
+        basis_text += f"\n(※ 10~11월 연속가동 또는 핑크멤버스 연속 시책은 아래 퀵버튼을 눌러 합산하실 수 있습니다)"
+    elif not is_heungkuk and c_mode == "none" and cont_bonus_rate > 0:
+        basis_text += f"\n(※ 전월 연속가동 시상은 아래 [🔥 연속포함] 버튼을 누르면 즉시 합산됩니다)"
+        
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "itemCard": {
+                        "imageTitle": {
+                            "title": f"[{cat}] {comp}",
+                            "description": f"{prod} · {term}" if term else prod
+                        },
+                        "title": f"총 수령액 {grand_total:,}원",
+                        "itemList": item_list,
+                        "itemListSummary": {
+                            "title": "최종 합계 (수수료 + 시상)",
+                            "description": f"{grand_total:,}원"
                         },
                         "buttons": [
                             {
@@ -914,26 +1447,31 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
 def build_help_response() -> Dict[str, Any]:
     help_text = (
         "🤖 스카이블루에셋 정산 계산기\n\n"
-        "상품명과 보험료를 자유롭게 입력하시면 익월/분급 수수료와 11월 공식 시상금을 즉시 계산해 드립니다.\n\n"
-        "📌 [입력 예시]\n"
+        "회사명, 상품명, 금액을 입력하시면 익월/분급 수수료와 11월 공식 시상금을 즉시 계산해 드립니다.\n\n"
+        "📌 [단건 계산 예시]\n"
         "• DB손보 10만원\n"
-        "• DB손보 10만원 연속포함\n"
         "• 한화생명 건강더한종신 50만원\n"
-        "• DB생명 알행플종신 10만원\n"
-        "• 흥국 오튼튼 20만 20년납\n"
+        "• 신한라이프 통합건강 20만 (연속포함)\n"
+        "• 라이나 새로담는건강 20만\n"
+        "• 흥국생명 오튼튼 20만 10-11월 연속\n"
+        "• 미래에셋 M-케어건강 20만\n"
         "• 현대해상 주력 20만\n\n"
-        "💡 전월 연속가동이나 연계 시책을 합산하고 싶으실 땐 뒤에 '연속포함'을 붙여주세요!"
+        "⚖️ [2~3개사 비교 예시]\n"
+        "• 흥국 vs 현대 20만 비교\n"
+        "• 흥국생명 현대해상 DB손보 20만 비교\n"
+        "• 한화 vs 흥국 20만 비교\n\n"
+        "💡 전월 연속가동 시책을 합산하시려면 뒤에 '연속포함'을 붙여주세요!"
     )
     return {
         "version": "2.0",
         "template": {
             "outputs": [{"simpleText": {"text": help_text}}],
             "quickReplies": [
-                {"messageText": "DB손보 10만원", "action": "message", "label": "DB손보 10만원"},
+                {"messageText": "DB손보 10만원", "action": "message", "label": "DB손보 10만"},
                 {"messageText": "한화생명 건강더한종신 50만원", "action": "message", "label": "한화 건강더한 50만"},
-                {"messageText": "DB생명 알행플종신 10만원", "action": "message", "label": "DB 알행플 10만"},
-                {"messageText": "흥국 오튼튼 20만 20년납", "action": "message", "label": "흥국 오튼튼 20만"},
-                {"messageText": "현대해상 주력 20만", "action": "message", "label": "현대 주력 20만"}
+                {"messageText": "신한라이프 통합건강 20만", "action": "message", "label": "신한 통합건강 20만"},
+                {"messageText": "라이나 새로담는건강 20만", "action": "message", "label": "라이나 새로담는 20만"},
+                {"messageText": "흥국 vs 현대 20만 비교", "action": "message", "label": "흥국 vs 현대 20만 비교"}
             ]
         }
     }
@@ -944,10 +1482,9 @@ def health_check():
     return {
         "status": "healthy",
         "service": "스카이블루에셋 카카오 챗봇 스킬 서버",
-        "version": "2.0.0",
+        "version": "2.3.0",
         "total_life_products": len(LIFE_PRODUCTS)
     }
-
 
 
 @app.get("/flyer-img/{filename}")
@@ -962,12 +1499,20 @@ def get_flyer_img(filename: str):
     raw_url = f"https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{encoded_fn}"
     return RedirectResponse(raw_url)
 
+
 @app.get("/flyer/{company_name}")
 def view_flyer_html(company_name: str):
     matched_k, filename = find_flyer(company_name)
     encoded_filename = urllib.parse.quote(filename)
     raw_cdn_url = f"https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{encoded_filename}"
     local_img_url = f"/flyer-img/{filename}"
+    
+    if "신한" in matched_k:
+        pages = ["신한라이프_11월_p1.png", "신한라이프_11월_p2.png", "신한라이프_11월_p3.png"]
+        img_tags = "".join([f'<div style="margin-bottom:16px;"><img src="https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{p}" onerror="this.src=\'/flyer-img/{p}\'" alt="신한라이프 시책지 {i+1}페이지"><p style="text-align:center;font-size:12px;color:#94a3b8;margin:6px 0 20px;">[ {i+1} / 3 페이지 ]</p></div>' for i, p in enumerate(pages)])
+    else:
+        img_tags = f'<img src="{raw_cdn_url}" onerror="this.src=\'{local_img_url}\'" alt="{matched_k} 시책지">'
+        
     html = f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1042,19 +1587,22 @@ def view_flyer_html(company_name: str):
         </div>
     </div>
     <div class="container">
-        <img src="{raw_cdn_url}" onerror="this.src='{local_img_url}'" alt="{matched_k} 시책지">
+        {img_tags}
     </div>
 </body>
 </html>"""
     return HTMLResponse(content=html)
 
 
+# ==========================================
+# 6. 메인 카카오 스킬 라우터
+# ==========================================
 @app.post("/skill/calculate")
 async def kakao_skill_calculate(request: Request):
     try:
         body = await request.json()
     except Exception:
-        return build_help_response()
+        return build_fallback_response()
 
     user_request = body.get("userRequest", {})
     utterance = user_request.get("utterance", "").strip()
@@ -1063,72 +1611,136 @@ async def kakao_skill_calculate(request: Request):
         return build_help_response()
 
     try:
-        # 시책지 직접 요청 처리 (예: 한화 시책지, DB손보 시책)
+        # 1. 시책지 전단지 직접 요청 처리
         if any(kw in utterance for kw in ['시책지', '시책표', '전단지', '시책확인']):
             for k in FLYER_MAP.keys():
                 if k in utterance:
                     return build_flyer_response(k)
             return build_flyer_response("스카이블루")
 
-        calc_result = parse_and_calculate(utterance, allow_term_inquiry=True)
-        if isinstance(calc_result, dict) and calc_result.get("need_term_inquiry"):
-            return build_ask_term_response(
-                calc_result["company"],
-                calc_result["product_name"],
-                calc_result["premium"],
-                calc_result["terms"]
-            )
-        return build_kakao_response(calc_result)
+        # 2. 회사명 및 금액 추출
+        matched_comps = find_companies_in_text(utterance)
+        premium = parse_premium(utterance)
+        
+        # 연속시상 모드 판정
+        continuous_mode = "none"
+        if "핑크" in utterance:
+            continuous_mode = "c2"
+        elif any(kw in utterance for kw in ['10-11', '10월연속', '연속가동']):
+            continuous_mode = "c1"
+        elif any(kw in utterance for kw in ['풀', '모두', '둘다', '전체', '연속포함', '연속', '연계']):
+            continuous_mode = "both"
+            
+        # 흥국생명 연속시상 질의 판정
+        if any(k in utterance for k in ['흥국']) and any(kw in utterance for kw in ['연속시상', '연속얼마', '10월실적', '10월']) and premium is None:
+            return build_heungkuk_continuous_inquiry_response()
+
+        is_compare_query = (
+            len(matched_comps) >= 2 or
+            (len(matched_comps) >= 2 and any(k in utterance for k in ['비교', 'vs', 'VS', '대', '차이']))
+        )
+
+        # 3. 2개 또는 3개 회사 비교 처리 (총합만 비교하는 카드)
+        if is_compare_query:
+            target_comps = matched_comps[:3]
+            comp_prem = premium or 200000
+            comp_results = []
+            for c in target_comps:
+                res = calculate_company_for_compare(c, comp_prem, utterance, continuous_mode)
+                comp_results.append(res)
+            return build_compare_response(comp_results, comp_prem, continuous_mode)
+
+        # 4. 단일 회사 처리
+        if len(matched_comps) == 1:
+            comp = matched_comps[0]
+            
+            cleaned = utterance
+            for alias in ALL_COMPANIES[comp]['aliases']:
+                cleaned = re.sub(re.escape(alias), '', cleaned, flags=re.IGNORECASE)
+            cleaned_tokens = re.sub(r'[시책|계산|얼마|수수료|시상|조회|알려줘|해줘|\s|\?|\!|\.]', '', cleaned)
+            
+            # Case 4-A: 상품과 금액 없이 회사명만 입력한 경우 -> 둘 다 되묻기
+            if premium is None and len(cleaned_tokens) == 0:
+                return build_ask_product_and_amount_response(comp)
+                
+            # Case 4-B: 상품명은 있으나 금액이 없는 경우 -> 금액만 되묻기
+            if premium is None:
+                info = ALL_COMPANIES[comp]
+                m_term = re.search(r'(\d+)\s*년\s*납?', utterance)
+                term = f"{m_term.group(1)}년납" if m_term else info.get("default_term", "")
+                prod_name = cleaned_tokens if cleaned_tokens else info.get("default_prod", "주력")
+                return build_ask_amount_response(comp, prod_name, term)
+                
+            # Case 4-C: 금액이 명시된 정상 단건 계산
+            calc_prem = premium
+            info = ALL_COMPANIES[comp]
+            
+            if info['category'] == "손해보험":
+                prod_name = "주력보종"
+                for p in ['퍼펙트', '간편', '굿앤굿', '주력', '종합', '자녀', '나에게맞춘', '참좋은', '훼밀리', '아이러브', '행복플러스']:
+                    if p in utterance:
+                        prod_name = p
+                        break
+                calc_res = calculate_nonlife(comp, prod_name, calc_prem, incentive_type="주력", continuous_mode=continuous_mode)
+                return build_kakao_response(calc_res)
+            else:
+                m_term = re.search(r'(\d+)\s*년\s*납?', utterance)
+                term = f"{m_term.group(1)}년납" if m_term else ""
+                
+                if '라이나' in comp and ('종신' in utterance or '채우는' in utterance):
+                    if not term:
+                        return build_ask_term_response("라이나생명", "THE채우는종신", calc_prem, ["10년납 일반(950%)", "10년납 간편(450%)", "7년납(500%)", "착한간편종신(350%)"])
+
+                matched = search_life_product(comp, utterance, term=term)
+                if matched:
+                    needed_terms = check_term_required(matched['product'], utterance)
+                    if needed_terms:
+                        return build_ask_term_response(comp, matched['product'], calc_prem, needed_terms)
+                    calc_res = calculate_life(
+                        company=comp,
+                        product_name=matched['product'],
+                        premium=calc_prem,
+                        s_factor=matched['s_factor'],
+                        term=matched.get('term', term or info.get("default_term", "20년납")),
+                        incentive_type="전략",
+                        continuous_mode=continuous_mode
+                    )
+                    return build_kakao_response(calc_res)
+                else:
+                    calc_res = calculate_life(
+                        company=comp,
+                        product_name=info.get("default_prod", "보장성"),
+                        premium=calc_prem,
+                        s_factor=1000.0,
+                        term=term or info.get("default_term", "20년납"),
+                        incentive_type="전략",
+                        continuous_mode=continuous_mode
+                    )
+                    return build_kakao_response(calc_res)
+
+        # 5. 회사명은 없지만 대표 상품명이 직접 들어온 경우 (예: 오튼튼 20만)
+        if premium is not None:
+            if any(k in utterance for k in ['오튼튼', '다사랑']):
+                calc_res = calculate_life("흥국생명", "다사랑·오튼튼(종합)", premium, 1100.0, "20년납", "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['건강더한', '하나로H']):
+                calc_res = calculate_life("한화생명", "건강더한종신", premium, 1100.0, "10년납", "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['알행플']):
+                calc_res = calculate_life("DB생명", "알행플종신", premium, 1020.0, "10년납", "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['퍼펙트', '간편', '굿앤굿', '주력']):
+                calc_res = calculate_nonlife("현대해상", "주력보종", premium, "주력", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['새로담는', '브레인케어']):
+                calc_res = calculate_life("라이나생명", "새로담는건강보험", premium, 1000.0, "20년납", "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['m케어', '엠케어']):
+                calc_res = calculate_life("미래에셋", "M-케어건강보험", premium, 825.0, "20년납", "전략", continuous_mode)
+                return build_kakao_response(calc_res)
+
+        # 6. 해석 불가 질문 -> 사용자 지정 표준 폴백 메시지 반환
+        return build_fallback_response()
+
     except Exception as e:
-        return {
-            "version": "2.0",
-            "template": {
-                "outputs": [
-                    {
-                        "simpleText": {
-                            "text": f"⚠️ 계산 중 오류가 발생했습니다: {str(e)}\n\n'DB손보 10만' 또는 '한화 건강더한 50만' 형식으로 다시 입력해 주세요."
-                        }
-                    }
-                ]
-            }
-        }
-
-class DirectCalcRequest(BaseModel):
-    query: Optional[str] = None
-    company: Optional[str] = None
-    product_name: Optional[str] = None
-    premium: Optional[int] = None
-    term: Optional[str] = None
-    category: Optional[str] = None
-    incentive_type: Optional[str] = None
-    s_factor: Optional[float] = None
-    include_continuous: Optional[bool] = False
-
-@app.post("/api/calculate")
-def api_calculate(req: DirectCalcRequest):
-    if req.query:
-        return parse_and_calculate(req.query)
-
-    if req.category == "손해보험" or (req.company and any(c in req.company for c in ["현대", "손보", "화재", "메리츠", "KB손", "한화손", "DB손"])):
-        return calculate_nonlife(
-            company=req.company or "현대해상",
-            product_name=req.product_name or "주력보종",
-            premium=req.premium or 200000,
-            incentive_type=req.incentive_type or "주력",
-            include_continuous=req.include_continuous or False
-        )
-    else:
-        return calculate_life(
-            company=req.company or "흥국",
-            product_name=req.product_name or "다사랑·오튼튼",
-            premium=req.premium or 200000,
-            s_factor=req.s_factor or 1100.0,
-            term=req.term or "20년납",
-            incentive_type=req.incentive_type or "전략",
-            include_continuous=req.include_continuous or False
-        )
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+        return build_fallback_response()
