@@ -1,3 +1,4 @@
+import urllib.parse
 # -*- coding: utf-8 -*-
 """
 스카이블루에셋 카카오톡 챗봇 스킬 서버 (단일 파일 독립 실행형)
@@ -12,6 +13,7 @@ import os
 import re
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -550,6 +552,86 @@ def calculate_nonlife(
 
 
 
+
+FLYER_MAP = {
+    "한화생명": "한화생명_11월.png",
+    "한화": "한화생명_11월.png",
+    "흥국생명": "흥국생명_11월.png",
+    "흥국": "흥국생명_11월.png",
+    "DB생명": "DB생명_11월.jpg",
+    "DB손해보험": "DB손보_1주.jpg",
+    "DB손보": "DB손보_1주.jpg",
+    "디비손보": "DB손보_1주.jpg",
+    "디비": "DB손보_1주.jpg",
+    "현대해상": "현대해상_1주.png",
+    "현대": "현대해상_1주.png",
+    "KB손보": "KB손보_1주차.jpg",
+    "KB손해보험": "KB손보_1주차.jpg",
+    "한화손보": "한화손보_1주.jpg",
+    "한화손해보험": "한화손보_1주.jpg",
+    "메리츠": "메리츠_11월_1주.jpg",
+    "동양생명": "동양생명_11월.png",
+    "동양": "동양생명_11월.png",
+    "교보생명": "교보생명_11월.png",
+    "교보": "교보생명_11월.png",
+    "농협생명": "농협생명_11월.png",
+    "농협": "농협생명_11월.png",
+    "KDB생명": "KDB생명_11월.jpg",
+    "KDB": "KDB생명_11월.jpg",
+    "푸본현대": "푸본현대_11월.png",
+    "푸본": "푸본현대_11월.png",
+    "라이나생명": "라이나생명_11월.png",
+    "라이나": "라이나생명_11월.png",
+    "미래에셋": "미래에셋_11월.png",
+    "미래": "미래에셋_11월.png",
+    "ABL생명": "ABL생명_11월.png",
+    "ABL": "ABL생명_11월.png",
+    "KB라이프": "KB라이프_11월.png"
+}
+
+def find_flyer(comp_name: str):
+    for k, v in FLYER_MAP.items():
+        if k in comp_name or comp_name in k:
+            return k, v
+    return comp_name, "SKY_11월.jpg"
+
+def build_flyer_response(comp_name: str) -> Dict[str, Any]:
+    matched_k, filename = find_flyer(comp_name)
+    encoded_comp = urllib.parse.quote(matched_k)
+    flyer_url = f"https://skyblue-kakao-bot.onrender.com/flyer/{encoded_comp}"
+    img_url = f"https://skyblue-kakao-bot.onrender.com/flyer-img/{filename}"
+    
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "basicCard": {
+                        "title": f"📑 {matched_k} 11월 공식 시책지",
+                        "description": "아래 [시책지 원본 열기]를 누르시면 고화질로 확대해 보실 수 있습니다.",
+                        "thumbnail": {
+                            "imageUrl": img_url
+                        },
+                        "buttons": [
+                            {
+                                "action": "webLink",
+                                "label": "🔍 시책지 원본 열기",
+                                "webLinkUrl": flyer_url
+                            }
+                        ]
+                    }
+                }
+            ],
+            "quickReplies": [
+                {"messageText": "사용법", "action": "message", "label": "💡 사용법 (회사 상품 금액)"},
+                {"messageText": f"{matched_k} 10만원", "action": "message", "label": f"{matched_k} 10만 계산"},
+                {"messageText": f"{matched_k} 20만원", "action": "message", "label": f"{matched_k} 20만 계산"},
+                {"messageText": "도움말", "action": "message", "label": "💡 도움말"}
+            ]
+        }
+    }
+
+
 TERM_REQUIRED_PRODUCTS = {
     "건강더한": ["7년납", "10년납"],
     "하나로": ["10년납", "15년납", "20년납"],
@@ -752,8 +834,11 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
         
 
 
-    # 퀵리플라이 구성
-    quick_replies = []
+    # 퀵리플라이 구성 (입력란 바로 위 상시 사용법 및 시책지 보기 배치)
+    quick_replies = [
+        {"messageText": "사용법", "action": "message", "label": "💡 사용법: 회사 상품 금액"},
+        {"messageText": comp + " 시책지", "action": "message", "label": "📑 " + comp + " 시책지"}
+    ]
     if not include_cont and cont_bonus_rate > 0:
         bonus_man = int(premium * cont_bonus_rate) // 10000
         btn_label = f"🔥 연속포함 (+{bonus_man}만)" if bonus_man > 0 else "🔥 연속가동 포함"
@@ -797,7 +882,14 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                         "itemListSummary": {
                             "title": "🎉 최종 총수령액 합계",
                             "description": format_money(calc_result['grand_total'])
-                        }
+                        },
+                        "buttons": [
+                            {
+                                "label": "📑 " + comp + " 시책지 보기",
+                                "action": "webLink",
+                                "webLinkUrl": "https://skyblue-kakao-bot.onrender.com/flyer/" + urllib.parse.quote(comp)
+                            }
+                        ]
                     }
                 },
                 {
@@ -849,6 +941,94 @@ def health_check():
     }
 
 
+
+@app.get("/flyer-img/{filename}")
+def get_flyer_img(filename: str):
+    import os
+    from fastapi.responses import FileResponse
+    path = os.path.join("flyers", filename)
+    if os.path.exists(path):
+        return FileResponse(path)
+    # fallback
+    sky_path = os.path.join("flyers", "SKY_11월.jpg")
+    if os.path.exists(sky_path):
+        return FileResponse(sky_path)
+    return {"error": "file not found"}
+
+@app.get("/flyer/{company_name}")
+def view_flyer_html(company_name: str):
+    matched_k, filename = find_flyer(company_name)
+    html = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>{matched_k} 11월 공식 시책지</title>
+    <style>
+        body {{
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }}
+        .header {{
+            position: sticky;
+            top: 0;
+            width: 100%;
+            max-width: 800px;
+            background-color: #1e293b;
+            padding: 12px 16px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            z-index: 100;
+        }}
+        .title {{
+            font-size: 16px;
+            font-weight: 700;
+            margin: 0;
+        }}
+        .save-btn {{
+            background-color: #0284c7;
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }}
+        .container {{
+            width: 100%;
+            max-width: 800px;
+            padding: 8px 0;
+            box-sizing: border-box;
+        }}
+        img {{
+            width: 100%;
+            height: auto;
+            display: block;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">📑 {matched_k} 11월 공식 시책지</h1>
+        <a class="save-btn" href="/flyer-img/{filename}" download>이미지 저장</a>
+    </div>
+    <div class="container">
+        <img src="/flyer-img/{filename}" alt="{matched_k} 시책지">
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+
 @app.post("/skill/calculate")
 async def kakao_skill_calculate(request: Request):
     try:
@@ -863,6 +1043,13 @@ async def kakao_skill_calculate(request: Request):
         return build_help_response()
 
     try:
+        # 시책지 직접 요청 처리 (예: 한화 시책지, DB손보 시책)
+        if any(kw in utterance for kw in ['시책지', '시책표', '전단지', '시책확인']):
+            for k in FLYER_MAP.keys():
+                if k in utterance:
+                    return build_flyer_response(k)
+            return build_flyer_response("스카이블루")
+
         calc_result = parse_and_calculate(utterance, allow_term_inquiry=True)
         if isinstance(calc_result, dict) and calc_result.get("need_term_inquiry"):
             return build_ask_term_response(
