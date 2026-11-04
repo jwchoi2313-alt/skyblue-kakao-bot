@@ -586,7 +586,14 @@ FLYER_MAP = {
     "미래": "미래에셋_11월.png",
     "ABL생명": "ABL생명_11월.png",
     "ABL": "ABL생명_11월.png",
-    "KB라이프": "KB라이프_11월.png"
+    "KB라이프": "KB라이프_11월.png",
+    "롯데손보": "롯데손보_1주.jpg",
+    "롯데": "롯데손보_1주.jpg",
+    "하나손보": "하나손보_1주.jpg",
+    "하나손해보험": "하나손보_1주.jpg",
+    "농협손보": "농협손보_1주.jpg",
+    "농협손해보험": "농협손보_1주.jpg",
+    "흥국화재": "흥국화재_1주.jpg"
 }
 
 def find_flyer(comp_name: str):
@@ -598,8 +605,9 @@ def find_flyer(comp_name: str):
 def build_flyer_response(comp_name: str) -> Dict[str, Any]:
     matched_k, filename = find_flyer(comp_name)
     encoded_comp = urllib.parse.quote(matched_k)
+    encoded_filename = urllib.parse.quote(filename)
     flyer_url = f"https://skyblue-kakao-bot.onrender.com/flyer/{encoded_comp}"
-    img_url = f"https://skyblue-kakao-bot.onrender.com/flyer-img/{filename}"
+    img_url = f"https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{encoded_filename}"
     
     return {
         "version": "2.0",
@@ -945,19 +953,21 @@ def health_check():
 @app.get("/flyer-img/{filename}")
 def get_flyer_img(filename: str):
     import os
-    from fastapi.responses import FileResponse
+    import urllib.parse
+    from fastapi.responses import FileResponse, RedirectResponse
     path = os.path.join("flyers", filename)
     if os.path.exists(path):
         return FileResponse(path)
-    # fallback
-    sky_path = os.path.join("flyers", "SKY_11월.jpg")
-    if os.path.exists(sky_path):
-        return FileResponse(sky_path)
-    return {"error": "file not found"}
+    encoded_fn = urllib.parse.quote(filename)
+    raw_url = f"https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{encoded_fn}"
+    return RedirectResponse(raw_url)
 
 @app.get("/flyer/{company_name}")
 def view_flyer_html(company_name: str):
     matched_k, filename = find_flyer(company_name)
+    encoded_filename = urllib.parse.quote(filename)
+    raw_cdn_url = f"https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{encoded_filename}"
+    local_img_url = f"/flyer-img/{filename}"
     html = f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -994,7 +1004,11 @@ def view_flyer_html(company_name: str):
             font-weight: 700;
             margin: 0;
         }}
-        .save-btn {{
+        .btn-group {{
+            display: flex;
+            gap: 8px;
+        }}
+        .action-btn {{
             background-color: #0284c7;
             color: white;
             text-decoration: none;
@@ -1002,6 +1016,9 @@ def view_flyer_html(company_name: str):
             border-radius: 6px;
             font-size: 13px;
             font-weight: 600;
+        }}
+        .action-btn.secondary {{
+            background-color: #475569;
         }}
         .container {{
             width: 100%;
@@ -1019,10 +1036,13 @@ def view_flyer_html(company_name: str):
 <body>
     <div class="header">
         <h1 class="title">📑 {matched_k} 11월 공식 시책지</h1>
-        <a class="save-btn" href="/flyer-img/{filename}" download>이미지 저장</a>
+        <div class="btn-group">
+            <a class="action-btn secondary" href="{raw_cdn_url}" target="_blank">고화질 원본</a>
+            <a class="action-btn" href="{local_img_url}" download>다운로드</a>
+        </div>
     </div>
     <div class="container">
-        <img src="/flyer-img/{filename}" alt="{matched_k} 시책지">
+        <img src="{raw_cdn_url}" onerror="this.src='{local_img_url}'" alt="{matched_k} 시책지">
     </div>
 </body>
 </html>"""
