@@ -778,10 +778,28 @@ for d in LIFE_PRODUCTS:
         LIFE_CATALOG[key]['terms'].append(t)
     LIFE_CATALOG[key]['items'].append(d)
 
+REGULATORY_PATTERNS = [
+    r'\(무\)',
+    r'무배당',
+    r'\(해약환급금\s*미지급형\)',
+    r'\(해지환급금\s*미지급형\)',
+    r'\(해약환급금\s*일부지급형\)',
+    r'\(해지환급금\s*일부지급형\)',
+    r'\(해약환급금일부지급형[ⅠⅡⅢ]*\)',
+    r'\(해지환급금일부지급형[ⅠⅡⅢ]*\)',
+    r'\(해약환급금\s*일부\(50%\)지급형\)',
+    r'\(보증비용부과형\)',
+    r'\(해지환급금보증형\)',
+    r'\(주계약기준\)',
+    r'\(주계약\)',
+    r'가입금액:.*',
+    r'보종코드:.*',
+]
+
 def clean_prod_short_name(prod: str) -> str:
-    p = re.sub(r'\(.*?\)', '', prod)
-    p = re.sub(r'가입금액:.*', '', p)
-    p = re.sub(r'보종코드:.*', '', p)
+    p = prod
+    for pat in REGULATORY_PATTERNS:
+        p = re.sub(pat, '', p)
     p = re.sub(r'\s+', ' ', p).strip()
     return p if len(p) >= 2 else prod
 
@@ -1744,6 +1762,39 @@ def get_suggested_terms_for_life(comp: str, prod_name: str) -> List[str]:
         return ["10년납", "15년납", "20년납", "30년납"]
 
 
+BRAND_PREFIXES = [
+    r'^백년친구\s*',
+    r'^우리WON하는\s*',
+    r'^우리WON\s*',
+    r'^골든라이프\s*',
+    r'^iM\s*',
+    r'^NH올원\s*',
+    r'^NH\s*',
+    r'^KB\s*',
+    r'^K-\s*',
+    r'^교보\(간편\)\s*',
+    r'^교보\s*',
+]
+
+def make_similar_btn_label(num: int, prod_name: str) -> str:
+    p = prod_name
+    for bp in BRAND_PREFIXES:
+        p = re.sub(bp, '', p)
+    label = f"{num}. {p}"
+    if len(label) > 13:
+        m = re.search(r'\((.*?)\)$', label)
+        if m:
+            type_str = m.group(1)
+            base = re.sub(r'\s*\(.*?\)$', '', label)
+            avail = 13 - len(f"({type_str})") - 1
+            if avail > 3:
+                label = f"{base[:avail]}…({type_str})"
+            else:
+                label = label[:12] + "…"
+        else:
+            label = label[:12] + "…"
+    return label
+
 def build_ask_similar_product_response(comp: str, candidates: list, premium: int, term: str = "", gubun: str = "") -> dict:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
@@ -1751,9 +1802,7 @@ def build_ask_similar_product_response(comp: str, candidates: list, premium: int
     quick_replies = []
     for i, c in enumerate(candidates[:6]):
         short_name = clean_prod_short_name(c['full_product'])
-        btn_label = f"{i+1}. {short_name}"
-        if len(btn_label) > 13:
-            btn_label = btn_label[:12] + "…"
+        btn_label = make_similar_btn_label(i+1, short_name)
         msg_parts = [comp, short_name]
         if gubun: msg_parts.append(gubun)
         if term: msg_parts.append(term)
