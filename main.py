@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="2.9.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
