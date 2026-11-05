@@ -376,7 +376,12 @@ def handle_admin_command(utterance: str) -> Optional[Dict[str, Any]]:
     return None
 
 import json
-LIFE_PRODUCTS = json.loads('[{"company": "한화", "sheet": "한화", "product": "제로백H종신", "term": "10년납", "gubun": "일반가입", "raw_factor": 1200.0, "s_factor": 1140.0, "adj_coef": 0.95}, {"company": "한화", "sheet": "한화", "product": "시그니처H암보험", "term": "5년납", "gubun": "일반가입 간편가입", "raw_factor": 450.0, "s_factor": 292.5, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "제로백H종신", "term": "20년납 이상", "gubun": "일반가입", "raw_factor": 1500.0, "s_factor": 1425.0, "adj_coef": 0.95}, {"company": "한화", "sheet": "한화", "product": "시그니처H암보험", "term": "7년납", "gubun": "일반가입 간편가입", "raw_factor": 600.0, "s_factor": 390.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "제로백H종신", "term": "10년납", "gubun": "간편가입", "raw_factor": 1150.0, "s_factor": 1092.5, "adj_coef": 0.95}, {"company": "한화", "sheet": "한화", "product": "시그니처H암보험", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 850.0, "s_factor": 552.5, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "제로백H종신", "term": "20년납 이상", "gubun": "간편가입", "raw_factor": 1450.0, "s_factor": 1377.5, "adj_coef": 0.95}, {"company": "한화", "sheet": "한화", "product": "시그니처H암보험", "term": "15년납", "gubun": "일반가입 간편가입", "raw_factor": 1250.0, "s_factor": 812.5, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "H 종신", "term": "5년납", "gubun": "일반가입", "raw_factor": 550.0, "s_factor": 605.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "시그니처H암보험", "term": "20년납 이상", "gubun": "일반가입 간편가입", "raw_factor": 1800.0, "s_factor": 1170.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "H 종신", "term": "7년납", "gubun": "일반가입", "raw_factor": 800.0, "s_factor": 880.0000000000001, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "케어백 간병플러스, 치매담은 간병플러스", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 1000.0, "s_factor": 650.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "H 종신", "term": "5년납", "gubun": "간편가입", "raw_factor": 500.0, "s_factor": 550.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "케어백 간병플러스, 치매담은 간병플러스", "term": "15년납", "gubun": "일반가입 간편가입", "raw_factor": 1350.0, "s_factor": 877.5, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "H 종신", "term": "7년납", "gubun": "간편가입", "raw_factor": 750.0, "s_factor": 825.0000000000001, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "케어백 간병플러스, 치매담은 간병플러스", "term": "20년납 이상", "gubun": "일반가입 간편가입", "raw_factor": 1700.0, "s_factor": 1105.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "밸류플러스보장보험2.0", "term": "5년납", "gubun": "일반가입", "raw_factor": 550.0, "s_factor": 605.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "NEED AI 암보험", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 850.0, "s_factor": 552.5, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "밸류플러스보장보험2.0", "term": "7년납", "gubun": "일반가입", "raw_factor": 800.0, "s_factor": 880.0000000000001, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "NEED AI 암보험", "term": "15년납", "gubun": "일반가입 간편가입", "raw_factor": 1250.0, "s_factor": 812.5, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "밸류플러스보장보험2.0", "term": "10년납", "gubun": "일반가입", "raw_factor": 1000.0, "s_factor": 1100.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "NEED AI 암보험", "term": "20년납 이상", "gubun": "일반가입 간편가입", "raw_factor": 1800.0, "s_factor": 1170.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "밸류플러스보장보험2.0", "term": "5년납", "gubun": "간편가입", "raw_factor": 500.0, "s_factor": 550.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "H당뇨보험", "term": "5년납", "gubun": "일반가입 간편가입", "raw_factor": 300.0, "s_factor": 195.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "밸류플러스보장보험2.0", "term": "7년납", "gubun": "간편가입", "raw_factor": 750.0, "s_factor": 825.0000000000001, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "H당뇨보험", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 800.0, "s_factor": 520.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "밸류플러스보장보험2.0", "term": "10년납", "gubun": "간편가입", "raw_factor": 1000.0, "s_factor": 1100.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "H당뇨보험", "term": "20년납 이상", "gubun": "일반가입 간편가입", "raw_factor": 1500.0, "s_factor": 975.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "건강더한종신", "term": "7년납", "gubun": "일반가입", "raw_factor": 800.0, "s_factor": 880.0000000000001, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "실속가득H통합보험", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 800.0, "s_factor": 520.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "건강더한종신", "term": "10년납", "gubun": "일반가입", "raw_factor": 1000.0, "s_factor": 1100.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "실속가득H통합보험", "term": "15년납", "gubun": "일반가입 간편가입", "raw_factor": 1200.0, "s_factor": 780.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "건강더한종신", "term": "7년납", "gubun": "간편가입", "raw_factor": 750.0, "s_factor": 825.0000000000001, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "실속가득H통합보험", "term": "20년납 이상", "gubun": "일반가입 간편가입", "raw_factor": 1500.0, "s_factor": 975.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "건강더한종신", "term": "10년납", "gubun": "간편가입", "raw_factor": 1000.0, "s_factor": 1100.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "실속가득H치매간병보험", "term": "5년납", "gubun": "일반가입 간편가입", "raw_factor": 700.0, "s_factor": 455.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "필요할때쓰는종신", "term": "10년납", "gubun": "일반,간편", "raw_factor": 1000.0, "s_factor": 1100.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "실속가득H치매간병보험", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 1000.0, "s_factor": 650.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "필요할때쓰는종신", "term": "12년납", "gubun": "일반,간편", "raw_factor": 1100.0, "s_factor": 1210.0, "adj_coef": 1.1}, {"company": "한화", "sheet": "한화", "product": "실속가득H치매간병보험", "term": "15년납", "gubun": "일반가입 간편가입", "raw_factor": 1350.0, "s_factor": 877.5, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "(간편)경영인H정기", "term": "전기납", "gubun": "일반,간편", "raw_factor": 1800.0, "s_factor": 1800.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "실속가득H치매간병보험", "term": "20년납", "gubun": "일반가입 간편가입", "raw_factor": 1700.0, "s_factor": 1105.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "상속H종신보험", "term": "10년납", "gubun": "일반가입", "raw_factor": 1100.0, "s_factor": 1100.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "영사모 든든건강플러스보험", "term": "5년납", "gubun": "일반형", "raw_factor": 500.0, "s_factor": 325.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "상속H종신보험", "term": "15년납", "gubun": "일반가입", "raw_factor": 1500.0, "s_factor": 1500.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "영사모 든든건강플러스보험", "term": "7년납", "gubun": "일반형", "raw_factor": 700.0, "s_factor": 455.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "상속H종신보험", "term": "20년납 이상", "gubun": "일반가입", "raw_factor": 1700.0, "s_factor": 1700.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "영사모 든든건강플러스보험", "term": "10년납", "gubun": "일반형", "raw_factor": 1200.0, "s_factor": 780.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "상속H종신보험", "term": "10년납", "gubun": "간편가입", "raw_factor": 1000.0, "s_factor": 1000.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "영사모 든든건강플러스보험", "term": "20년납이상", "gubun": "일반형", "raw_factor": 1800.0, "s_factor": 1170.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "상속H종신보험", "term": "15년납", "gubun": "간편가입", "raw_factor": 1400.0, "s_factor": 1400.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "영사모 든든건강플러스보험", "term": "20년납", "gubun": "상생협력형", "raw_factor": 1800.0, "s_factor": 1170.0, "adj_coef": 0.65}, {"company": "한화", "sheet": "한화", "product": "상속H종신보험", "term": "20년납 이상", "gubun": "간편가입", "raw_factor": 1600.0, "s_factor": 1600.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "H건강플러스보험", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 1000.0, "s_factor": 1000.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "하나로 H종신", "term": "10년납", "gubun": "일반가입 간편가입", "raw_factor": 1000.0, "s_factor": 1000.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "H건강플러스보험", "term": "15년납", "gubun": "일반가입 간편가입", "raw_factor": 1500.0, "s_factor": 1500.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "하나로 H종신", "term": "15년납", "gubun": "일반가입 간편가입", "raw_factor": 1300.0, "s_factor": 1300.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "H건강플러스보험", "term": "20년납 이상", "gubun": "일반가입 간편가입", "raw_factor": 1800.0, "s_factor": 1800.0, "adj_coef": 1.0}, {"company": "한화", "sheet": "한화", "product": "하나로 H종신", "term": "20년납 이상", "gubun": "일반가입 간편가입", "raw_factor": 1500.0, "s_factor": 1500.0, "adj_coef": 1.0}, {"company": "DB", "sheet": "DB", "product": "백년친구 뉴-알행플종신 (해지환급금일부지급형) (기본형)", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1800.0, "s_factor": 846.0, "adj_coef": 0.47}, {"company": "DB", "sheet": "DB", "product": "건강100 내가고른 통합보험, 백년친구 New내가고른 건강 (일반/간편)", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 840.0, "s_factor": 319.2, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "백년친구 뉴-알행플종신 (해지환급금일부지급형) (기본형)", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2040.0, "s_factor": 1020.0, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "건강100 내가고른 통합보험, 백년친구 New내가고른 건강 (일반/간편)", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1680.0, "s_factor": 638.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "백년친구 뉴-알행플종신 (해지환급금일부지급형) (기본형)", "term": "20년납↑", "gubun": "일반심사형 간편심사형", "raw_factor": 3600.0, "s_factor": 1800.0, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "건강100 내가고른 통합보험, 백년친구 New내가고른 건강 (일반/간편)", "term": "20년납↑", "gubun": "해약환급금 미지급형", "raw_factor": 2880.0, "s_factor": 1094.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "백년친구 뉴-알행플종신 (해지환급금일부지급형) (체증형)", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1920.0, "s_factor": 902.4, "adj_coef": 0.47}, {"company": "DB", "sheet": "DB", "product": "건강100 내가고른 통합보험, 백년친구 New내가고른 건강 (일반/간편)", "term": "10년납", "gubun": "표준형", "raw_factor": 480.0, "s_factor": 182.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "백년친구 뉴-알행플종신 (해지환급금일부지급형) (체증형)", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2160.0, "s_factor": 1080.0, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "건강100 내가고른 통합보험, 백년친구 New내가고른 건강 (일반/간편)", "term": "15년납", "gubun": "표준형", "raw_factor": 1080.0, "s_factor": 410.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "백년친구 뉴-알행플종신 (해지환급금일부지급형) (체증형)", "term": "20년납↑", "gubun": "일반심사형 간편심사형", "raw_factor": 3720.0, "s_factor": 1860.0, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "건강100 내가고른 통합보험, 백년친구 New내가고른 건강 (일반/간편)", "term": "20년납↑", "gubun": "표준형", "raw_factor": 2160.0, "s_factor": 820.8, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "알차고 행복한 리턴 종신 (해약환급금 일부지급형)", "term": "5년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1680.0000000000005, "s_factor": 789.6000000000001, "adj_coef": 0.47}, {"company": "DB", "sheet": "DB", "product": "백년친구 New 내가고른 건강 (갱신형)", "term": "10년납", "gubun": "주계약", "raw_factor": 1080.0, "s_factor": 410.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "알차고 행복한 리턴 종신 (해약환급금 일부지급형)", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1800.0, "s_factor": 846.0, "adj_coef": 0.47}, {"company": "DB", "sheet": "DB", "product": "백년친구 New 내가고른 건강 (갱신형)", "term": "20년납", "gubun": "주계약", "raw_factor": 2880.0, "s_factor": 1094.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "알차고 행복한 리턴 종신 (해약환급금 일부지급형)", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2040.0000000000005, "s_factor": 1020.0000000000002, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "백년친구 간편한 내가고른 건강 (갱신형)", "term": "10년납", "gubun": "주계약", "raw_factor": 1080.0, "s_factor": 410.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "알차고 행복한 리턴 종신 (해약환급금 일부지급형)", "term": "20년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2760.0, "s_factor": 1380.0, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "백년친구 간편한 내가고른 건강 (갱신형)", "term": "20년납", "gubun": "주계약", "raw_factor": 2880.0, "s_factor": 1094.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "5년납", "gubun": "일반", "raw_factor": 1560.0, "s_factor": 655.1999999999999, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "실속N 7대질병 건강보험, 실속N 6대질병 건강보험, 생활비암보험하이파이브 (일반/간편)", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 840.0, "s_factor": 319.2, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "7년납", "gubun": "일반", "raw_factor": 2040.0, "s_factor": 856.8, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "실속N 7대질병 건강보험, 실속N 6대질병 건강보험, 생활비암보험하이파이브 (일반/간편)", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1680.0, "s_factor": 638.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "10년납", "gubun": "일반", "raw_factor": 2640.0, "s_factor": 1108.8, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "실속N 7대질병 건강보험, 실속N 6대질병 건강보험, 생활비암보험하이파이브 (일반/간편)", "term": "20년납↑", "gubun": "해약환급금 미지급형", "raw_factor": 2880.0, "s_factor": 1094.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "12년납", "gubun": "일반", "raw_factor": 2880.0, "s_factor": 1209.6, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "실속N 7대질병 건강보험, 실속N 6대질병 건강보험, 생활비암보험하이파이브 (일반/간편)", "term": "10년납", "gubun": "표준형", "raw_factor": 480.0, "s_factor": 182.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "15년납", "gubun": "일반", "raw_factor": 3480.0, "s_factor": 1461.6, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "실속N 7대질병 건강보험, 실속N 6대질병 건강보험, 생활비암보험하이파이브 (일반/간편)", "term": "15년납", "gubun": "표준형", "raw_factor": 1080.0, "s_factor": 410.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "20년납↑", "gubun": "일반", "raw_factor": 4200.0, "s_factor": 2100.0, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "실속N 7대질병 건강보험, 실속N 6대질병 건강보험, 생활비암보험하이파이브 (일반/간편)", "term": "20년납↑", "gubun": "표준형", "raw_factor": 2160.0, "s_factor": 820.8, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "5년납", "gubun": "간편", "raw_factor": 1680.0, "s_factor": 705.6, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 839.9999999999999, "s_factor": 319.2, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "7년납", "gubun": "간편", "raw_factor": 1920.0, "s_factor": 806.4, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1200.0, "s_factor": 456.0, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "10년납", "gubun": "간편", "raw_factor": 2880.0, "s_factor": 1209.6, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "20년납", "gubun": "해약환급금 미지급형", "raw_factor": 2760.0, "s_factor": 1048.8, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "12년납", "gubun": "간편", "raw_factor": 3120.0, "s_factor": 1310.3999999999999, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "10년납", "gubun": "해약환급금 일부지급형", "raw_factor": 839.9999999999999, "s_factor": 319.2, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "15년납", "gubun": "간편", "raw_factor": 3600.0, "s_factor": 1512.0, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "15년납", "gubun": "해약환급금 일부지급형", "raw_factor": 960.0, "s_factor": 364.8, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "10년더드림플러스유니버셜종신 (보증비용부과형) (100%형)(해지환급금보증형)", "term": "20년납↑", "gubun": "간편", "raw_factor": 4200.0, "s_factor": 2100.0, "adj_coef": 0.5}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "20년납", "gubun": "해약환급금 일부지급형", "raw_factor": 2520.0, "s_factor": 957.6, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "뉴-올케어 암종신 (해약환급금 일부지급형)", "term": "10년납", "gubun": "일반,간편", "raw_factor": 1920.0, "s_factor": 806.4, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "10년납", "gubun": "표준형", "raw_factor": 360.0, "s_factor": 136.8, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "뉴-올케어 암종신 (해약환급금 일부지급형)", "term": "15년납", "gubun": "일반,간편", "raw_factor": 2760.0, "s_factor": 1159.2, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "15년납", "gubun": "표준형", "raw_factor": 479.99999999999994, "s_factor": 182.39999999999998, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "뉴-올케어 암종신 (해약환급금 일부지급형)", "term": "20년납", "gubun": "일반,간편", "raw_factor": 3720.0, "s_factor": 1562.3999999999999, "adj_coef": 0.42}, {"company": "DB", "sheet": "DB", "product": "백년친구 당신곁에 치매간병 (주계약기준)", "term": "20년납", "gubun": "표준형", "raw_factor": 1800.0, "s_factor": 684.0, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "(간편한)경영인 정기(2501) (해약환급금 일부지급형)", "term": "1형 (5%체증형)", "gubun": "일반,간편", "raw_factor": 3960.0, "s_factor": 1702.8, "adj_coef": 0.43}, {"company": "DB", "sheet": "DB", "product": "초경증 간편 내가고른 건강보험", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 840.0, "s_factor": 319.2, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "(간편한)경영인 정기(2501) (해약환급금 일부지급형)", "term": "2형 (10%체증형)", "gubun": "일반,간편", "raw_factor": 3960.0, "s_factor": 1702.8, "adj_coef": 0.43}, {"company": "DB", "sheet": "DB", "product": "초경증 간편 내가고른 건강보험", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1680.0, "s_factor": 638.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "초경증 간편 내가고른 건강보험", "term": "20년납↑", "gubun": "해약환급금 미지급형", "raw_factor": 2880.0, "s_factor": 1094.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "초경증 간편 내가고른 건강보험", "term": "10년납", "gubun": "표준형", "raw_factor": 480.0, "s_factor": 182.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "초경증 간편 내가고른 건강보험", "term": "15년납", "gubun": "표준형", "raw_factor": 1080.0, "s_factor": 410.4, "adj_coef": 0.38}, {"company": "DB", "sheet": "DB", "product": "초경증 간편 내가고른 건강보험", "term": "20년납↑", "gubun": "표준형", "raw_factor": 2160.0, "s_factor": 820.8, "adj_coef": 0.38}, {"company": "신한", "sheet": "신한", "product": "종신보험 세븐Plus골드", "term": "20년납", "gubun": "일반,간편", "raw_factor": 1120.0, "s_factor": 1120.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "종신보험 세븐PlusⅡ", "term": "20년납", "gubun": "일반,간편", "raw_factor": 1120.0, "s_factor": 1400.0, "adj_coef": 1.25}, {"company": "신한", "sheet": "신한", "product": "신한모아더드림종신 (해약환급금 일부지급형)", "term": "5년납이상", "gubun": "일반심사 간편심사", "raw_factor": 370.0, "s_factor": 481.0, "adj_coef": 1.3}, {"company": "신한", "sheet": "신한", "product": "신한모아더드림종신 (해약환급금 일부지급형)", "term": "7년납이상", "gubun": "일반심사 간편심사", "raw_factor": 510.0, "s_factor": 663.0, "adj_coef": 1.3}, {"company": "신한", "sheet": "신한", "product": "신한모아더드림Plus종신 (해약환급금 일부지급형)", "term": "5년납", "gubun": "일반심사 간편심사", "raw_factor": 280.0, "s_factor": 420.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "신한모아더드림Plus종신 (해약환급금 일부지급형)", "term": "7년납", "gubun": "일반심사 간편심사", "raw_factor": 490.0, "s_factor": 735.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "신한모아더드림Plus종신 (해약환급금 일부지급형)", "term": "10년납", "gubun": "일반심사 간편심사", "raw_factor": 560.0, "s_factor": 840.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "(간편가입)종신보험 세븐Plus", "term": "20년납", "gubun": "일반심사 간편심사", "raw_factor": 1100.0, "s_factor": 1100.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "위너스경영인정기 (체증형)", "term": "20년납이상", "gubun": "일반심사형", "raw_factor": 1400.0, "s_factor": 1400.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "든든한실속(간편)종신, 든든한VIP상속(간편)종신:1억이상 (해약환급금 미지급형)", "term": "5년납", "gubun": "일반심사 간편심사", "raw_factor": 300.0, "s_factor": 450.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "든든한실속(간편)종신, 든든한VIP상속(간편)종신:1억이상 (해약환급금 미지급형)", "term": "7년납", "gubun": "일반심사 간편심사", "raw_factor": 400.0, "s_factor": 600.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "든든한실속(간편)종신, 든든한VIP상속(간편)종신:1억이상 (해약환급금 미지급형)", "term": "10년납", "gubun": "일반심사 간편심사", "raw_factor": 600.0, "s_factor": 900.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "든든한실속(간편)종신, 든든한VIP상속(간편)종신:1억이상 (해약환급금 미지급형)", "term": "15년납", "gubun": "일반심사 간편심사", "raw_factor": 800.0, "s_factor": 1200.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "든든한실속(간편)종신, 든든한VIP상속(간편)종신:1억이상 (해약환급금 미지급형)", "term": "20년납", "gubun": "일반심사 간편심사", "raw_factor": 970.0, "s_factor": 1455.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "The든든한종신보험", "term": "10년납", "gubun": "일반심사 간편심사", "raw_factor": 600.0, "s_factor": 900.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "The든든한종신보험", "term": "15년납", "gubun": "일반심사 간편심사", "raw_factor": 800.0, "s_factor": 1200.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "The든든한종신보험", "term": "20년납", "gubun": "일반심사 간편심사", "raw_factor": 970.0, "s_factor": 1455.0, "adj_coef": 1.5}, {"company": "신한", "sheet": "신한", "product": "(간편가입)리필종신", "term": "10년납", "gubun": "기본납입형", "raw_factor": 1050.0, "s_factor": 630.0, "adj_coef": 0.6}, {"company": "신한", "sheet": "신한", "product": "(간편가입)리필종신", "term": "20년납", "gubun": "기본납입형", "raw_factor": 1400.0, "s_factor": 840.0, "adj_coef": 0.6}, {"company": "신한", "sheet": "신한", "product": "(간편가입)리필종신", "term": "10년납", "gubun": "집중납입형", "raw_factor": 700.0, "s_factor": 420.0, "adj_coef": 0.6}, {"company": "신한", "sheet": "신한", "product": "(간편가입)리필종신", "term": "20년납", "gubun": "집중납입형", "raw_factor": 950.0, "s_factor": 570.0, "adj_coef": 0.6}, {"company": "신한", "sheet": "신한", "product": "3케어리워드종신", "term": "10년납", "gubun": "일반,간편", "raw_factor": 1050.0, "s_factor": 630.0, "adj_coef": 0.6}, {"company": "신한", "sheet": "신한", "product": "3케어리워드종신", "term": "20년납", "gubun": "일반,간편", "raw_factor": 1400.0, "s_factor": 840.0, "adj_coef": 0.6}, {"company": "신한", "sheet": "신한", "product": "통합건강보장 슈퍼원(ONE)", "term": "10년납이상", "gubun": "일반,간편", "raw_factor": 1500.0, "s_factor": 675.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "통합건강보장 슈퍼원(ONE)", "term": "15년납이상", "gubun": "일반,간편", "raw_factor": 1900.0, "s_factor": 855.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "통합건강보장 슈퍼원(ONE)", "term": "20년납이상", "gubun": "일반,간편", "raw_factor": 2200.0, "s_factor": 990.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "통합건강보장보험원(ONE), 통합건강보장라이트원(ONE), (3.10.5고당지알파)", "term": "10년납", "gubun": "일반심사 간편심사", "raw_factor": 1600.0, "s_factor": 720.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "통합건강보장보험원(ONE), 통합건강보장라이트원(ONE), (3.10.5고당지알파)", "term": "15년납", "gubun": "일반심사 간편심사", "raw_factor": 2000.0, "s_factor": 900.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "통합건강보장보험원(ONE), 통합건강보장라이트원(ONE), (3.10.5고당지알파)", "term": "20년납이상", "gubun": "일반심사 간편심사", "raw_factor": 2400.0, "s_factor": 1080.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "통합건강보험 원(ONE) 갱신형", "term": "10년납이상", "gubun": "일반,간편", "raw_factor": 1600.0, "s_factor": 720.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "통합건강보험 원(ONE) 갱신형", "term": "20년납이상", "gubun": "일반,간편", "raw_factor": 2400.0, "s_factor": 1080.0, "adj_coef": 0.45}, {"company": "신한", "sheet": "신한", "product": "신한ONE더라이프 연금", "term": "5년납이상", "gubun": "연금액 보증형", "raw_factor": 50.0, "s_factor": 50.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더라이프 연금", "term": "7년납이상", "gubun": "연금액 보증형", "raw_factor": 250.0, "s_factor": 250.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더라이프 연금", "term": "10년납이상", "gubun": "연금액 보증형", "raw_factor": 550.0, "s_factor": 550.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더드림 변액연금", "term": "5년납", "gubun": "기본형", "raw_factor": 130.0, "s_factor": 130.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더드림 변액연금", "term": "7년납", "gubun": "기본형", "raw_factor": 300.0, "s_factor": 300.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더드림 변액연금", "term": "10년납이상", "gubun": "기본형", "raw_factor": 420.0, "s_factor": 420.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더드림 변액연금", "term": "5년납", "gubun": "연금 강화형", "raw_factor": 170.0, "s_factor": 170.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더드림 변액연금", "term": "7년납", "gubun": "연금 강화형", "raw_factor": 340.0, "s_factor": 340.0, "adj_coef": 1.0}, {"company": "신한", "sheet": "신한", "product": "신한ONE더드림 변액연금", "term": "10년납이상", "gubun": "연금 강화형", "raw_factor": 560.0, "s_factor": 560.0, "adj_coef": 1.0}, {"company": "KB", "sheet": "KB", "product": "7년의약속 플러스 평생종신", "term": "20년납", "gubun": "-", "raw_factor": 2620.0, "s_factor": 786.0, "adj_coef": 0.3}, {"company": "KB", "sheet": "KB", "product": "KB 약속플러스종신 (해약환급금일부지급형)", "term": "5년납", "gubun": "-", "raw_factor": 1010.0, "s_factor": 414.09999999999997, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 약속플러스종신 (해약환급금일부지급형)", "term": "7년납", "gubun": "-", "raw_factor": 1170.0, "s_factor": 479.7, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 약속플러스종신 (해약환급금일부지급형)", "term": "10년납", "gubun": "-", "raw_factor": 1370.0, "s_factor": 561.6999999999999, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 리턴종신 (해약환급금 일부지급형)", "term": "5년납", "gubun": "보증비용 부과형", "raw_factor": 1800.0, "s_factor": 738.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 리턴종신 (해약환급금 일부지급형)", "term": "7년납", "gubun": "보증비용 부과형", "raw_factor": 1860.0, "s_factor": 762.5999999999999, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 리턴종신 (해약환급금 일부지급형)", "term": "10년납", "gubun": "보증비용 부과형", "raw_factor": 2100.0, "s_factor": 861.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 리턴종신 (해약환급금 일부지급형)", "term": "15년납", "gubun": "보증비용 부과형", "raw_factor": 2170.0, "s_factor": 889.6999999999999, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 리턴종신 (해약환급금 일부지급형)", "term": "20년납 이상", "gubun": "보증비용 부과형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "경영인 정기보험Ⅲ", "term": "20년납 이상", "gubun": "보증비용 부과형", "raw_factor": 3290.0, "s_factor": 1348.8999999999999, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 트리플 레벨업 연금보험", "term": "5년납", "gubun": "계약자 적립액 보증형", "raw_factor": 610.0, "s_factor": 250.1, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 트리플 레벨업 연금보험", "term": "7년납", "gubun": "계약자 적립액 보증형", "raw_factor": 1000.0, "s_factor": 410.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 트리플 레벨업 연금보험", "term": "10년납", "gubun": "계약자 적립액 보증형", "raw_factor": 1670.0, "s_factor": 684.6999999999999, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 트리플 레벨업 연금보험", "term": "5년납", "gubun": "계약자 적립액 미보증형", "raw_factor": 400.0, "s_factor": 164.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 트리플 레벨업 연금보험", "term": "7년납", "gubun": "계약자 적립액 미보증형", "raw_factor": 550.0, "s_factor": 225.5, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB 트리플 레벨업 연금보험", "term": "10년납", "gubun": "계약자 적립액 미보증형", "raw_factor": 640.0, "s_factor": 262.4, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB넥스트레벨업연금보험", "term": "10년납", "gubun": "보증형", "raw_factor": 1550.0, "s_factor": 635.5, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB넥스트레벨업연금보험", "term": "12년납", "gubun": "보증형", "raw_factor": 1670.0, "s_factor": 684.6999999999999, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB넥스트레벨업연금보험", "term": "10년납", "gubun": "미보증형", "raw_factor": 640.0, "s_factor": 262.4, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "KB넥스트레벨업연금보험", "term": "12년납", "gubun": "미보증형", "raw_factor": 740.0, "s_factor": 303.4, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "100세든든 연금보험(기본형)", "term": "10년납이상", "gubun": "미보증형", "raw_factor": 1340.0, "s_factor": 402.0, "adj_coef": 0.3}, {"company": "KB", "sheet": "KB", "product": "딱좋은 0540 건강보험 (해약환급금 미지급형), 3.N.5 딱좋은 요즘 건강보험", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 1200.0, "s_factor": 491.99999999999994, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "딱좋은 0540 건강보험 (해약환급금 미지급형), 3.N.5 딱좋은 요즘 건강보험", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1850.0, "s_factor": 758.5, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "딱좋은 0540 건강보험 (해약환급금 미지급형), 3.N.5 딱좋은 요즘 건강보험", "term": "20년납", "gubun": "해약환급금 미지급형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "딱좋은 0540 건강보험 (해약환급금 미지급형), 3.N.5 딱좋은 요즘 건강보험", "term": "30년납", "gubun": "해약환급금 미지급형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "딱좋은 0540 건강보험 (해약환급금 미지급형), 3.N.5 딱좋은 요즘 건강보험", "term": "10년납", "gubun": "갱신형", "raw_factor": 1200.0, "s_factor": 491.99999999999994, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "딱좋은 0540 건강보험 (해약환급금 미지급형), 3.N.5 딱좋은 요즘 건강보험", "term": "20년납", "gubun": "갱신형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "딱좋은 0540 건강보험 (해약환급금 미지급형), 3.N.5 딱좋은 요즘 건강보험", "term": "30년납", "gubun": "갱신형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "5.10.5 딱좋은 플러스 건강보험 3.10.5 딱좋은 초경증 건강보험", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 1200.0, "s_factor": 491.99999999999994, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "5.10.5 딱좋은 플러스 건강보험 3.10.5 딱좋은 초경증 건강보험", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1850.0, "s_factor": 758.5, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "5.10.5 딱좋은 플러스 건강보험 3.10.5 딱좋은 초경증 건강보험", "term": "20년납", "gubun": "해약환급금 미지급형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "5.10.5 딱좋은 플러스 건강보험 3.10.5 딱좋은 초경증 건강보험", "term": "30년납", "gubun": "해약환급금 미지급형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "행복한약속 치매간병 (해약환급금 일부지급형) (주계약기준)", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 2200.0, "s_factor": 902.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "행복한약속 치매간병 (해약환급금 일부지급형) (주계약기준)", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "행복한약속 치매간병 (해약환급금 일부지급형) (주계약기준)", "term": "20년납", "gubun": "해약환급금 미지급형", "raw_factor": 2750.0, "s_factor": 1127.5, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "행복한약속 치매간병 (해약환급금 일부지급형) (주계약기준)", "term": "30년납", "gubun": "해약환급금 미지급형", "raw_factor": 2800.0, "s_factor": 1148.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "골든라이프 딱좋은 간병보험 무배당 (해약환급금 미지급형)", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 1200.0, "s_factor": 491.99999999999994, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "골든라이프 딱좋은 간병보험 무배당 (해약환급금 미지급형)", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1850.0, "s_factor": 758.5, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "골든라이프 딱좋은 간병보험 무배당 (해약환급금 미지급형)", "term": "20년납", "gubun": "해약환급금 미지급형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "KB", "sheet": "KB", "product": "골든라이프 딱좋은 간병보험 무배당 (해약환급금 미지급형)", "term": "30년납", "gubun": "해약환급금 미지급형", "raw_factor": 2500.0, "s_factor": 1025.0, "adj_coef": 0.41}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "20년납", "gubun": "일반가입", "raw_factor": 3093.0, "s_factor": 1391.8500000000001, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "20년납 이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "TheClassic 달러경영인정기", "term": "90세납", "gubun": "일반가입", "raw_factor": 3448.0, "s_factor": 1827.44, "adj_coef": 0.53}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "5년납 이상", "gubun": "500천 이상", "raw_factor": 513.0, "s_factor": 194.94, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "5년납 이상", "gubun": "500천 이상", "raw_factor": 642.0, "s_factor": 243.96, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "5년납", "gubun": "200달러 이상", "raw_factor": 708.0, "s_factor": 155.76, "adj_coef": 0.22}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "15년납", "gubun": "일반가입", "raw_factor": 2769.0, "s_factor": 1246.05, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "15년납", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "TheClassic 달러경영인정기", "term": "", "gubun": "간편가입", "raw_factor": 3448.0, "s_factor": 1827.44, "adj_coef": 0.53}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "1000천 이상", "raw_factor": 599.0, "s_factor": 227.62, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "1000천 이상", "raw_factor": 642.0, "s_factor": 243.96, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "", "gubun": "250달러 이상", "raw_factor": 948.0, "s_factor": 208.56, "adj_coef": 0.22}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "10년납", "gubun": "일반가입", "raw_factor": 1439.0, "s_factor": 647.5500000000001, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "10년납", "gubun": "일반가입", "raw_factor": 3254.0, "s_factor": 1627.0, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "TheClassic 경영인정기", "term": "", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1882.0300000000002, "adj_coef": 0.53}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "7년납 이상", "gubun": "300천 이상", "raw_factor": 728.0, "s_factor": 276.64, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "7년납 이상", "gubun": "300천 이상", "raw_factor": 985.0, "s_factor": 374.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "7년납", "gubun": "150달러 이상", "raw_factor": 537.0, "s_factor": 144.99, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "7년납", "gubun": "일반가입", "raw_factor": 1202.0, "s_factor": 540.9, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "7년납", "gubun": "일반가입", "raw_factor": 2141.0, "s_factor": 1070.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "TheClassic 경영인정기", "term": "", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 1882.0300000000002, "adj_coef": 0.53}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "500천 이상", "raw_factor": 856.0, "s_factor": 325.28000000000003, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "500천 이상", "raw_factor": 985.0, "s_factor": 374.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "", "gubun": "200달러 이상", "raw_factor": 748.0, "s_factor": 201.96, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "5년납", "gubun": "일반가입", "raw_factor": 678.0, "s_factor": 305.1, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "5년납", "gubun": "일반가입", "raw_factor": 1713.0, "s_factor": 856.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "더해주고채워주는정기보험", "term": "20년납 이상", "gubun": "일반가입", "raw_factor": 3180.0, "s_factor": 1431.0, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "1000천 이상", "raw_factor": 899.0, "s_factor": 341.62, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "1000천 이상", "raw_factor": 985.0, "s_factor": 374.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "", "gubun": "250달러 이상", "raw_factor": 916.0, "s_factor": 247.32000000000002, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "20년납", "gubun": "간편가입", "raw_factor": 2569.0, "s_factor": 1156.05, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "20년납 이상", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "더해주고채워주는정기보험", "term": "19년납 이하", "gubun": "일반가입", "raw_factor": 2333.0, "s_factor": 1049.8500000000001, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "10년납 이상", "gubun": "200천 이상", "raw_factor": 985.0, "s_factor": 374.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "10년납 이상", "gubun": "200천 이상", "raw_factor": 1541.0, "s_factor": 585.58, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "10년납", "gubun": "100달러 이상", "raw_factor": 537.0, "s_factor": 144.99, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "15년납", "gubun": "간편가입", "raw_factor": 2569.0, "s_factor": 1156.05, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "15년납", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "더해주고채워주는정기보험", "term": "10년납 이하", "gubun": "일반가입", "raw_factor": 1982.0, "s_factor": 891.9, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "300천 이상", "raw_factor": 1199.0, "s_factor": 455.62, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "300천 이상", "raw_factor": 1541.0, "s_factor": 585.58, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "", "gubun": "150달러 이상", "raw_factor": 958.0, "s_factor": 258.66, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "10년납", "gubun": "간편가입", "raw_factor": 1106.0, "s_factor": 497.7, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "10년납", "gubun": "간편가입", "raw_factor": 3168.0, "s_factor": 1584.0, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "더해주고채워주는정기보험", "term": "7년납 이하", "gubun": "일반가입", "raw_factor": 1704.0, "s_factor": 766.8000000000001, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "500천 이상", "raw_factor": 1284.0, "s_factor": 487.92, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "500천 이상", "raw_factor": 1541.0, "s_factor": 585.58, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "", "gubun": "200달러 이상", "raw_factor": 1169.0, "s_factor": 315.63, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "7년납", "gubun": "간편가입", "raw_factor": 1202.0, "s_factor": 540.9, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "7년납", "gubun": "간편가입", "raw_factor": 2055.0, "s_factor": 1027.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "더해주고채워주는정기보험", "term": "5년납 이하", "gubun": "일반가입", "raw_factor": 1506.0, "s_factor": 677.7, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "1000천 이상", "raw_factor": 1456.0, "s_factor": 553.28, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "1000천 이상", "raw_factor": 1541.0, "s_factor": 585.58, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (보증형)", "term": "", "gubun": "250달러 이상", "raw_factor": 1169.0, "s_factor": 315.63, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 달러종신보험 Plus (저해약환급금형) 가입금액: 2만달러 이상", "term": "5년납", "gubun": "간편가입", "raw_factor": 592.0, "s_factor": 266.40000000000003, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (기본형) 가입금액: 3천만 이상", "term": "5년납", "gubun": "간편가입", "raw_factor": 1627.0, "s_factor": 813.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "미리받는 GI 종신 (무해약환급금형) 가입금액: 3천만 이상", "term": "25년납이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "12년납 이상", "gubun": "200천 이상", "raw_factor": 1113.0, "s_factor": 422.94, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "12년납 이상", "gubun": "200천 이상", "raw_factor": 1670.0, "s_factor": 634.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "5년납", "gubun": "200달러 이상", "raw_factor": 85.0, "s_factor": 18.7, "adj_coef": 0.22}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "20년납", "gubun": "일반가입", "raw_factor": 3093.0, "s_factor": 1391.8500000000001, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "20년납 이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "미리받는 GI 종신 (무해약환급금형) 가입금액: 3천만 이상", "term": "20년납이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "300천 이상", "raw_factor": 1242.0, "s_factor": 471.96, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "300천 이상", "raw_factor": 1670.0, "s_factor": 634.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "", "gubun": "250달러 이상", "raw_factor": 85.0, "s_factor": 18.7, "adj_coef": 0.22}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "15년납", "gubun": "일반가입", "raw_factor": 2769.0, "s_factor": 1246.05, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "15년납", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "미리받는 GI 종신 (무해약환급금형) 가입금액: 3천만 이상", "term": "15년납이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "500천 이상", "raw_factor": 1413.0, "s_factor": 536.94, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "500천 이상", "raw_factor": 1670.0, "s_factor": 634.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "7년납", "gubun": "150달러 이상", "raw_factor": 85.0, "s_factor": 22.950000000000003, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "10년납", "gubun": "일반가입", "raw_factor": 1439.0, "s_factor": 647.5500000000001, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "10년납", "gubun": "일반가입", "raw_factor": 3254.0, "s_factor": 1627.0, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "미리받는 GI 종신 (무해약환급금형) 가입금액: 3천만 이상", "term": "10년납이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "1000천 이상", "raw_factor": 1584.0, "s_factor": 601.92, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "1000천 이상", "raw_factor": 1670.0, "s_factor": 634.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "", "gubun": "200달러 이상", "raw_factor": 85.0, "s_factor": 22.950000000000003, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "7년납", "gubun": "일반가입", "raw_factor": 1020.0, "s_factor": 459.0, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "7년납", "gubun": "일반가입", "raw_factor": 2141.0, "s_factor": 1070.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "미리받는 GI 종신 (무해약환급금형) 가입금액: 3천만 이상", "term": "7년납이상", "gubun": "일반가입", "raw_factor": 2997.0, "s_factor": 1498.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "15년납 이상", "gubun": "200천 이상", "raw_factor": 1284.0, "s_factor": 487.92, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "15년납 이상", "gubun": "200천 이상", "raw_factor": 1798.0, "s_factor": 683.24, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "", "gubun": "250달러 이상", "raw_factor": 85.0, "s_factor": 22.950000000000003, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "5년납", "gubun": "일반가입", "raw_factor": 506.0, "s_factor": 227.70000000000002, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "5년납", "gubun": "일반가입", "raw_factor": 1713.0, "s_factor": 856.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "미리받는 GI 종신 (무해약환급금형) 가입금액: 3천만 이상", "term": "5년납이상", "gubun": "일반가입", "raw_factor": 2141.0, "s_factor": 1070.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "300천 이상", "raw_factor": 1413.0, "s_factor": 536.94, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "300천 이상", "raw_factor": 1798.0, "s_factor": 683.24, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "10년납", "gubun": "100달러 이상", "raw_factor": 85.0, "s_factor": 22.950000000000003, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "20년납", "gubun": "간편가입", "raw_factor": 2484.0, "s_factor": 1117.8, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "20년납 이상", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "25년납 이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "500천 이상", "raw_factor": 1584.0, "s_factor": 601.92, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "500천 이상", "raw_factor": 1798.0, "s_factor": 683.24, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "", "gubun": "150달러 이상", "raw_factor": 85.0, "s_factor": 22.950000000000003, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "15년납", "gubun": "간편가입", "raw_factor": 2484.0, "s_factor": 1117.8, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "15년납", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "20년납 이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 1종", "term": "", "gubun": "1000천 이상", "raw_factor": 1713.0, "s_factor": 650.94, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종 사망보장형", "term": "", "gubun": "1000천 이상", "raw_factor": 1798.0, "s_factor": 683.24, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "", "gubun": "200달러 이상", "raw_factor": 85.0, "s_factor": 22.950000000000003, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "10년납", "gubun": "간편가입", "raw_factor": 1020.0, "s_factor": 459.0, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "10년납", "gubun": "간편가입", "raw_factor": 3168.0, "s_factor": 1584.0, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "15년납 이상", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "5년납 이상", "gubun": "500천 이상", "raw_factor": 556.0, "s_factor": 211.28, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "5년납 이상", "gubun": "500천 이상", "raw_factor": 214.0, "s_factor": 81.32000000000001, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오로지 연금을 위한 달러연금보험 (보증비용부과형) (미보증형)", "term": "", "gubun": "250달러 이상", "raw_factor": 85.0, "s_factor": 22.950000000000003, "adj_coef": 0.27}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "7년납", "gubun": "간편가입", "raw_factor": 678.0, "s_factor": 305.1, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "7년납", "gubun": "간편가입", "raw_factor": 2055.0, "s_factor": 1027.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "14년납 이하", "gubun": "일반가입", "raw_factor": 3198.0, "s_factor": 1918.8, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "1000천 이상", "raw_factor": 642.0, "s_factor": 243.96, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "1000천 이상", "raw_factor": 299.0, "s_factor": 113.62, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "백만인을 위한 종신보험 Plus (저해약환급금형) 가입금액: 2천만 이상", "term": "5년납", "gubun": "간편가입", "raw_factor": 421.0, "s_factor": 189.45000000000002, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 종신보험 (체증형) 가입금액: 3천만 이상", "term": "5년납", "gubun": "간편가입", "raw_factor": 1627.0, "s_factor": 813.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "10년납 이하", "gubun": "일반가입", "raw_factor": 2796.0, "s_factor": 1677.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "7년납 이상", "gubun": "300천 이상", "raw_factor": 770.0, "s_factor": 292.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "7년납 이상", "gubun": "300천 이상", "raw_factor": 513.0, "s_factor": 194.94, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오늘의종신Plus / VIP Plus", "term": "25년납이상", "gubun": "3천만 이상", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "20년납이상", "gubun": "일반가입", "raw_factor": 2517.0, "s_factor": 1510.2, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "7년납 이하", "gubun": "일반가입", "raw_factor": 2106.0, "s_factor": 1263.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "500천 이상", "raw_factor": 899.0, "s_factor": 341.62, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "500천 이상", "raw_factor": 685.0, "s_factor": 260.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오늘의종신Plus / VIP Plus", "term": "20년납이상", "gubun": "3천만 이상", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "15년납이상", "gubun": "일반가입", "raw_factor": 2517.0, "s_factor": 1258.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "5년납 이하", "gubun": "일반가입", "raw_factor": 1737.0, "s_factor": 1042.2, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "1000천 이상", "raw_factor": 985.0, "s_factor": 374.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "1000천 이상", "raw_factor": 770.0, "s_factor": 292.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오늘의종신Plus / VIP Plus", "term": "15년납이상", "gubun": "3천만 이상", "raw_factor": 3551.0, "s_factor": 1775.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "10년납이상", "gubun": "일반가입", "raw_factor": 2220.0, "s_factor": 1110.0, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "25년납 이상", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "10년납 이상", "gubun": "200천 이상", "raw_factor": 1070.0, "s_factor": 406.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "10년납 이상", "gubun": "100천 이상", "raw_factor": 128.0, "s_factor": 48.64, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오늘의종신Plus / VIP Plus", "term": "10년납이상", "gubun": "3천만 이상", "raw_factor": 2871.0, "s_factor": 1435.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "7년납이상", "gubun": "일반가입", "raw_factor": 1107.0, "s_factor": 553.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "20년납 이상", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "300천 이상", "raw_factor": 1284.0, "s_factor": 487.92, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "150천 이상", "raw_factor": 342.0, "s_factor": 129.96, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오늘의종신Plus / VIP Plus", "term": "9년납이하", "gubun": "3천만 이상", "raw_factor": 2383.0, "s_factor": 1191.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "20년납이상", "gubun": "간편가입", "raw_factor": 2517.0, "s_factor": 1510.2, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "15년납 이상", "gubun": "간편가입", "raw_factor": 3551.0, "s_factor": 2130.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "500천 이상", "raw_factor": 1370.0, "s_factor": 520.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "200천 이상", "raw_factor": 685.0, "s_factor": 260.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오늘의종신Plus / VIP Plus", "term": "7년납이하", "gubun": "3천만 이상", "raw_factor": 1831.0, "s_factor": 915.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "15년납", "gubun": "간편가입", "raw_factor": 2517.0, "s_factor": 1258.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "14년납 이하", "gubun": "간편가입", "raw_factor": 3198.0, "s_factor": 1918.8, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "1000천 이상", "raw_factor": 1541.0, "s_factor": 585.58, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "300천 이상", "raw_factor": 813.0, "s_factor": 308.94, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "오늘의종신Plus / VIP Plus", "term": "5년납이하", "gubun": "3천만 이상", "raw_factor": 1529.0, "s_factor": 764.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "10년납", "gubun": "간편가입", "raw_factor": 2135.0, "s_factor": 1067.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "10년납 이하", "gubun": "간편가입", "raw_factor": 2796.0, "s_factor": 1677.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "12년납 이상", "gubun": "200천 이상", "raw_factor": 1199.0, "s_factor": 455.62, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "500천 이상", "raw_factor": 985.0, "s_factor": 374.3, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "360 종합보장보험", "term": "20년납이상", "gubun": "일반가입 간편가입", "raw_factor": 3551.0, "s_factor": 1597.95, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "모두의 달러종신 (기본형) 가입금액: 3만달러 이상", "term": "7년납", "gubun": "간편가입", "raw_factor": 1021.0, "s_factor": 510.5, "adj_coef": 0.5}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "7년납 이하", "gubun": "간편가입", "raw_factor": 2106.0, "s_factor": 1263.6, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "300천 이상", "raw_factor": 1327.0, "s_factor": 504.26, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 사망보장형-월납", "term": "", "gubun": "1000천 이상", "raw_factor": 1027.0, "s_factor": 390.26, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "360 종합보장보험", "term": "19년납이하", "gubun": "일반가입 간편가입", "raw_factor": 3426.0, "s_factor": 1541.7, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "3년내고만족하는달러보험", "term": "3년납", "gubun": "일반가입", "raw_factor": 849.0, "s_factor": 382.05, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액유니버셜 모두의상속종신보험 가입금액: 3천만 이상", "term": "5년납 이하", "gubun": "간편가입", "raw_factor": 1455.0, "s_factor": 873.0, "adj_coef": 0.6}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "500천 이상", "raw_factor": 1498.0, "s_factor": 569.24, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "360 종합보장보험", "term": "14년납이하", "gubun": "일반가입 간편가입", "raw_factor": 2569.0, "s_factor": 1156.05, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "3년내고만족하는달러보험", "term": "", "gubun": "간편가입", "raw_factor": 592.0, "s_factor": 266.40000000000003, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "1000천 이상", "raw_factor": 1670.0, "s_factor": 634.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "360 암보험 (갱신형)", "term": "전기납", "gubun": "일반가입", "raw_factor": 3551.0, "s_factor": 1597.95, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액리치정기보험", "term": "전기납", "gubun": "일반가입", "raw_factor": 3206.0, "s_factor": 1442.7, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "15년납 이상", "gubun": "200천 이상", "raw_factor": 1370.0, "s_factor": 520.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "간편 360 종합보장보험 (갱신형)", "term": "전기납", "gubun": "간편가입", "raw_factor": 3206.0, "s_factor": 1442.7, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액리치정기보험", "term": "", "gubun": "간편가입", "raw_factor": 3206.0, "s_factor": 1442.7, "adj_coef": 0.45}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "300천 이상", "raw_factor": 1498.0, "s_factor": 569.24, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "500천 이상", "raw_factor": 1670.0, "s_factor": 634.6, "adj_coef": 0.38}, {"company": "메트", "sheet": "메트", "product": "변액연금 동행 Plus 2종", "term": "", "gubun": "1000천 이상", "raw_factor": 1798.0, "s_factor": 683.24, "adj_coef": 0.38}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "5년", "gubun": "해지환급금 일부지급형", "raw_factor": 850.0, "s_factor": 510.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "7년", "gubun": "해지환급금 일부지급형", "raw_factor": 1350.0, "s_factor": 810.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "10년", "gubun": "해지환급금 일부지급형", "raw_factor": 1650.0, "s_factor": 990.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "12년", "gubun": "해지환급금 일부지급형", "raw_factor": 1800.0, "s_factor": 1080.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "5년", "gubun": "표준형", "raw_factor": 650.0, "s_factor": 390.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "7년", "gubun": "표준형", "raw_factor": 900.0, "s_factor": 540.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "10년", "gubun": "표준형", "raw_factor": 1250.0, "s_factor": 750.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "12년", "gubun": "표준형", "raw_factor": 1450.0, "s_factor": 870.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "마이초이스NH종신보험", "term": "20년", "gubun": "표준형", "raw_factor": 2400.0, "s_factor": 1440.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "투스텝NH종신", "term": "10년", "gubun": "해약환급금일부지급형", "raw_factor": 800.0, "s_factor": 480.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "투스텝NH종신", "term": "12년", "gubun": "해약환급금일부지급형", "raw_factor": 1050.0, "s_factor": 630.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "건강채움NH암종신보험 (해약환급금일부지급형)", "term": "10년", "gubun": "스마트 페이형", "raw_factor": 750.0, "s_factor": 450.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "건강채움NH암종신보험 (해약환급금일부지급형)", "term": "15년", "gubun": "스마트 페이형", "raw_factor": 1200.0, "s_factor": 720.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "건강채움NH암종신보험 (해약환급금일부지급형)", "term": "10년", "gubun": "일반페이형", "raw_factor": 1150.0, "s_factor": 690.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "건강채움NH암종신보험 (해약환급금일부지급형)", "term": "15년", "gubun": "일반페이형", "raw_factor": 1700.0, "s_factor": 1020.0, "adj_coef": 0.6}, {"company": "농협", "sheet": "농협", "product": "스텝업700NH종신보험", "term": "해약환급금일부지급형", "gubun": "일반페이형", "raw_factor": 2150.0, "s_factor": 1397.5, "adj_coef": 0.65}, {"company": "농협", "sheet": "농협", "product": "행복한NH경영인정기", "term": "해약환급금일부지급형", "gubun": "일반페이형", "raw_factor": 2700.0, "s_factor": 1350.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "행복한NH경영인정기", "term": "표준형", "gubun": "일반페이형", "raw_factor": 1250.0, "s_factor": 625.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀기억안심치매보험 (주계약기준)", "term": "10년이상", "gubun": "해약환급금 일부지급형", "raw_factor": 1100.0, "s_factor": 550.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀기억안심치매보험 (주계약기준)", "term": "15년이상", "gubun": "해약환급금 일부지급형", "raw_factor": 1550.0, "s_factor": 775.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀기억안심치매보험 (주계약기준)", "term": "20년이상", "gubun": "해약환급금 일부지급형", "raw_factor": 1950.0, "s_factor": 975.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "10년이상", "gubun": "해약환급금 미지급형", "raw_factor": 900.0, "s_factor": 450.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "15년이상", "gubun": "해약환급금 미지급형", "raw_factor": 1300.0, "s_factor": 650.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "20년이상", "gubun": "해약환급금 미지급형", "raw_factor": 1700.0, "s_factor": 850.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "30년이상", "gubun": "해약환급금 미지급형", "raw_factor": 2200.0, "s_factor": 1100.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "10년이상", "gubun": "표준형", "raw_factor": 800.0, "s_factor": 400.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "15년이상", "gubun": "표준형", "raw_factor": 1050.0, "s_factor": 525.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "20년이상", "gubun": "표준형", "raw_factor": 1300.0, "s_factor": 650.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "NH올원더풀간병안심요양보험 (주계약기준)", "term": "30년이상", "gubun": "표준형", "raw_factor": 1750.0, "s_factor": 875.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "10년미만", "gubun": "간편가입", "raw_factor": 500.0, "s_factor": 250.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "10년이상", "gubun": "간편가입", "raw_factor": 900.0, "s_factor": 450.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "15년이상", "gubun": "간편가입", "raw_factor": 1300.0, "s_factor": 650.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "20년이상", "gubun": "간편가입", "raw_factor": 1600.0, "s_factor": 800.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "10년미만", "gubun": "일반가입", "raw_factor": 450.0, "s_factor": 225.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "10년이상", "gubun": "일반가입", "raw_factor": 850.0, "s_factor": 425.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "15년이상", "gubun": "일반가입", "raw_factor": 1200.0, "s_factor": 600.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "핑크케어 NH건강보험", "term": "20년이상", "gubun": "일반가입", "raw_factor": 1500.0, "s_factor": 750.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "건강플러스NH통합보험", "term": "10년이상", "gubun": "해지환급금 미지급형", "raw_factor": 950.0, "s_factor": 475.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "건강플러스NH통합보험", "term": "15년이상", "gubun": "해지환급금 미지급형", "raw_factor": 1300.0, "s_factor": 650.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "건강플러스NH통합보험", "term": "20년이상", "gubun": "해지환급금 미지급형", "raw_factor": 1550.0, "s_factor": 775.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "건강플러스NH통합보험", "term": "10년이상", "gubun": "표준형", "raw_factor": 750.0, "s_factor": 375.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "건강플러스NH통합보험", "term": "15년이상", "gubun": "표준형", "raw_factor": 1000.0, "s_factor": 500.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "건강플러스NH통합보험", "term": "20년이상", "gubun": "표준형", "raw_factor": 1250.0, "s_factor": 625.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "치료비안심해2NH건강보험", "term": "10년미만", "gubun": "표준형", "raw_factor": 550.0, "s_factor": 275.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "치료비안심해2NH건강보험", "term": "10년이상", "gubun": "표준형", "raw_factor": 1050.0, "s_factor": 525.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "치료비안심해2NH건강보험", "term": "15년이상", "gubun": "표준형", "raw_factor": 1450.0, "s_factor": 725.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "치료비안심해2NH건강보험", "term": "20년이상", "gubun": "표준형", "raw_factor": 1800.0, "s_factor": 900.0, "adj_coef": 0.5}, {"company": "농협", "sheet": "농협", "product": "치료비안심해2NH건강보험", "term": "갱신형", "gubun": "표준형", "raw_factor": 2000.0, "s_factor": 1000.0, "adj_coef": 0.5}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 (간편)알뜰플러스종신 (해약환급금일부지급형)", "term": "5년납", "gubun": "보장형_평준납입형", "raw_factor": 550.0, "s_factor": 385.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 (간편)알뜰플러스종신 (해약환급금일부지급형)", "term": "7년납", "gubun": "보장형_평준납입형", "raw_factor": 650.0, "s_factor": 454.99999999999994, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 (간편)알뜰플러스종신 (해약환급금일부지급형)", "term": "10년납", "gubun": "보장형_평준납입형", "raw_factor": 1200.0, "s_factor": 840.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 (간편)알뜰플러스종신 (해약환급금일부지급형)", "term": "10년납", "gubun": "보장형_체감납입형", "raw_factor": 500.0, "s_factor": 350.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 (간편)알뜰플러스종신 (해약환급금일부지급형)", "term": "10년납", "gubun": "표준형", "raw_factor": 200.0, "s_factor": 140.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는유니버셜종신 (일반심사형,간편심사형)", "term": "10년납", "gubun": "건강체 표준체", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는유니버셜종신 (일반심사형,간편심사형)", "term": "15년납", "gubun": "건강체 표준체", "raw_factor": 2050.0, "s_factor": 1435.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는유니버셜종신 (일반심사형,간편심사형)", "term": "20년납", "gubun": "건강체 표준체", "raw_factor": 2450.0, "s_factor": 1715.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는5배더행복한플러스종신", "term": "15년납", "gubun": "일반/간편", "raw_factor": 1350.0, "s_factor": 499.5, "adj_coef": 0.37}, {"company": "동양", "sheet": "동양", "product": "우리WON하는7배더행복한플러스종신", "term": "20년납", "gubun": "일반/간편", "raw_factor": 1450.0, "s_factor": 536.5, "adj_coef": 0.37}, {"company": "동양", "sheet": "동양", "product": "우리WON안심상속종신", "term": "10년납", "gubun": "일반/간편", "raw_factor": 850.0, "s_factor": 595.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON안심상속종신", "term": "15년납", "gubun": "일반/간편", "raw_factor": 1150.0, "s_factor": 805.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON안심상속종신", "term": "20년납 이상", "gubun": "일반/간편", "raw_factor": 1650.0, "s_factor": 1155.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는건강플러스종신", "term": "10년납", "gubun": "해약환급금일부지급형", "raw_factor": 750.0, "s_factor": 525.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는치매간병(주계약), 우리WON하는 건강한보장", "term": "10년납이상", "gubun": "해약환급금일부/미지급형 표준형", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는치매간병(주계약), 우리WON하는 건강한보장", "term": "20년납이상", "gubun": "해약환급금일부/미지급형 표준형", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 보장", "term": "10년납", "gubun": "일반", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 보장", "term": "20년납 이상", "gubun": "일반", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 보장", "term": "10년납 이상", "gubun": "간편", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는 보장", "term": "20년납이상", "gubun": "간편", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는보장(갱신형)", "term": "20년납, 30년납", "gubun": "일반/간편", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는암 (해약환급금 일부지급형, 표준형)", "term": "10년납", "gubun": "일반/간편", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는암 (해약환급금 일부지급형, 표준형)", "term": "20년납 이상", "gubun": "일반/간편", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "15년납", "gubun": "종합설계형", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "20년납", "gubun": "종합설계형", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "30년납", "gubun": "종합설계형", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "15년납", "gubun": "종합설계형_ 출생후보장기간", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "20년납", "gubun": "종합설계형_ 출생후보장기간", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "30년납", "gubun": "종합설계형_ 출생후보장기간", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "15년납", "gubun": "3대질환보장형", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "20년납", "gubun": "3대질환보장형", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "30년납", "gubun": "3대질환보장형", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "15년납", "gubun": "3대질환보장형_ 출생후보장기간", "raw_factor": 600.0, "s_factor": 420.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "20년납", "gubun": "3대질환보장형_ 출생후보장기간", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "동양", "sheet": "동양", "product": "우리WON하는쑥쑥어린이보장 (해약환급금일부지급형Ⅲ)", "term": "30년납", "gubun": "3대질환보장형_ 출생후보장기간", "raw_factor": 1050.0, "s_factor": 735.0, "adj_coef": 0.7}, {"company": "흥국", "sheet": "흥국", "product": "미리받는트리플더블업건강종신", "term": "20년납이상", "gubun": "", "raw_factor": 2000.0, "s_factor": 800.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 리턴100종신", "term": "20년↑", "gubun": "라이프 밸런스형", "raw_factor": 2000.0, "s_factor": 800.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 리턴100종신", "term": "15년↑", "gubun": "라이프 밸런스형", "raw_factor": 1650.0, "s_factor": 660.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 리턴100종신", "term": "10년↑(일반)", "gubun": "라이프 밸런스형", "raw_factor": 1100.0, "s_factor": 440.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 리턴100종신", "term": "10년↑(간편)", "gubun": "라이프 밸런스형", "raw_factor": 1000.0, "s_factor": 400.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 리턴100종신", "term": "20년↑", "gubun": "프리미엄 보장형", "raw_factor": 2000.0, "s_factor": 800.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 리턴100종신", "term": "15년↑", "gubun": "프리미엄 보장형", "raw_factor": 1400.0, "s_factor": 560.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 리턴100종신", "term": "10년↑", "gubun": "프리미엄 보장형", "raw_factor": 700.0, "s_factor": 280.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 플렉스 리턴100종신", "term": "20년↑", "gubun": "라이프 밸런스형", "raw_factor": 2000.0, "s_factor": 800.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 플렉스 리턴100종신", "term": "15년↑", "gubun": "라이프 밸런스형", "raw_factor": 1650.0, "s_factor": 660.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 플렉스 리턴100종신", "term": "10년↑", "gubun": "라이프 밸런스형", "raw_factor": 1200.0, "s_factor": 480.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 플렉스 리턴100종신", "term": "20년↑", "gubun": "프리미엄 보장형", "raw_factor": 2000.0, "s_factor": 800.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 플렉스 리턴100종신", "term": "15년↑", "gubun": "프리미엄 보장형", "raw_factor": 1650.0, "s_factor": 660.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "(간편한) 플렉스 리턴100종신", "term": "10년↑", "gubun": "프리미엄 보장형", "raw_factor": 800.0, "s_factor": 320.0, "adj_coef": 0.4}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "20년↑", "gubun": "해약환급금 미지급형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "15년↑", "gubun": "해약환급금 미지급형", "raw_factor": 1450.0, "s_factor": 797.5000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "10년↑", "gubun": "해약환급금 미지급형", "raw_factor": 950.0, "s_factor": 522.5, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "20년↑", "gubun": "해약환급금 일부지급형", "raw_factor": 1700.0, "s_factor": 935.0000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "15년↑", "gubun": "해약환급금 일부지급형", "raw_factor": 1300.0, "s_factor": 715.0000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "10년↑", "gubun": "해약환급금 일부지급형", "raw_factor": 800.0, "s_factor": 440.00000000000006, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "20년↑", "gubun": "표준형", "raw_factor": 1450.0, "s_factor": 797.5000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "15년↑", "gubun": "표준형", "raw_factor": 1100.0, "s_factor": 605.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은시니어보장", "term": "10년↑", "gubun": "표준형", "raw_factor": 700.0, "s_factor": 385.00000000000006, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은Plus보장보험", "term": "15년↑", "gubun": "해약환급금 일부지급형", "raw_factor": 1300.0, "s_factor": 715.0000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "치매담은Plus보장보험", "term": "10년↑", "gubun": "해약환급금 일부지급형", "raw_factor": 800.0, "s_factor": 440.00000000000006, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "20년↑", "gubun": "해약환급금 미지급형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "15년↑", "gubun": "해약환급금 미지급형", "raw_factor": 1300.0, "s_factor": 715.0000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "10년↑", "gubun": "해약환급금 미지급형", "raw_factor": 600.0, "s_factor": 330.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "20년↑", "gubun": "표준형", "raw_factor": 1700.0, "s_factor": 935.0000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "15년↑", "gubun": "표준형", "raw_factor": 1300.0, "s_factor": 715.0000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "10년↑", "gubun": "표준형", "raw_factor": 600.0, "s_factor": 330.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "20년↑", "gubun": "갱신형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다(多)사랑통합", "term": "10년↑", "gubun": "갱신형", "raw_factor": 1200.0, "s_factor": 660.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "오튼튼5.10.5건강보험, 다(多)사랑암", "term": "20년↑", "gubun": "해약환급금 미지급형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "오튼튼5.10.5건강보험, 다(多)사랑암", "term": "15년↑", "gubun": "해약환급금 미지급형", "raw_factor": 1300.0, "s_factor": 715.0000000000001, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "오튼튼5.10.5건강보험, 다(多)사랑암", "term": "10년↑", "gubun": "해약환급금 미지급형", "raw_factor": 600.0, "s_factor": 330.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "오튼튼5.10.5건강보험(갱신형)", "term": "20년↑", "gubun": "갱신형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다사랑3.10.5간편건강, 3.10.5.5고당플러스간편건강 3.N.5.N플러스간편건강보험", "term": "20년↑", "gubun": "해약환급금 미지급형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다사랑3.10.5간편건강, 3.10.5.5고당플러스간편건강 3.N.5.N플러스간편건강보험", "term": "10년↑", "gubun": "해약환급금 미지급형", "raw_factor": 1200.0, "s_factor": 660.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "3.1.1간편건강보험(갱신형)", "term": "20년↑", "gubun": "갱신형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다사랑3N5간편건강", "term": "20년↑", "gubun": "해약환급금 미지급형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다사랑3N5간편건강", "term": "10년↑", "gubun": "해약환급금 미지급형", "raw_factor": 1200.0, "s_factor": 660.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다사랑3N5간편건강", "term": "20년↑", "gubun": "표준형", "raw_factor": 2000.0, "s_factor": 1100.0, "adj_coef": 0.55}, {"company": "흥국", "sheet": "흥국", "product": "다사랑3N5간편건강", "term": "10년↑", "gubun": "표준형", "raw_factor": 1000.0, "s_factor": 550.0, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "20년납", "gubun": "해지환급금 미지급형", "raw_factor": 2600.0, "s_factor": 1430.0000000000002, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "15년납", "gubun": "해지환급금 미지급형", "raw_factor": 2380.0, "s_factor": 1309.0, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "12년납", "gubun": "해지환급금 미지급형", "raw_factor": 1900.0, "s_factor": 1045.0, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "10년납", "gubun": "해지환급금 미지급형", "raw_factor": 1350.0, "s_factor": 742.5000000000001, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "20년납", "gubun": "기본형", "raw_factor": 650.0, "s_factor": 357.50000000000006, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "15년납", "gubun": "기본형", "raw_factor": 600.0, "s_factor": 330.0, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "12년납", "gubun": "기본형", "raw_factor": 550.0, "s_factor": 302.5, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE건강해지는 종신", "term": "10년납", "gubun": "기본형", "raw_factor": 500.0, "s_factor": 275.0, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE채우는 335 간편고지 종신, THE채우는 종신", "term": "20년납", "gubun": "해약환급금 일부지급형", "raw_factor": 2100.0, "s_factor": 630.0, "adj_coef": 0.3}, {"company": "라이나", "sheet": "라이나", "product": "THE채우는 335 간편고지 종신, THE채우는 종신", "term": "15년납", "gubun": "해약환급금 일부지급형", "raw_factor": 1900.0, "s_factor": 570.0, "adj_coef": 0.3}, {"company": "라이나", "sheet": "라이나", "product": "THE채우는 335 간편고지 종신, THE채우는 종신", "term": "10년납", "gubun": "해약환급금 일부지급형", "raw_factor": 1700.0, "s_factor": 510.0, "adj_coef": 0.3}, {"company": "라이나", "sheet": "라이나", "product": "THE채우는 335 간편고지 종신, THE채우는 종신", "term": "7년납", "gubun": "해약환급금 일부지급형", "raw_factor": 1300.0, "s_factor": 390.0, "adj_coef": 0.3}, {"company": "라이나", "sheet": "라이나", "product": "THE(착한) 간편고지 종신, 전에없던 초간편종신, THE착한 간편고지 건강종신", "term": "15년납이상", "gubun": "해지환급금 미지급형", "raw_factor": 2600.0, "s_factor": 1430.0000000000002, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE(착한) 간편고지 종신, 전에없던 초간편종신, THE착한 간편고지 건강종신", "term": "10년납", "gubun": "해지환급금 미지급형", "raw_factor": 1650.0, "s_factor": 907.5000000000001, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE(착한) 간편고지 종신, 전에없던 초간편종신, THE착한 간편고지 건강종신", "term": "15년납이상", "gubun": "기본형", "raw_factor": 500.0, "s_factor": 275.0, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "THE(착한) 간편고지 종신, 전에없던 초간편종신, THE착한 간편고지 건강종신", "term": "10년납", "gubun": "기본형", "raw_factor": 350.0, "s_factor": 192.50000000000003, "adj_coef": 0.55}, {"company": "라이나", "sheet": "라이나", "product": "전에없던실속치매 (해약환급금 미지급형)", "term": "20년납이상", "gubun": "주계약", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "전에없던실속치매 (해약환급금 미지급형)", "term": "15년납", "gubun": "주계약", "raw_factor": 2200.0, "s_factor": 990.0, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "전에없던실속치매 (해약환급금 미지급형)", "term": "10년납", "gubun": "주계약", "raw_factor": 1600.0, "s_factor": 720.0, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "암으로치료하였어도 OK암", "term": "-", "gubun": "주계약", "raw_factor": 2000.0, "s_factor": 900.0, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "THE실속있는치아, THE건강한치아V THE든든해진라이나치아", "term": "10년만기", "gubun": "갱신형", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "THE실속있는치아, THE건강한치아V THE든든해진라이나치아", "term": "5년만기", "gubun": "갱신형", "raw_factor": 1400.0, "s_factor": 630.0, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "THE건강한치아보험V(리셋형)", "term": "갱신형", "gubun": "갱신형", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "골라담는(간편)건강보험 (갱신형)", "term": "20년납", "gubun": "주계약", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "골라담는(간편)건강보험 (갱신형)", "term": "10년납", "gubun": "주계약", "raw_factor": 1520.0, "s_factor": 684.0, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "새로담는 (간편)건강보험(클래식)", "term": "해약환급금미지급형Ⅱ", "gubun": "주계약", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "새로담는 (간편)건강보험(클래식)", "term": "기본형", "gubun": "주계약", "raw_factor": 2000.0, "s_factor": 900.0, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "새로담는 간편건강보험(갱신형)", "term": "20년납", "gubun": "해약환급금 미지급형", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "새로담는 간편건강보험(갱신형)", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 1520.0, "s_factor": 684.0, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "브레인케어건강(클래식), 새로운치아보험 덴탈어카운트, 새로담는건강플러스BLUE,GOLD(클래식)", "term": "해약환급금미지급형Ⅱ", "gubun": "해약환급금 미지급형", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "브레인케어건강(클래식), 새로운치아보험 덴탈어카운트, 새로담는건강플러스BLUE,GOLD(클래식)", "term": "", "gubun": "해약환급금 미지급형", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "라이나", "sheet": "라이나", "product": "브레인케어건강(클래식), 새로운치아보험 덴탈어카운트, 새로담는건강플러스BLUE,GOLD(클래식)", "term": "", "gubun": "해약환급금 미지급형", "raw_factor": 2450.0, "s_factor": 1102.5, "adj_coef": 0.45}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "10년미만", "gubun": "저해약", "raw_factor": 450.0, "s_factor": 360.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "10-14년", "gubun": "저해약", "raw_factor": 1100.0, "s_factor": 880.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "15-19년", "gubun": "저해약", "raw_factor": 1450.0, "s_factor": 1160.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "20년납이상", "gubun": "저해약", "raw_factor": 1600.0, "s_factor": 1280.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "10년미만", "gubun": "일반형", "raw_factor": 350.0, "s_factor": 280.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "10-14년", "gubun": "일반형", "raw_factor": 600.0, "s_factor": 480.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "15-19년", "gubun": "일반형", "raw_factor": 800.0, "s_factor": 640.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)평생건강보험 (기본보장형)", "term": "20년납이상", "gubun": "일반형", "raw_factor": 1000.0, "s_factor": 800.0, "adj_coef": 0.8}, {"company": "교보", "sheet": "교보", "product": "교보(간편)K-실속종신보험", "term": "5~6년", "gubun": "-", "raw_factor": 550.0, "s_factor": 500.5, "adj_coef": 0.91}, {"company": "교보", "sheet": "교보", "product": "교보(간편)K-실속종신보험", "term": "7~9년", "gubun": "-", "raw_factor": 900.0, "s_factor": 819.0, "adj_coef": 0.91}, {"company": "교보", "sheet": "교보", "product": "교보(간편)K-실속종신보험", "term": "10~14년", "gubun": "-", "raw_factor": 1300.0, "s_factor": 1183.0, "adj_coef": 0.91}, {"company": "교보", "sheet": "교보", "product": "교보(간편)K-실속종신보험", "term": "15년", "gubun": "-", "raw_factor": 1450.0, "s_factor": 1319.5, "adj_coef": 0.91}, {"company": "교보", "sheet": "교보", "product": "교보(간편)모두지킴종신", "term": "10년납 미만", "gubun": "-", "raw_factor": 900.0, "s_factor": 630.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)모두지킴종신", "term": "10년납-14년납", "gubun": "-", "raw_factor": 1300.0, "s_factor": 909.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)모두지킴종신", "term": "15년납-19년납", "gubun": "-", "raw_factor": 1450.0, "s_factor": 1014.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)모두지킴종신", "term": "20년납이상", "gubun": "-", "raw_factor": 1600.0, "s_factor": 1120.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "10년납 미만", "gubun": "일반가입", "raw_factor": 700.0, "s_factor": 489.99999999999994, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "10년납-14년납", "gubun": "일반가입", "raw_factor": 1400.0, "s_factor": 979.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "15년납-19년납", "gubun": "일반가입", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "20년납 이상", "gubun": "일반가입", "raw_factor": 1800.0, "s_factor": 1260.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "10년납 미만", "gubun": "간편가입", "raw_factor": 650.0, "s_factor": 454.99999999999994, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "10년납-14년납", "gubun": "간편가입", "raw_factor": 1350.0, "s_factor": 944.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "15년납-19년납", "gubun": "간편가입", "raw_factor": 1500.0, "s_factor": 1050.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보다시채움건강종신보험", "term": "20년납 이상", "gubun": "간편가입", "raw_factor": 1750.0, "s_factor": 1225.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)3밸런스보장보험PLUS", "term": "5년납~6년납", "gubun": "간편가입", "raw_factor": 700.0, "s_factor": 489.99999999999994, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)3밸런스보장보험PLUS", "term": "7년납~9년납", "gubun": "간편가입", "raw_factor": 900.0, "s_factor": 630.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)3밸런스보장보험PLUS", "term": "10년납~14년납", "gubun": "간편가입", "raw_factor": 1400.0, "s_factor": 979.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)3밸런스보장보험PLUS", "term": "15년납~19년납", "gubun": "간편가입", "raw_factor": 1550.0, "s_factor": 1085.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)3밸런스보장보험PLUS", "term": "20년납 이상", "gubun": "간편가입", "raw_factor": 1650.0, "s_factor": 1155.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)밸런스건강보험", "term": "10년납-14년납", "gubun": "간편가입", "raw_factor": 1000.0, "s_factor": 700.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)밸런스건강보험", "term": "15년납-19년납", "gubun": "간편가입", "raw_factor": 1400.0, "s_factor": 979.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "교보(간편)밸런스건강보험", "term": "20년납이상", "gubun": "간편가입", "raw_factor": 1750.0, "s_factor": 1225.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "실속건강종신보험 (기본형,보장강화형)", "term": "10년미만", "gubun": "-", "raw_factor": 750.0, "s_factor": 525.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "실속건강종신보험 (기본형,보장강화형)", "term": "10년", "gubun": "-", "raw_factor": 1400.0, "s_factor": 979.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "실속건강종신보험 (기본형,보장강화형)", "term": "12년", "gubun": "-", "raw_factor": 1400.0, "s_factor": 979.9999999999999, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "실속건강종신보험 (기본형,보장강화형)", "term": "15-19년", "gubun": "-", "raw_factor": 1650.0, "s_factor": 1155.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "실속건강종신보험 (기본형,보장강화형)", "term": "20년납이상", "gubun": "-", "raw_factor": 2000.0, "s_factor": 1400.0, "adj_coef": 0.7}, {"company": "교보", "sheet": "교보", "product": "K-밸류업종신 (베이직,프라임형)", "term": "-", "gubun": "일반,간편", "raw_factor": 1500.0, "s_factor": 1425.0, "adj_coef": 0.95}, {"company": "교보", "sheet": "교보", "product": "K-밸류업종신 (라이트형)", "term": "66세미만", "gubun": "일반", "raw_factor": 1500.0, "s_factor": 1425.0, "adj_coef": 0.95}, {"company": "교보", "sheet": "교보", "product": "K-밸류업종신 (라이트형)", "term": "66세이상", "gubun": "일반", "raw_factor": 1200.0, "s_factor": 1140.0, "adj_coef": 0.95}, {"company": "교보", "sheet": "교보", "product": "K-밸류업종신 (라이트형)", "term": "61세미만", "gubun": "간편", "raw_factor": 1500.0, "s_factor": 1425.0, "adj_coef": 0.95}, {"company": "교보", "sheet": "교보", "product": "K-밸류업종신 (라이트형)", "term": "61세이상", "gubun": "간편", "raw_factor": 1200.0, "s_factor": 1140.0, "adj_coef": 0.95}, {"company": "교보", "sheet": "교보", "product": "교보경영인정기(보증비용부과형)", "term": "20년납이상", "gubun": "일반,간편", "raw_factor": 1500.0, "s_factor": 1350.0, "adj_coef": 0.9}, {"company": "교보", "sheet": "교보", "product": "교보(간편)치매·간병안심보험 (주계약기준)", "term": "10년 미만", "gubun": "일반,간편", "raw_factor": 500.0, "s_factor": 425.0, "adj_coef": 0.85}, {"company": "교보", "sheet": "교보", "product": "교보(간편)치매·간병안심보험 (주계약기준)", "term": "10년-14년", "gubun": "일반,간편", "raw_factor": 900.0, "s_factor": 765.0, "adj_coef": 0.85}, {"company": "교보", "sheet": "교보", "product": "교보(간편)치매·간병안심보험 (주계약기준)", "term": "15년-19년", "gubun": "일반,간편", "raw_factor": 1300.0, "s_factor": 1105.0, "adj_coef": 0.85}, {"company": "교보", "sheet": "교보", "product": "교보(간편)치매·간병안심보험 (주계약기준)", "term": "20년 이상", "gubun": "일반,간편", "raw_factor": 1600.0, "s_factor": 1360.0, "adj_coef": 0.85}, {"company": "KDB", "sheet": "KDB", "product": "더블찬스종신Ⅱ", "term": "5년납", "gubun": "", "raw_factor": 550.0, "s_factor": 495.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "더블찬스종신Ⅱ", "term": "7년납", "gubun": "", "raw_factor": 750.0, "s_factor": 675.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "더블찬스종신Ⅱ", "term": "10년납", "gubun": "", "raw_factor": 1050.0, "s_factor": 945.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "트리플찬스 종신", "term": "10년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 900.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "트리플찬스 종신", "term": "15년납", "gubun": "", "raw_factor": 1200.0, "s_factor": 1080.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "트리플찬스 종신", "term": "20년납", "gubun": "", "raw_factor": 1500.0, "s_factor": 1350.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "무심사 버팀목 종신 (해약환급금 일부(50%)지급형)", "term": "5년납", "gubun": "체증형", "raw_factor": 500.0, "s_factor": 450.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "무심사 버팀목 종신 (해약환급금 일부(50%)지급형)", "term": "7년납", "gubun": "체증형", "raw_factor": 700.0, "s_factor": 630.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "무심사 버팀목 종신 (해약환급금 일부(50%)지급형)", "term": "10년납", "gubun": "체증형", "raw_factor": 1000.0, "s_factor": 900.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "서포트100건강종신", "term": "10년납", "gubun": "체증형", "raw_factor": 1000.0, "s_factor": 900.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "서포트100건강종신", "term": "15년납", "gubun": "체증형", "raw_factor": 1200.0, "s_factor": 1080.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "서포트100건강종신", "term": "20년납이상", "gubun": "체증형", "raw_factor": 1500.0, "s_factor": 1350.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "라이프핏건강보험, 버팀목 NEW케어보험", "term": "5년납", "gubun": "체증형", "raw_factor": 500.0, "s_factor": 300.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "라이프핏건강보험, 버팀목 NEW케어보험", "term": "7년납", "gubun": "체증형", "raw_factor": 700.0, "s_factor": 420.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "라이프핏건강보험, 버팀목 NEW케어보험", "term": "10년납", "gubun": "체증형", "raw_factor": 1200.0, "s_factor": 720.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "라이프핏건강보험, 버팀목 NEW케어보험", "term": "15년납", "gubun": "체증형", "raw_factor": 1400.0, "s_factor": 840.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "라이프핏건강보험, 버팀목 NEW케어보험", "term": "20년납이상", "gubun": "체증형", "raw_factor": 1700.0, "s_factor": 1020.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "암만생각해도 KDB암보험2.0", "term": "10년납", "gubun": "체증형", "raw_factor": 1200.0, "s_factor": 720.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "암만생각해도 KDB암보험2.0", "term": "15년납", "gubun": "체증형", "raw_factor": 1400.0, "s_factor": 840.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "암만생각해도 KDB암보험2.0", "term": "20년납 이상", "gubun": "체증형", "raw_factor": 1700.0, "s_factor": 1020.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "버팀목 치매보장", "term": "10년납", "gubun": "체증형", "raw_factor": 1200.0, "s_factor": 720.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "버팀목 치매보장", "term": "15년납", "gubun": "체증형", "raw_factor": 1400.0, "s_factor": 840.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "버팀목 치매보장", "term": "20년납 이상", "gubun": "체증형", "raw_factor": 1700.0, "s_factor": 1020.0, "adj_coef": 0.6}, {"company": "KDB", "sheet": "KDB", "product": "영리한 변액연금 더!행복드림변액연금 더!행복플러스UP연금", "term": "5년납", "gubun": "체증형", "raw_factor": 150.0, "s_factor": 135.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "영리한 변액연금 더!행복드림변액연금 더!행복플러스UP연금", "term": "7년납", "gubun": "체증형", "raw_factor": 400.0, "s_factor": 360.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "영리한 변액연금 더!행복드림변액연금 더!행복플러스UP연금", "term": "10년납이상", "gubun": "체증형", "raw_factor": 700.0, "s_factor": 630.0, "adj_coef": 0.9}, {"company": "KDB", "sheet": "KDB", "product": "더!행복플러스종신", "term": "10년납", "gubun": "체증형", "raw_factor": 700.0, "s_factor": 854.0, "adj_coef": 1.22}, {"company": "KDB", "sheet": "KDB", "product": "더!행복플러스종신", "term": "20년납", "gubun": "체증형", "raw_factor": 900.0, "s_factor": 1098.0, "adj_coef": 1.22}, {"company": "KDB", "sheet": "KDB", "product": "더!행복세븐종신", "term": "20년납", "gubun": "체증형", "raw_factor": 1150.0, "s_factor": 1403.0, "adj_coef": 1.22}, {"company": "ABL", "sheet": "ABL", "product": "우리WON세븐종신보험", "term": "20년납", "gubun": "일반/간편", "raw_factor": 3180.0, "s_factor": 1113.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON더채움종신보험 (해약환급금 일부지급형)", "term": "10년납", "gubun": "일반/간편", "raw_factor": 2160.0, "s_factor": 756.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON더채움종신보험 (해약환급금 일부지급형)", "term": "20년납", "gubun": "일반/간편", "raw_factor": 2400.0, "s_factor": 840.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON더블종신 (해약환급금 일부지급형)", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1920.0, "s_factor": 672.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON더블종신 (해약환급금 일부지급형)", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2820.0, "s_factor": 986.9999999999999, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON더블종신 (해약환급금 일부지급형)", "term": "15년납", "gubun": "일반심사형 간편심사형", "raw_factor": 3600.0, "s_factor": 1260.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON더블종신 (해약환급금 일부지급형)", "term": "20년납", "gubun": "일반심사형 간편심사형", "raw_factor": 4020.0, "s_factor": 1407.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON스테이블종신", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1920.0, "s_factor": 672.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON스테이블종신", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2160.0, "s_factor": 756.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON스테이블종신", "term": "15년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2280.0, "s_factor": 798.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON스테이블종신", "term": "20년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2400.0, "s_factor": 840.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON상속종신보험, 우리WON상속종신보험Trust (해약환급금 미지급형)", "term": "5년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1680.0, "s_factor": 588.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON상속종신보험, 우리WON상속종신보험Trust (해약환급금 미지급형)", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2280.0, "s_factor": 798.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON상속종신보험, 우리WON상속종신보험Trust (해약환급금 미지급형)", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2760.0, "s_factor": 965.9999999999999, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON상속종신보험, 우리WON상속종신보험Trust (해약환급금 미지급형)", "term": "15년납", "gubun": "일반심사형 간편심사형", "raw_factor": 3600.0, "s_factor": 1260.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON상속종신보험, 우리WON상속종신보험Trust (해약환급금 미지급형)", "term": "20년납", "gubun": "일반심사형 간편심사형", "raw_factor": 3600.0, "s_factor": 1260.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "5년납", "gubun": "평준형 (일반심사형) (간편심사형)", "raw_factor": 1800.0, "s_factor": 630.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "7년납", "gubun": "평준형 (일반심사형) (간편심사형)", "raw_factor": 1740.0, "s_factor": 609.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "10년납", "gubun": "평준형 (일반심사형) (간편심사형)", "raw_factor": 2940.0, "s_factor": 1029.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "15년납", "gubun": "평준형 (일반심사형) (간편심사형)", "raw_factor": 3900.0, "s_factor": 1365.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "20년이상", "gubun": "평준형 (일반심사형) (간편심사형)", "raw_factor": 4080.0, "s_factor": 1428.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "5년납", "gubun": "체증형 (일반심사형) (간편심사형)", "raw_factor": 1680.0, "s_factor": 588.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "7년납", "gubun": "체증형 (일반심사형) (간편심사형)", "raw_factor": 1740.0, "s_factor": 609.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "10년납", "gubun": "체증형 (일반심사형) (간편심사형)", "raw_factor": 2640.0, "s_factor": 923.9999999999999, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "15년납", "gubun": "체증형 (일반심사형) (간편심사형)", "raw_factor": 3540.0, "s_factor": 1239.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON드림종신III (해약환급금 일부지급형)", "term": "20년이상", "gubun": "체증형 (일반심사형) (간편심사형)", "raw_factor": 3960.0, "s_factor": 1386.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "5년납", "gubun": "해약환급금 미지급형", "raw_factor": 1080.0, "s_factor": 378.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 1920.0, "s_factor": 672.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 2760.0, "s_factor": 965.9999999999999, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "20년납 이상", "gubun": "해약환급금 미지급형", "raw_factor": 3240.0, "s_factor": 1134.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "5년납", "gubun": "기본형", "raw_factor": 360.0, "s_factor": 125.99999999999999, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "10년납", "gubun": "기본형", "raw_factor": 1380.0, "s_factor": 482.99999999999994, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "15년납", "gubun": "기본형", "raw_factor": 2100.0, "s_factor": 735.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장종합건강, 우리WON(3.10.5) 간편건강, 우리WON더담은암보험", "term": "20년납 이상", "gubun": "기본형", "raw_factor": 2700.0, "s_factor": 944.9999999999999, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장 종합건강보험", "term": "10년 만기", "gubun": "갱신형", "raw_factor": 1920.0, "s_factor": 672.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON건강N더보장 종합건강보험", "term": "20년&30년", "gubun": "갱신형", "raw_factor": 3240.0, "s_factor": 1134.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON케어간병 (해약환급금 미지급형) (주계약기준)", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 1140.0, "s_factor": 399.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON케어간병 (해약환급금 미지급형) (주계약기준)", "term": "15년납", "gubun": "일반심사형 간편심사형", "raw_factor": 2520.0, "s_factor": 882.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON케어간병 (해약환급금 미지급형) (주계약기준)", "term": "20년납이상", "gubun": "일반심사형 간편심사형", "raw_factor": 3120.0, "s_factor": 1092.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON톡톡튀는여성건강 (일반심사형, 간편심사형)", "term": "5년납", "gubun": "기본형", "raw_factor": 360.0, "s_factor": 125.99999999999999, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON톡톡튀는여성건강 (일반심사형, 간편심사형)", "term": "10년납", "gubun": "기본형", "raw_factor": 1380.0, "s_factor": 482.99999999999994, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON톡톡튀는여성건강 (일반심사형, 간편심사형)", "term": "15년납", "gubun": "기본형", "raw_factor": 2100.0, "s_factor": 735.0, "adj_coef": 0.35}, {"company": "ABL", "sheet": "ABL", "product": "우리WON톡톡튀는여성건강 (일반심사형, 간편심사형)", "term": "20년이상", "gubun": "기본형", "raw_factor": 2700.0, "s_factor": 944.9999999999999, "adj_coef": 0.35}, {"company": "미래", "sheet": "미래", "product": "미래에셋생명 변액연금 (기본형)", "term": "3년납이상", "gubun": "보종코드: 21218", "raw_factor": 20.0, "s_factor": 16.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "미래에셋생명 변액연금 (기본형)", "term": "5년납이상", "gubun": "보종코드: 21218", "raw_factor": 250.0, "s_factor": 200.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "미래에셋생명 변액연금 (기본형)", "term": "7년납이상", "gubun": "보종코드: 21218", "raw_factor": 390.0, "s_factor": 312.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "미래에셋생명 변액연금 (기본형)", "term": "10년납이상", "gubun": "보종코드: 21218", "raw_factor": 550.0, "s_factor": 440.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 라이트 종신보험 (보증비용부과형)", "term": "5년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 550.0, "s_factor": 440.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 라이트 종신보험 (보증비용부과형)", "term": "7년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 700.0, "s_factor": 560.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 라이트 종신보험 (보증비용부과형)", "term": "10년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 950.0, "s_factor": 760.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 라이트 종신보험 (보증비용부과형)", "term": "12년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 1050.0, "s_factor": 840.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 라이트 종신보험 (보증비용부과형)", "term": "15년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 1450.0, "s_factor": 1160.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 라이트 종신보험 (보증비용부과형)", "term": "20년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 1650.0, "s_factor": 1320.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 변액정기보험 (실적배당형 계약)", "term": "15년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 1450.0, "s_factor": 1160.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 변액정기보험 (실적배당형 계약)", "term": "20년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 1650.0, "s_factor": 1320.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "헤리티지 변액정기보험 (실적배당형 계약)", "term": "25년납이상", "gubun": "일반가입형, 간편고지형", "raw_factor": 1750.0, "s_factor": 1400.0, "adj_coef": 0.8}, {"company": "미래", "sheet": "미래", "product": "암 걱정없는 암치료보험", "term": "10년납이상", "gubun": "갱신형", "raw_factor": 1000.0, "s_factor": 550.0, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "암 걱정없는 암치료보험", "term": "20년납이상", "gubun": "갱신형", "raw_factor": 1500.0, "s_factor": 825.0000000000001, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 치매간병 (해약환급금이 없는 유형) (주계약기준)", "term": "10년납이상", "gubun": "일반가입형, 간편가입형", "raw_factor": 1000.0, "s_factor": 550.0, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 치매간병 (해약환급금이 없는 유형) (주계약기준)", "term": "15년납이상", "gubun": "일반가입형, 간편가입형", "raw_factor": 1150.0, "s_factor": 632.5, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 치매간병 (해약환급금이 없는 유형) (주계약기준)", "term": "20년납이상", "gubun": "일반가입형, 간편가입형", "raw_factor": 1300.0, "s_factor": 715.0000000000001, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (특약유형W가입용) 일반/간편고지", "term": "10년납이상", "gubun": "기본형, 해약환급금이없는유형", "raw_factor": 750.0, "s_factor": 412.50000000000006, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (특약유형W가입용) 일반/간편고지", "term": "15년납이상", "gubun": "기본형, 해약환급금이없는유형", "raw_factor": 1120.0, "s_factor": 616.0, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (특약유형W가입용) 일반/간편고지", "term": "20년납이상", "gubun": "기본형, 해약환급금이없는유형", "raw_factor": 1500.0, "s_factor": 825.0000000000001, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (특약유형S가입용)", "term": "10년납이상", "gubun": "기본형, 해약환급금이없는유형", "raw_factor": 750.0, "s_factor": 412.50000000000006, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (특약유형S가입용)", "term": "15년납이상", "gubun": "기본형, 해약환급금이없는유형", "raw_factor": 1120.0, "s_factor": 616.0, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (특약유형S가입용)", "term": "20년납이상", "gubun": "기본형, 해약환급금이없는유형", "raw_factor": 1500.0, "s_factor": 825.0000000000001, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지)_S가입용 (355간편고지 고당)_S가입용 (주계약)", "term": "10년납이상", "gubun": "기본형", "raw_factor": 300.0, "s_factor": 165.0, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지)_S가입용 (355간편고지 고당)_S가입용 (주계약)", "term": "15년납이상", "gubun": "기본형", "raw_factor": 370.0, "s_factor": 203.50000000000003, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지)_S가입용 (355간편고지 고당)_S가입용 (주계약)", "term": "20년납이상", "gubun": "기본형", "raw_factor": 450.0, "s_factor": 247.50000000000003, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지)_S가입용 (355간편고지 고당)_S가입용 (주계약)", "term": "25년납이상", "gubun": "기본형", "raw_factor": 520.0, "s_factor": 286.0, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지)_S가입용 (355간편고지 고당)_S가입용 (주계약)", "term": "10년납이상", "gubun": "해약환급금이없는유형", "raw_factor": 750.0, "s_factor": 412.50000000000006, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지)_S가입용 (355간편고지 고당)_S가입용 (주계약)", "term": "15년납이상", "gubun": "해약환급금이없는유형", "raw_factor": 1120.0, "s_factor": 616.0, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지)_S가입용 (355간편고지 고당)_S가입용 (주계약)", "term": "20년납이상", "gubun": "해약환급금이없는유형", "raw_factor": 1500.0, "s_factor": 825.0000000000001, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지),(355간편고지 고당)", "term": "10년납이상", "gubun": "갱신형", "raw_factor": 750.0, "s_factor": 412.50000000000006, "adj_coef": 0.55}, {"company": "미래", "sheet": "미래", "product": "M-케어 건강보험 (3.10.5간편고지),(355간편고지 고당)", "term": "20년납이상", "gubun": "갱신형", "raw_factor": 1500.0, "s_factor": 825.0000000000001, "adj_coef": 0.55}, {"company": "하나", "sheet": "하나", "product": "하나로 THE연결된 종신", "term": "5년납", "gubun": "일반심사형 간편심사형", "raw_factor": 330.0, "s_factor": 363.00000000000006, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나로 THE연결된 종신", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 430.0, "s_factor": 473.00000000000006, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나로 THE연결된 종신", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 500.0, "s_factor": 550.0, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나로 THE연결된 종신", "term": "15년/20년납", "gubun": "일반심사형 간편심사형", "raw_factor": 900.0, "s_factor": 990.0000000000001, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나원!투!종신", "term": "5년납", "gubun": "일반심사형 간편심사형", "raw_factor": 280.0, "s_factor": 308.0, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나원!투!종신", "term": "7년납", "gubun": "일반심사형 간편심사형", "raw_factor": 300.0, "s_factor": 330.0, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나원!투!종신", "term": "10년납", "gubun": "일반심사형 간편심사형", "raw_factor": 380.0, "s_factor": 418.00000000000006, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "CEO경영인정기보험 (전기납)", "term": "해약환급금 일부지급형", "gubun": "일반심사형 간편심사형", "raw_factor": 1440.0, "s_factor": 1440.0, "adj_coef": 1.0}, {"company": "하나", "sheet": "하나", "product": "CEO경영인정기보험 (전기납)", "term": "일반형", "gubun": "일반심사형 간편심사형", "raw_factor": 800.0, "s_factor": 800.0, "adj_coef": 1.0}, {"company": "하나", "sheet": "하나", "product": "하나더넥스트케어 (주계약기준)", "term": "10년납", "gubun": "해약환급금 미지급형", "raw_factor": 1600.0, "s_factor": 640.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나더넥스트케어 (주계약기준)", "term": "15년납", "gubun": "해약환급금 미지급형", "raw_factor": 1800.0, "s_factor": 720.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나더넥스트케어 (주계약기준)", "term": "20년납", "gubun": "해약환급금 미지급형", "raw_factor": 2200.0, "s_factor": 880.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나더넥스트케어 (주계약기준)", "term": "10년납", "gubun": "해약환급금 일부지급형", "raw_factor": 1200.0, "s_factor": 480.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나더넥스트케어 (주계약기준)", "term": "15년납", "gubun": "해약환급금 일부지급형", "raw_factor": 1600.0, "s_factor": 640.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나더넥스트케어 (주계약기준)", "term": "20년납", "gubun": "해약환급금 일부지급형", "raw_factor": 1900.0, "s_factor": 760.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나로 누리는 건강보험, 하나로라이트3.10.5간편건강보험", "term": "10년납", "gubun": "해약환급금 미지급형/갱신형", "raw_factor": 1300.0, "s_factor": 520.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나로 누리는 건강보험, 하나로라이트3.10.5간편건강보험", "term": "20년/30년납", "gubun": "해약환급금 미지급형/갱신형", "raw_factor": 2200.0, "s_factor": 880.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나로 누리는 건강보험, 하나로라이트3.10.5간편건강보험", "term": "10년납", "gubun": "일반형", "raw_factor": 900.0, "s_factor": 360.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "하나로 누리는 건강보험, 하나로라이트3.10.5간편건강보험", "term": "20년/30년납", "gubun": "일반형", "raw_factor": 1700.0, "s_factor": 680.0, "adj_coef": 0.4}, {"company": "하나", "sheet": "하나", "product": "THE든든한연금", "term": "전기납", "gubun": "일반/간편", "raw_factor": 550.0, "s_factor": 605.0, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나뿐인 변액연금", "term": "5년납", "gubun": "적립형", "raw_factor": 200.0, "s_factor": 220.00000000000003, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나뿐인 변액연금", "term": "7년납", "gubun": "적립형", "raw_factor": 400.0, "s_factor": 440.00000000000006, "adj_coef": 1.1}, {"company": "하나", "sheet": "하나", "product": "하나뿐인 변액연금", "term": "10년납 이상", "gubun": "적립형", "raw_factor": 650.0, "s_factor": 715.0000000000001, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 종신보험 원픽 (해약환급금 일부지급형)", "term": "5년납", "gubun": "일반가입 간편가입", "raw_factor": 300.0, "s_factor": 330.0, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 종신보험 원픽 (해약환급금 일부지급형)", "term": "7년납", "gubun": "일반가입 간편가입", "raw_factor": 550.0, "s_factor": 880.0, "adj_coef": 1.6}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 종신보험 원픽 (해약환급금 일부지급형)", "term": "20년납", "gubun": "일반가입 간편가입", "raw_factor": 1000.0, "s_factor": 1600.0, "adj_coef": 1.6}, {"company": "푸본현대", "sheet": "푸본현대", "product": "정기보험 스마트픽 (해약환급금미지급형/표준형)", "term": "10년납", "gubun": "10년", "raw_factor": 300.0, "s_factor": 330.0, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "정기보험 스마트픽 (해약환급금미지급형/표준형)", "term": "10년납", "gubun": "11~20년", "raw_factor": 500.0, "s_factor": 550.0, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "정기보험 스마트픽 (해약환급금미지급형/표준형)", "term": "20년납", "gubun": "11~20년", "raw_factor": 700.0, "s_factor": 770.0000000000001, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "정기보험 스마트픽 (해약환급금미지급형/표준형)", "term": "10년납", "gubun": "21~30년", "raw_factor": 500.0, "s_factor": 550.0, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "정기보험 스마트픽 (해약환급금미지급형/표준형)", "term": "20년납이상", "gubun": "21~30년", "raw_factor": 900.0, "s_factor": 990.0000000000001, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "정기보험 스마트픽 (해약환급금미지급형/표준형)", "term": "10년납", "gubun": "31년이상", "raw_factor": 400.0, "s_factor": 440.00000000000006, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "정기보험 스마트픽 (해약환급금미지급형/표준형)", "term": "20년납이상", "gubun": "31년이상", "raw_factor": 800.0, "s_factor": 880.0000000000001, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 경영인정기 탑픽Ⅱ (해약환급금 일부지급형)", "term": "55세미만", "gubun": "일반가입", "raw_factor": 1290.0, "s_factor": 1419.0000000000002, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 경영인정기 탑픽Ⅱ (해약환급금 일부지급형)", "term": "55세이상", "gubun": "일반가입", "raw_factor": 1200.0, "s_factor": 1320.0, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 경영인정기 탑픽Ⅱ (해약환급금 일부지급형)", "term": "-", "gubun": "간편가입", "raw_factor": 1290.0, "s_factor": 1419.0000000000002, "adj_coef": 1.1}, {"company": "푸본현대", "sheet": "푸본현대", "product": "건강보험 마이픽 (해약환급금 일부지급형)", "term": "10년납", "gubun": "주계약", "raw_factor": 500.0, "s_factor": 250.0, "adj_coef": 0.5}, {"company": "푸본현대", "sheet": "푸본현대", "product": "건강보험 마이픽 (해약환급금 일부지급형)", "term": "15년납", "gubun": "주계약", "raw_factor": 660.0, "s_factor": 330.0, "adj_coef": 0.5}, {"company": "푸본현대", "sheet": "푸본현대", "product": "건강보험 마이픽 (해약환급금 일부지급형)", "term": "20년납", "gubun": "주계약", "raw_factor": 850.0, "s_factor": 425.0, "adj_coef": 0.5}, {"company": "푸본현대", "sheet": "푸본현대", "product": "건강보험 마이픽 (해약환급금 일부지급형)", "term": "30년납", "gubun": "주계약", "raw_factor": 850.0, "s_factor": 425.0, "adj_coef": 0.5}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 연금다운 연금보험", "term": "10년납", "gubun": "1형 보증비용부과형", "raw_factor": 840.0, "s_factor": 546.0, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 연금다운 연금보험", "term": "20년납", "gubun": "1형 보증비용부과형", "raw_factor": 940.0, "s_factor": 611.0, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 연금다운 연금보험", "term": "10년납", "gubun": "2형 보증비용미부과형", "raw_factor": 200.0, "s_factor": 130.0, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX 연금다운 연금보험", "term": "20년납", "gubun": "2형 보증비용미부과형", "raw_factor": 250.0, "s_factor": 162.5, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX UP 연금보험", "term": "5년", "gubun": "1형 연금액강화형", "raw_factor": 250.0, "s_factor": 162.5, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX UP 연금보험", "term": "7년", "gubun": "1형 연금액강화형", "raw_factor": 350.0, "s_factor": 227.5, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX UP 연금보험", "term": "10년", "gubun": "1형 연금액강화형", "raw_factor": 550.0, "s_factor": 357.5, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX UP 연금보험", "term": "5년", "gubun": "2형 일반연금형", "raw_factor": 50.0, "s_factor": 32.5, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX UP 연금보험", "term": "7년", "gubun": "2형 일반연금형", "raw_factor": 150.0, "s_factor": 97.5, "adj_coef": 0.65}, {"company": "푸본현대", "sheet": "푸본현대", "product": "MAX UP 연금보험", "term": "10년", "gubun": "2형 일반연금형", "raw_factor": 200.0, "s_factor": 130.0, "adj_coef": 0.65}, {"company": "IM", "sheet": "IM", "product": "당당한 인생종신 (체증형)", "term": "5년납", "gubun": "일반", "raw_factor": 870.0, "s_factor": 556.8000000000001, "adj_coef": 0.64}, {"company": "IM", "sheet": "IM", "product": "당당한 인생종신 (체증형)", "term": "7년납", "gubun": "일반", "raw_factor": 1180.0, "s_factor": 873.2, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "당당한 인생종신 (체증형)", "term": "5년납", "gubun": "간편", "raw_factor": 850.0, "s_factor": 544.0, "adj_coef": 0.64}, {"company": "IM", "sheet": "IM", "product": "당당한 인생종신 (체증형)", "term": "7년납", "gubun": "간편", "raw_factor": 1160.0, "s_factor": 858.4, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "더(THE) 행복한 종신보험", "term": "20년이상", "gubun": "간편", "raw_factor": 900.0, "s_factor": 666.0, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM Plus세븐UP종신보험", "term": "20년", "gubun": "일반,간편", "raw_factor": 1260.0, "s_factor": 932.4, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM Plus세븐UP골드종신보험", "term": "20년", "gubun": "일반,간편", "raw_factor": 1820.0, "s_factor": 1346.8, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM 트래블PRO변액연금", "term": "5년납", "gubun": "일반,간편", "raw_factor": 310.0, "s_factor": 229.4, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM 트래블PRO변액연금", "term": "7년납", "gubun": "일반,간편", "raw_factor": 560.0, "s_factor": 414.4, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "10년/12년", "gubun": "보험료 10만원이상", "raw_factor": 190.0, "s_factor": 140.6, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "15년/20년이상", "gubun": "보험료 10만원이상", "raw_factor": 320.0, "s_factor": 236.8, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "10이상", "gubun": "보험료 20만원이상", "raw_factor": 780.0, "s_factor": 577.2, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "12년이상", "gubun": "보험료 20만원이상", "raw_factor": 820.0, "s_factor": 606.8, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "15년/20년이상", "gubun": "보험료 20만원이상", "raw_factor": 880.0, "s_factor": 651.2, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "5년이상", "gubun": "보험료 30만원이상", "raw_factor": 290.0, "s_factor": 214.6, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "7년이상", "gubun": "보험료 30만원이상", "raw_factor": 500.0, "s_factor": 370.0, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "(오토파일럿) 마이솔루션AI변액연금보험S", "term": "5년이상", "gubun": "50만원 이상", "raw_factor": 330.0, "s_factor": 244.2, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "든든한 인생치매 (주계약기준)", "term": "5년납", "gubun": "50만원 이상", "raw_factor": 770.0, "s_factor": 569.8, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "든든한 인생치매 (주계약기준)", "term": "7년납", "gubun": "50만원 이상", "raw_factor": 1080.0, "s_factor": 799.2, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM Active Care 치매간병보험 (해약환급금 미지급형)", "term": "10년", "gubun": "1종,2종", "raw_factor": 560.0, "s_factor": 414.4, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM Active Care 치매간병보험 (해약환급금 미지급형)", "term": "15년", "gubun": "1종,2종", "raw_factor": 830.0, "s_factor": 614.2, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM Active Care 치매간병보험 (해약환급금 미지급형)", "term": "20년이상", "gubun": "1종,2종", "raw_factor": 1090.0, "s_factor": 806.6, "adj_coef": 0.74}, {"company": "IM", "sheet": "IM", "product": "iM Plus세븐UP 더좋은종신보험", "term": "20년납", "gubun": "1종,2종", "raw_factor": 1260.0, "s_factor": 932.4, "adj_coef": 0.74}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK NEW 프리미엄 연금보험", "term": "5년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 250.0, "adj_coef": 0.25}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK NEW 프리미엄 연금보험", "term": "7년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 400.0, "adj_coef": 0.4}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK NEW 프리미엄 연금보험", "term": "10년납이상", "gubun": "", "raw_factor": 1000.0, "s_factor": 500.0, "adj_coef": 0.5}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK 프리미엄 연금보험", "term": "5년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 220.0, "adj_coef": 0.22}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK 프리미엄 연금보험", "term": "7년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 380.0, "adj_coef": 0.38}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK 프리미엄 연금보험", "term": "10년납이상", "gubun": "", "raw_factor": 1000.0, "s_factor": 450.0, "adj_coef": 0.45}, {"company": "IBK", "sheet": "IBK", "product": "연금액 평생보증받는 변액연금, 평생든든변액연금", "term": "5년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 170.0, "adj_coef": 0.17}, {"company": "IBK", "sheet": "IBK", "product": "연금액 평생보증받는 변액연금, 평생든든변액연금", "term": "7년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 400.0, "adj_coef": 0.4}, {"company": "IBK", "sheet": "IBK", "product": "연금액 평생보증받는 변액연금, 평생든든변액연금", "term": "10,11년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 600.0, "adj_coef": 0.6}, {"company": "IBK", "sheet": "IBK", "product": "연금액 평생보증받는 변액연금, 평생든든변액연금", "term": "12년납이상", "gubun": "", "raw_factor": 1000.0, "s_factor": 600.0, "adj_coef": 0.6}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK하이브리드 연금저축", "term": "5년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 150.0, "adj_coef": 0.15}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK하이브리드 연금저축", "term": "7년납", "gubun": "", "raw_factor": 1000.0, "s_factor": 250.0, "adj_coef": 0.25}, {"company": "IBK", "sheet": "IBK", "product": "(무)IBK하이브리드 연금저축", "term": "10년납이상", "gubun": "", "raw_factor": 1000.0, "s_factor": 350.0, "adj_coef": 0.35}]')
+MASTER_JSON_PATH = os.path.join(os.path.dirname(__file__), 'master_life_products.json')
+if os.path.exists(MASTER_JSON_PATH):
+    with open(MASTER_JSON_PATH, 'r', encoding='utf-8') as _f:
+        LIFE_PRODUCTS = json.load(_f)
+else:
+    LIFE_PRODUCTS = []
 EMBEDDED_RATES_DATA = json.loads('{"life_rules": {"next_month_rate": 3.32, "company_installments": {"흥국": {"default": 0.96, "건강": 0.96, "종신": 0.96, "오튼튼": 0.96, "다사랑": 0.96}, "한화": {"default": 1.56, "H종신": 1.56, "제로백": 1.56, "일반보장": 2.76}, "DB": {"default": 1.32, "건강": 1.32, "알행종": 1.56}, "신한": {"default": 0.84, "건강": 0.84, "종신": 1.56}, "KB": {"default": 3.48}, "메트": {"default": 3.84, "연금": 4.8, "종신": 3.84, "백만인": 2.52}, "농협": {"default": 1.56, "투스텝": 1.56, "기타": 0.6}, "동양": {"default": 1.08, "어린이": 1.08, "쑥쑥": 1.08, "단기납": 1.56, "종신": 1.8, "경영인": 2.28}, "라이나": {"default": 1.56, "건강": 1.56}, "교보": {"default": 2.76}, "KDB": {"default": 1.56}, "ABL": {"default": 1.56}, "미래": {"default": 2.76}, "하나": {"default": 0.96, "건강": 0.96, "일반": 1.56}, "푸본현대": {"default": 1.56, "표준": 6.12, "MAX원픽": 1.56, "마이픽": 1.56}, "IM": {"default": 2.04}, "IBK": {"default": 2.76}}, "incentives": {"흥국": {"전략": {"name": "흥국생명 전략 6종 (오튼튼/다사랑 등)", "next_month_base": 4.0, "next_month_sky": 2.0, "install_period_bonus": 6.0, "install_strategy_bonus": 2.0, "total_rate": 14.0, "note": "20만원 구간 기준, 본사 전략시책(+200%) 포함"}, "일반": {"name": "흥국생명 일반 건강", "next_month_base": 4.0, "next_month_sky": 0.0, "install_period_bonus": 6.0, "install_strategy_bonus": 0.0, "total_rate": 10.0, "note": "20만원 구간 기준"}}}}, "nonlife_rules": {"conversion_rate": 0.92, "next_month_rate": 6.1, "installment_rate": 1.32, "total_commission_rate": 7.42, "companies": ["현대해상", "메리츠", "KB손보", "한화손보", "DB손보", "롯데손보", "흥국화재", "농협손보", "하나손보"], "incentives": {"현대해상": {"주력": {"name": "현대해상 주력보종 (퍼펙트/간편/굿앤굿)", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 3.0, "install_sky_2nd": 1.7, "total_rate": 10.3, "note": "1주차 가동(200%) + 주력가동(300%) + SKY 2차년도(170%) 포함"}, "일반": {"name": "현대해상 일반 인보험", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 0.0, "install_sky_2nd": 1.7, "total_rate": 7.3, "note": "주력보종 가동시상(300%) 제외"}}, "KB손보": {"주력": {"name": "KB손해보험 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.6, "note": "익월 360% + 1주차 가동 200% + 주력 200%"}}, "한화손보": {"주력": {"name": "한화손해보험 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 0.5, "install_week_bonus": 4.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.5, "note": "익월 150% + 1주차 인보험 400% + 주력 200%"}}, "메리츠": {"주력": {"name": "메리츠화재 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 2.5, "install_week_bonus": 2.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.5, "note": "익월 350% + 1주차 가동 200% + 주력 200%"}}}}}')
 
 COMPANY_RATES = EMBEDDED_RATES_DATA
@@ -703,228 +708,210 @@ def pick_best_term_product(candidates: List[Dict[str, Any]], term: str, default_
     return candidates[0]
 
 
+EN_KO_SYNONYMS = {
+    'plus': '플러스',
+    'one': '원',
+    'max': '맥스',
+    'pro': '프로',
+    'ai': '에이아이',
+    'gold': '골드',
+    'classic': '클래식',
+    'vip': '브이아이피',
+    'gi': '지아이',
+    'top': '탑',
+    'pick': '픽',
+    'h': '에이치',
+    's': '에스',
+    'w': '더블유',
+    'new': '뉴',
+    'up': '업',
+    'free': '프리',
+}
+
+def normalize_text(text: str) -> str:
+    if not text:
+        return ""
+    t = text.lower()
+    for en, ko in EN_KO_SYNONYMS.items():
+        t = re.sub(rf'\b{en}\b|{en}', ko, t)
+    t = t.replace('ⅰ', '1').replace('ⅱ', '2').replace('ⅲ', '3').replace('ⅳ', '4')
+    t = t.replace('i', '1').replace('ii', '2').replace('iii', '3')
+    return re.sub(r'[\s\(\)\[\]\{\}\-\_\,\.\:\/\+\#\*\~]', '', t)
+
+GUBUN_KEYWORDS = [
+    '간편가입', '간편심사형', '간편고지형', '간편가입형', '간편',
+    '일반가입', '일반심사형', '일반가입형', '일반형', '일반',
+    '체증형', '평준형', '체감형',
+    '기본형', '기본납입형', '기본보장형', '기본',
+    '해약환급금미지급형', '해지환급금미지급형', '미지급형', '미지급',
+    '해약환급금일부지급형', '해지환급금일부지급형', '일부지급형',
+    '표준형', '상생협력형',
+    '라이프밸런스형', '라이프밸런스', '밸런스형', '밸런스', '프리미엄보장형',
+    '종합설계형', '3대질환보장형', '3대질환',
+    '보증형', '미보증형', '계약자적립액보증형', '계약자적립액미보증형',
+    '갱신형'
+]
+
+LIFE_CATALOG: Dict[Tuple[str, str], Dict[str, Any]] = {}
+for d in LIFE_PRODUCTS:
+    d['company'] = d.get('company', '').replace('\n', '').strip()
+    sheet = d.get('sheet', '').strip()
+    prod = d.get('product', '').strip()
+    key = (sheet, prod)
+    if key not in LIFE_CATALOG:
+        LIFE_CATALOG[key] = {
+            'sheet': sheet,
+            'company': d.get('company', '').strip(),
+            'full_product': prod,
+            'norm_name': normalize_text(prod),
+            'gubuns': [],
+            'terms': [],
+            'items': []
+        }
+    g = d.get('gubun', '').strip()
+    t = d.get('term', '').strip()
+    # 납기형 표기(10년납, 20년납 이상)가 gubun에 단독 기재된 경우 실제 구분(종)이 아니므로 제외
+    if g and not re.search(r'^\d+\s*년', g):
+        if g not in LIFE_CATALOG[key]['gubuns']:
+            LIFE_CATALOG[key]['gubuns'].append(g)
+    if t and t not in LIFE_CATALOG[key]['terms']:
+        LIFE_CATALOG[key]['terms'].append(t)
+    LIFE_CATALOG[key]['items'].append(d)
+
+def clean_prod_short_name(prod: str) -> str:
+    p = re.sub(r'\(.*?\)', '', prod)
+    p = re.sub(r'가입금액:.*', '', p)
+    p = re.sub(r'보종코드:.*', '', p)
+    p = re.sub(r'\s+', ' ', p).strip()
+    return p if len(p) >= 2 else prod
+
+def extract_gubun_from_query(query: str) -> Optional[str]:
+    q_norm = normalize_text(query)
+    for g in sorted(GUBUN_KEYWORDS, key=len, reverse=True):
+        if normalize_text(g) in q_norm:
+            return g
+    return None
+
+def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]]:
+    comp_clean = company.replace('생명', '').replace('라이프', '').strip().lower()
+    if comp_clean in ['kb', '케이비']: comp_clean = 'KB'
+    elif comp_clean in ['디비', 'db']: comp_clean = 'DB'
+    elif comp_clean in ['아이엠', 'im']: comp_clean = 'IM'
+
+    sheet_prods = [p for (s, _), p in LIFE_CATALOG.items() if s == comp_clean or comp_clean in s.lower() or comp_clean in p['company'].lower()]
+    if not sheet_prods:
+        return []
+
+    cleaned = utterance
+    for comp_token in [comp_clean, '생명', '라이프', '화재', '손보']:
+        cleaned = re.sub(rf'\b{comp_token}\b|{comp_token}', ' ', cleaned, flags=re.IGNORECASE)
+    detected_gubun = extract_gubun_from_query(utterance)
+    if detected_gubun:
+        cleaned = cleaned.replace(detected_gubun, ' ')
+    cleaned = re.sub(r'(\d+)\s*년\s*납?|전기납', ' ', cleaned)
+    cleaned = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)', ' ', cleaned)
+    cleaned = re.sub(r'계산|시책|얼마|수수료|알려줘|비교|안내', ' ', cleaned)
+    cleaned = re.sub(r'\b\d+\b', ' ', cleaned)
+
+    q_norm = normalize_text(cleaned)
+    if not q_norm:
+        return sheet_prods
+
+    exact_matches = []
+    partial_matches = []
+
+    for p in sheet_prods:
+        p_norm = p['norm_name']
+        if q_norm == p_norm:
+            exact_matches.append((0, p))
+        elif q_norm in p_norm:
+            exact_matches.append((len(p_norm) - len(q_norm), p))
+        elif p_norm in q_norm:
+            exact_matches.append((len(q_norm) - len(p_norm), p))
+        else:
+            matches = sum(1 for i in range(len(q_norm)-1) if q_norm[i:i+2] in p_norm)
+            if matches >= 2 or (len(q_norm) <= 3 and matches >= 1):
+                partial_matches.append((matches, p))
+
+    if exact_matches:
+        exact_matches.sort(key=lambda x: x[0])
+        min_diff = exact_matches[0][0]
+        candidates = [p for diff, p in exact_matches if diff <= min_diff + 3]
+    elif partial_matches:
+        partial_matches.sort(key=lambda x: x[0], reverse=True)
+        candidates = [p for _, p in partial_matches[:6]]
+    else:
+        candidates = []
+
+    # detected_gubun이 존재하는 경우 후보 상품명(예: 기본형 vs 체증형)으로 정확히 좁힘
+    if detected_gubun and len(candidates) > 1:
+        d_norm = normalize_text(detected_gubun)
+        gubun_filtered = [c for c in candidates if d_norm in c['norm_name']]
+        if gubun_filtered:
+            return gubun_filtered
+
+    return candidates
+
+def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Optional[str]:
+    if not prod_group:
+        return ""
+    gubuns = prod_group.get('gubuns', [])
+    if not gubuns:
+        return ""
+    if len(gubuns) == 1:
+        return gubuns[0]
+
+    u_norm = normalize_text(utterance)
+    for g in gubuns:
+        g_norm = normalize_text(g)
+        if g_norm in u_norm:
+            return g
+
+    detected = extract_gubun_from_query(utterance)
+    if detected:
+        d_norm = normalize_text(detected)
+        for g in gubuns:
+            if d_norm in normalize_text(g):
+                return g
+
+    return None
+
+def match_term_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Optional[str]:
+    m = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+    if not m:
+        return None
+    term_str = m.group(0)
+    if not term_str.endswith('납') and term_str != '전기납':
+        term_str += '납'
+
+    if prod_group:
+        for t in prod_group.get('terms', []):
+            if term_str in t or t in term_str:
+                return t
+    return term_str
+
+def match_master_item(prod_group: Dict[str, Any], term: str, gubun: str) -> Dict[str, Any]:
+    items = prod_group.get('items', [])
+    if not items:
+        return {'s_factor': 1000.0, 'adj_coef': 1.0, 'raw_factor': 1000.0}
+    if gubun:
+        matched = [it for it in items if it['term'] == term and it['gubun'] == gubun]
+        if matched: return matched[0]
+        matched = [it for it in items if it['term'] == term and (gubun in it['gubun'] or it['gubun'] in gubun)]
+        if matched: return matched[0]
+
+    matched = [it for it in items if it['term'] == term or term in it['term']]
+    if matched: return matched[0]
+    return items[0]
+
 def search_life_product(company: str, query: str, term: str = "") -> Optional[Dict[str, Any]]:
-    """생보사 조견표(767개 전수 데이터)에서 가장 근접한 상품 검색"""
-    comp_clean = company.replace('생명', '').replace('라이프', '').strip()
-    if comp_clean in ['KB', '케이비']:
-        comp_clean = 'KB'
-    elif comp_clean in ['신한']:
-        comp_clean = '신한'
-        
-    candidates = [p for p in LIFE_PRODUCTS if p['company'] == comp_clean or comp_clean in p['company'] or comp_clean in p.get('sheet', '')]
+    candidates = find_candidate_products(company, query)
     if not candidates:
         return None
-        
-    q_norm = query.replace(" ", "").replace("-", "").lower()
-    
-    # 회사별 주요 상품 특화 라우팅
-    if comp_clean == "한화":
-        if "시그니처" in q_norm or "암" in q_norm:
-            matched = [p for p in candidates if "시그니처" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-        elif "실속가득" in q_norm or "통합" in q_norm:
-            matched = [p for p in candidates if "실속가득H통합" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-        elif "치매" in q_norm or "간병" in q_norm:
-            matched = [p for p in candidates if "치매담은" in p['product'] or "간병플러스" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-        elif "건강더한" in q_norm:
-            matched = [p for p in candidates if "건강더한" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif "하나로" in q_norm:
-            matched = [p for p in candidates if "하나로" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="15년납")
-        elif "필요할때" in q_norm:
-            matched = [p for p in candidates if "필요할때" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif "밸류플러스" in q_norm:
-            matched = [p for p in candidates if "밸류플러스" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif "h종신" in q_norm:
-            matched = [p for p in candidates if p['product'].replace(" ", "").lower() == "h종신"]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="7년납")
-    elif comp_clean == "메트":
-        if "변액리치" in q_norm or "리치" in q_norm:
-            matched = [p for p in candidates if "변액리치" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="전기납")
-        elif "오로지" in q_norm or "달러연금" in q_norm:
-            matched = [p for p in candidates if "오로지" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif "모두의" in q_norm:
-            matched = [p for p in candidates if "모두의" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납")
-        elif "달러" in q_norm or "백만인" in q_norm or "종신" in q_norm:
-            matched = [p for p in candidates if "백만인" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif "360" in q_norm or "종합" in q_norm:
-            matched = [p for p in candidates if "360" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-        elif "오늘의" in q_norm or "vip" in q_norm:
-            matched = [p for p in candidates if "오늘의종신" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납이상")
-    elif comp_clean == "DB":
-        if "내가고른" in q_norm or "통합" in q_norm:
-            matched = [p for p in candidates if "내가고른" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납")
-        elif "실속n" in q_norm:
-            matched = [p for p in candidates if "실속N" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납")
-        elif any(k in q_norm for k in ["알행플", "알행종"]):
-            matched = [p for p in candidates if "알행플" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif "리턴" in q_norm:
-            matched = [p for p in candidates if "리턴" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif "올케어" in q_norm:
-            matched = [p for p in candidates if "올케어" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-    elif comp_clean == "동양":
-        if "쑥쑥" in q_norm or "어린이" in q_norm:
-            matched = [p for p in candidates if "쑥쑥" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="15년납")
-    elif comp_clean == "미래":
-        if "m케어" in q_norm or "엠케어" in q_norm or "건강" in q_norm:
-            matched = [p for p in candidates if "M-케어" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-    elif comp_clean == "라이나":
-        if "새로담는" in q_norm:
-            matched = [p for p in candidates if "새로담는" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납")
-        elif "채우는" in q_norm:
-            matched = [p for p in candidates if "채우는" in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-    elif comp_clean == "흥국":
-        if any(k in q_norm for k in ['오튼튼', '5.10.5', '5105', '다사랑암']):
-            matched = [p for p in candidates if '오튼튼' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-        elif any(k in q_norm for k in ['3.10.5', '3105', '고당', '간편건강']):
-            matched = [p for p in candidates if '3.10.5' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-        elif any(k in q_norm for k in ['다사랑통합', '다사랑']):
-            matched = [p for p in candidates if '다(多)사랑통합' in p['product'] or '다사랑' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-        elif any(k in q_norm for k in ['건강', '종합', '인보험']):
-            matched = [p for p in candidates if '오튼튼' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-        elif any(k in q_norm for k in ['3.5.5', '355', '3n5']):
-            matched = [p for p in candidates if '3n5' in p['product'].lower()]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-        elif any(k in q_norm for k in ['3.1.1', '311']):
-            matched = [p for p in candidates if '3.1.1' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-        elif any(k in q_norm for k in ['리턴100', '리턴', '플렉스']):
-            matched = [p for p in candidates if '리턴100' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년↑")
-        elif any(k in q_norm for k in ['치매', '시니어']):
-            matched = [p for p in candidates if '치매담은' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-        elif any(k in q_norm for k in ['미리받는', '트리플']):
-            matched = [p for p in candidates if '미리받는' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-        else:
-            matched = [p for p in candidates if '오튼튼' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년↑")
-    elif comp_clean == "신한":
-        if any(k in q_norm for k in ['슈퍼원', '원', 'one', '통합', '건강', '3.10.5', '3105']):
-            matched = [p for p in candidates if '슈퍼원' in p['product'] or '통합건강' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-        elif any(k in q_norm for k in ['모아더드림', '더드림']):
-            matched = [p for p in candidates if '모아더드림' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="7년납이상")
-        elif any(k in q_norm for k in ['세븐플러스', '세븐plus', '세븐']):
-            matched = [p for p in candidates if '세븐Plus' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납")
-        elif any(k in q_norm for k in ['든든한', '더든든한']):
-            matched = [p for p in candidates if 'The든든한' in p['product'] or '든든한' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif any(k in q_norm for k in ['리필종신', '리필']):
-            matched = [p for p in candidates if '리필종신' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납")
-        elif any(k in q_norm for k in ['연금', '원더라이프', '변액연금']):
-            matched = [p for p in candidates if '연금' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="10년납이상")
-        else:
-            matched = [p for p in candidates if '슈퍼원' in p['product'] or '통합건강' in p['product']]
-            if matched:
-                return pick_best_term_product(matched, term, default_term="20년납이상")
-
-    # 일반 공백 무시 부분일치 검색
-    matched = []
-    for p in candidates:
-        p_norm = p['product'].replace(" ", "").replace("-", "").lower()
-        if q_norm in p_norm:
-            matched.append(p)
-    if matched:
-        return pick_best_term_product(matched, term, default_term="10년납")
-
-    # 토큰 스코어링 검색 (공백 분리 단어 기준)
-    q_words = re.sub(r'\d+[\d,]*\s*만?\s*원?', ' ', query)
-    q_words = re.sub(r'\d+\s*년\s*납?|전기납', ' ', q_words)
-    for c_alias in [company, comp_clean, '생명', '라이프', '보험']:
-        q_words = q_words.replace(c_alias, ' ')
-    tokens = [t for t in re.split(r'[\s,\(\)\/\-\.]+', q_words.strip()) if len(t) >= 2]
-
-    scored = []
-    for p in candidates:
-        p_name = p['product'].replace(" ", "").replace("-", "").lower()
-        score = sum(3 for t in tokens if t in p_name)
-        m_y = re.search(r'(\d+)\s*년', term)
-        if m_y and re.search(rf'(?<!\d){m_y.group(1)}년', p.get('term', '')):
-            score += 15
-        scored.append((score, p))
-
-    scored.sort(key=lambda x: x[0], reverse=True)
-    if scored and scored[0][0] > 0:
-        return scored[0][1]
-
-    def_prod = ALL_COMPANIES.get(company, {}).get('default_prod', '')
-    if def_prod:
-        matched_def = [p for p in candidates if def_prod in p['product']]
-        if matched_def:
-            return pick_best_term_product(matched_def, term, default_term="10년납")
-
-    return candidates[0]
-
-
+    prod_group = candidates[0]
+    gubun = match_gubun_in_text(prod_group, query)
+    item = match_master_item(prod_group, term or (prod_group['terms'][0] if prod_group['terms'] else "10년납"), gubun or "")
+    return item
 
 def get_sky_jongshin_bonus(comp: str, prod: str, term: str, premium: int, is_corp: bool = False) -> Tuple[int, str]:
     """스카이블루에셋 11월 본사 종신전략상품 추가지원안 (구간별 고정 시상금액, 익월 50% + 15회차 50%)"""
@@ -1757,28 +1744,35 @@ def get_suggested_terms_for_life(comp: str, prod_name: str) -> List[str]:
         return ["10년납", "15년납", "20년납", "30년납"]
 
 
-def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str]) -> Dict[str, Any]:
+def build_ask_similar_product_response(comp: str, candidates: list, premium: int, term: str = "", gubun: str = "") -> dict:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
-    clean_prod = clean_product_display_name(prod_name)
-    
+
     quick_replies = []
-    for t in terms:
-        clean_t = re.sub(r'\(.*?\)', '', t).strip()
+    for i, c in enumerate(candidates[:6]):
+        short_name = clean_prod_short_name(c['full_product'])
+        btn_label = f"{i+1}. {short_name}"
+        if len(btn_label) > 13:
+            btn_label = btn_label[:12] + "…"
+        msg_parts = [comp, short_name]
+        if gubun: msg_parts.append(gubun)
+        if term: msg_parts.append(term)
+        msg_parts.append(prem_str)
         quick_replies.append({
-            "messageText": f"{comp} {clean_prod} {prem_str} {clean_t}",
+            "messageText": " ".join(msg_parts),
             "action": "message",
-            "label": t
+            "label": btn_label
         })
-    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
-    
+    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법"})
+
+    prod_list_text = "\n".join([f"{i+1}. {clean_prod_short_name(c['full_product'])}" for i, c in enumerate(candidates[:6])])
     return {
         "version": "2.0",
         "template": {
             "outputs": [
                 {
                     "simpleText": {
-                        "text": f"📋 {comp} · {clean_prod} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
+                        "text": f"🔍 {comp} ({prem_str})\n\n유사한 상품이 여러 개 있습니다. 어떤 상품으로 계산해 드릴까요?\n\n{prod_list_text}\n\n원하시는 상품 버튼을 눌러주세요!"
                     }
                 }
             ],
@@ -1786,25 +1780,101 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
         }
     }
 
-def is_corp_incentive_target(comp: str, prod_name: str) -> bool:
-    """한화생명 하나로, 푸본현대 맥스원픽, IM라이프 당당한인생 3개 상품은 법인계약만 추가지급 대상인지 확인"""
-    c = comp.lower()
-    p = prod_name.replace(" ", "").lower()
-    if ('한화' in c) and ('하나로' in p):
-        return True
-    if ('푸본' in c) and ('원픽' in p):
-        return True
-    if ('im' in c or '아이엠' in c) and ('당당한' in p):
-        return True
-    return False
-
-
-def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, term: str) -> Dict[str, Any]:
-    """한화 하나로, 푸본 맥스원픽, IM 당당한인생에 대해 개인계약인지 법인계약인지 확인하는 인터랙션 (사용자 지시 완벽 반영)"""
+def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: str = "") -> dict:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
-    clean_prod = clean_product_display_name(prod_name)
+    prod_name = clean_prod_short_name(prod_group['full_product'])
+
+    quick_replies = []
+    for g in prod_group['gubuns'][:6]:
+        btn_label = g
+        if len(btn_label) > 13:
+            btn_label = btn_label[:12] + "…"
+        msg_parts = [comp, prod_name, g]
+        if term: msg_parts.append(term)
+        msg_parts.append(prem_str)
+        quick_replies.append({
+            "messageText": " ".join(msg_parts),
+            "action": "message",
+            "label": btn_label
+        })
+    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법"})
+
+    gubun_list_text = "\n".join([f"• {g}" for g in prod_group['gubuns'][:6]])
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": f"📋 {comp} · {prod_name} ({prem_str})\n\n이 상품은 가입 유형('종')에 따라 환산 성적이 다릅니다. 어떤 구분을 적용할까요?\n\n{gubun_list_text}\n\n원하시는 구분 버튼을 눌러주세요!"
+                    }
+                }
+            ],
+            "quickReplies": quick_replies
+        }
+    }
+
+def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str], gubun: str = "") -> Dict[str, Any]:
+    prem_man = premium // 10000
+    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    clean_prod = clean_prod_short_name(prod_name)
+    
+    quick_replies = []
+    for t in terms[:8]:
+        clean_t = re.sub(r'\(.*?\)', '', t).strip()
+        btn_label = clean_t
+        if len(btn_label) > 13:
+            btn_label = btn_label[:12] + "…"
+        msg_parts = [comp, clean_prod]
+        if gubun: msg_parts.append(gubun)
+        msg_parts.extend([prem_str, clean_t])
+        quick_replies.append({
+            "messageText": " ".join(msg_parts),
+            "action": "message",
+            "label": btn_label
+        })
+    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
+    
+    gubun_str = f" · {gubun}" if gubun else ""
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": f"📋 {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
+                    }
+                }
+            ],
+            "quickReplies": quick_replies
+        }
+    }
+
+def is_corp_incentive_target(comp: str, prod_name: str, term: str = "") -> bool:
+    """한화생명 하나로(15년), 푸본현대 맥스원픽(7년), IM라이프 당당한인생(7년) 3개 상품은 법인계약만 추가지급 대상인지 확인"""
+    c = comp.lower()
+    p = prod_name.replace(" ", "").lower()
+    t = term.replace(" ", "").lower()
+    if ('한화' in c) and ('하나로' in p):
+        return ('15' in t) if t else True
+    if ('푸본' in c) and ('원픽' in p):
+        return ('7' in t) if t else True
+    if ('im' in c or '아이엠' in c) and ('당당한' in p):
+        return ('7' in t) if t else True
+    return False
+
+def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, term: str, gubun: str = "") -> Dict[str, Any]:
+    prem_man = premium // 10000
+    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    clean_prod = clean_prod_short_name(prod_name)
     term_str = f" · {term}" if term else ""
+    gubun_str = f" · {gubun}" if gubun else ""
+    
+    msg_base = [comp, clean_prod]
+    if gubun: msg_base.append(gubun)
+    if term: msg_base.append(term)
+    msg_base.append(prem_str)
     
     return {
         "version": "2.0",
@@ -1813,7 +1883,7 @@ def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, te
                 {
                     "simpleText": {
                         "text": (
-                            f"📋 {comp} · {clean_prod} ({prem_str}{term_str})\n\n"
+                            f"📋 {comp} · {clean_prod}{gubun_str} ({prem_str}{term_str})\n\n"
                             "본 상품의 SKY 본사 추가 시상은 **법인계약**에만 지급됩니다.\n"
                             "계약자가 개인인가요, 법인인가요?\n\n"
                             "아래 버튼을 눌러 선택해 주세요!"
@@ -1823,12 +1893,12 @@ def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, te
             ],
             "quickReplies": [
                 {
-                    "messageText": f"{comp} {clean_prod} {prem_str} {term} 법인계약".strip(),
+                    "messageText": " ".join(msg_base + ["법인계약"]),
                     "action": "message",
                     "label": "🏢 법인계약 (SKY시상 포함)"
                 },
                 {
-                    "messageText": f"{comp} {clean_prod} {prem_str} {term} 개인계약".strip(),
+                    "messageText": " ".join(msg_base + ["개인계약"]),
                     "action": "message",
                     "label": "👤 개인계약"
                 },
@@ -1840,127 +1910,6 @@ def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, te
             ]
         }
     }
-
-
-
-def build_ask_product_and_amount_response(comp: str) -> Dict[str, Any]:
-    info = ALL_COMPANIES.get(comp, {})
-    recs = info.get("recommendations", [f"{info.get('default_prod', '주력')} 20만", f"{info.get('default_prod', '주력')} 10만"])
-    
-    quick_replies = [
-        {"messageText": f"{comp} {r}", "action": "message", "label": r}
-        for r in recs
-    ]
-    quick_replies.append({"messageText": f"{comp} 시책지", "action": "message", "label": f"📑 {comp} 시책지"})
-    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법"})
-    
-    example = recs[0] if recs else f"{comp} 20만"
-    return {
-        "version": "2.0",
-        "template": {
-            "outputs": [
-                {
-                    "simpleText": {
-                        "text": f"📋 {comp}\n\n어떤 상품과 월 보험료(금액)로 계산해 드릴까요?\n\n아래 추천 항목을 누르시거나 직접 입력해 주세요!\n(예: {comp} {example})"
-                    }
-                }
-            ],
-            "quickReplies": quick_replies
-        }
-    }
-
-
-def build_ask_amount_response(comp: str, prod_name: str, term: str = "") -> Dict[str, Any]:
-    term_part = f" {term}" if term else ""
-    quick_replies = [
-        {"messageText": f"{comp} {prod_name}{term_part} 10만원", "action": "message", "label": "10만원"},
-        {"messageText": f"{comp} {prod_name}{term_part} 20만원", "action": "message", "label": "20만원"},
-        {"messageText": f"{comp} {prod_name}{term_part} 30만원", "action": "message", "label": "30만원"},
-        {"messageText": f"{comp} {prod_name}{term_part} 50만원", "action": "message", "label": "50만원"},
-        {"messageText": f"{comp} 시책지", "action": "message", "label": f"📑 {comp} 시책지"}
-    ]
-    return {
-        "version": "2.0",
-        "template": {
-            "outputs": [
-                {
-                    "simpleText": {
-                        "text": f"💰 {comp} · {prod_name}\n\n월 보험료(금액)를 선택해 주세요.\n(원하시는 금액 버튼을 누르시거나 직접 입력해 주세요)"
-                    }
-                }
-            ],
-            "quickReplies": quick_replies
-        }
-    }
-
-
-def build_heungkuk_continuous_inquiry_response(premium: Optional[int] = None) -> Dict[str, Any]:
-    p_man = (premium // 10000) if premium else 20
-    text_desc = (
-        "🌸 흥국생명 10~11월 연속시상 안내\n\n"
-        "흥국생명은 10월 실적 조건에 따라 2가지 연속시상이 있습니다:\n\n"
-        "1️⃣ [10~11월 연속가동]\n"
-        "• 조건: 10.26~31 및 11.1~6 양 기간 동일 구간 달성 시\n"
-        "• 시상금: 5만(30만), 10만(60만), 20만(120만), 30만(180만), 50만(500만)\n\n"
-        "2️⃣ [핑크멤버스]\n"
-        "• 조건: 10월 전체 실적 10만 이상 달성 시\n"
-        "• 시상금: 10만(50만), 20만(100만), 30만(150만), 50만(250만)\n\n"
-        "해당하시는 조건을 선택하시면 정확한 총수령액을 산출해 드립니다!"
-    )
-    quick_replies = [
-        {"messageText": f"흥국 오튼튼 {p_man}만 10-11월 연속포함", "action": "message", "label": f"🔥 10~11월 연속 (+120만)"},
-        {"messageText": f"흥국 오튼튼 {p_man}만 핑크멤버스 포함", "action": "message", "label": f"🌸 핑크멤버스 (+100만)"},
-        {"messageText": f"흥국 오튼튼 {p_man}만 둘다포함", "action": "message", "label": f"💎 둘다포함 (+220만)"},
-        {"messageText": f"흥국 오튼튼 {p_man}만", "action": "message", "label": f"단건 기본 ({p_man}만)"}
-    ]
-    return {
-        "version": "2.0",
-        "template": {
-            "outputs": [{"simpleText": {"text": text_desc}}],
-            "quickReplies": quick_replies
-        }
-    }
-
-
-# ==========================================
-# 4. 2개 또는 3개 회사 비교 카드 엔진 (총합만 비교)
-# ==========================================
-def calculate_company_for_compare(comp_name: str, premium: int, text: str, continuous_mode: str) -> Dict[str, Any]:
-    info = ALL_COMPANIES.get(comp_name, {})
-    cat = info.get("category", "생명보험")
-    default_prod = info.get("default_prod", "주력")
-    default_term = info.get("default_term", "20년납")
-    
-    if cat == "손해보험":
-        return calculate_nonlife(
-            company=comp_name,
-            product_name=default_prod,
-            premium=premium,
-            incentive_type="주력",
-            continuous_mode=continuous_mode
-        )
-    else:
-        m_term = re.search(r'(\d+)\s*년\s*납?|전기납', text)
-        term = m_term.group(0) if m_term else default_term
-        if term and not term.endswith("납"):
-            term += "납"
-        
-        matched = search_life_product(comp_name, text, term=term)
-        s_factor = matched['s_factor'] if matched else 1000.0
-        prod_name = matched['product'] if matched else default_prod
-        
-        c_type = "법인" if any(k in text for k in ['법인', '법인계약']) else "개인"
-        return calculate_life(
-            company=comp_name,
-            product_name=prod_name,
-            premium=premium,
-            s_factor=s_factor,
-            term=term,
-            incentive_type="전략",
-            continuous_mode=continuous_mode,
-            contract_type=c_type
-        )
-
 
 def build_compare_response(results: List[Dict[str, Any]], premium: int, continuous_mode: str = "none") -> Dict[str, Any]:
     prem_man = premium // 10000
@@ -2512,30 +2461,49 @@ async def kakao_skill_calculate(request: Request):
                 calc_res = calculate_nonlife(comp, prod_name, calc_prem, incentive_type="주력", continuous_mode=continuous_mode)
                 return build_kakao_response(calc_res)
                 
-            # 생명보험: 사용자 명확 지침 ("생명보험사는 금액을 적고나면 납입기간을 확인해서 답을 주도록 해줘")
+            # 생명보험: 계층형 질의 유도 및 정밀 S환산 계산
             else:
-                m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
-                term = m_term.group(0) if m_term else ""
-                if term and not term.endswith("납"):
-                    term += "납"
-                    
-                matched = search_life_product(comp, utterance, term=term)
-                prod_name = matched['product'] if matched else info.get("default_prod", "보장성")
+                candidates = find_candidate_products(comp, utterance)
+                
+                # 유사 상품이 2개 이상 매칭된 경우 -> 챗봇이 상품 선택 질문 유도!
+                if len(candidates) > 1:
+                    m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+                    t_str = m_term.group(0) if m_term else ""
+                    return build_ask_similar_product_response(comp, candidates, calc_prem, term=t_str)
 
-                # 납입기간이 지정되지 않은 경우 -> 사용자 지시대로 납기 먼저 질의!
-                if not term:
+                # 단일 상품 매칭 또는 기본 상품
+                prod_group = candidates[0] if candidates else None
+                if not prod_group:
+                    prod_name = info.get("default_prod", "보장성")
                     suggested_terms = get_suggested_terms_for_life(comp, prod_name)
                     return build_ask_term_response(comp, prod_name, calc_prem, suggested_terms)
 
-                # 한화 하나로, 푸본 맥스원픽, IM 당당한인생 3개 상품은 법인계약만 추가지급 -> 개인/법인 질의!
-                if is_corp_incentive_target(comp, prod_name) and not contract_type:
-                    return build_ask_contract_type_response(comp, prod_name, calc_prem, term)
-                    
-                # 납입기간 및 계약형태가 확정된 경우 -> 해당 납기로 정확히 즉시 계산!
-                s_factor = matched['s_factor'] if matched else 1000.0
+                prod_name = clean_prod_short_name(prod_group['full_product'])
+
+                # 1단계: 구분('종') 확인 - 같은 상품인데 구분이 여러 개 있는 경우 질문 유도
+                gubun = match_gubun_in_text(prod_group, utterance)
+                if gubun is None and len(prod_group['gubuns']) > 1:
+                    m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+                    t_str = m_term.group(0) if m_term else ""
+                    return build_ask_gubun_response(comp, prod_group, calc_prem, term=t_str)
+
+                # 2단계: 납입기간(term) 확인
+                term = match_term_in_text(prod_group, utterance)
+                if not term:
+                    valid_terms = prod_group['terms'] if prod_group['terms'] else ["10년납", "15년납", "20년납"]
+                    return build_ask_term_response(comp, prod_name, calc_prem, valid_terms, gubun=gubun or "")
+
+                # 3단계: 법인계약 여부 확인 (한화 하나로 15년, 푸본 원픽 7년, IM 당당한 7년)
+                if is_corp_incentive_target(comp, prod_name, term) and not contract_type:
+                    return build_ask_contract_type_response(comp, prod_name, calc_prem, term, gubun=gubun or "")
+
+                # 4단계: 모든 조건(상품, 구분/종, 납기, 법인여부) 확정 -> 0.1초 즉시 계산!
+                item = match_master_item(prod_group, term, gubun or "")
+                s_factor = item['s_factor']
+                
                 calc_res = calculate_life(
                     company=comp,
-                    product_name=prod_name,
+                    product_name=f"{prod_name} ({gubun})" if gubun and gubun not in prod_name else prod_name,
                     premium=calc_prem,
                     s_factor=s_factor,
                     term=term,
@@ -2545,78 +2513,42 @@ async def kakao_skill_calculate(request: Request):
                 )
                 return build_kakao_response(calc_res)
 
-        # 5. 회사명은 없지만 대표 상품명이 직접 들어온 경우 (예: 오튼튼 20만)
+        # 5. 회사명은 없지만 대표 상품명이 직접 들어온 경우 (전체 생보사 카탈로그 자동 검색)
         if premium is not None:
-            m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
-            term = m_term.group(0) if m_term else ""
-            if term and not term.endswith("납"):
-                term += "납"
+            all_candidates = []
+            for (s, _), p in LIFE_CATALOG.items():
+                p_norm = p['norm_name']
+                m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+                t_raw = m_term.group(0) if m_term else ""
+                cleaned = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)|계산|시책|얼마|수수료|알려줘|비교|안내|\b\d+\b', ' ', utterance)
+                if t_raw: cleaned = cleaned.replace(t_raw, ' ')
+                q_norm = normalize_text(cleaned)
+                if q_norm and (q_norm in p_norm or p_norm in q_norm):
+                    all_candidates.append(p)
 
-            if any(k in utterance for k in ['오튼튼', '다사랑', '3.10.5', '3105']):
-                matched = search_life_product("흥국생명", utterance, term=term)
-                prod_name = matched['product'] if matched else "오튼튼5.10.5건강보험, 다(多)사랑암"
+            if len(all_candidates) == 1:
+                p = all_candidates[0]
+                comp = p['company']
+                prod_name = clean_prod_short_name(p['full_product'])
+                gubun = match_gubun_in_text(p, utterance)
+                if gubun is None and len(p['gubuns']) > 1:
+                    m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+                    t_str = m_term.group(0) if m_term else ""
+                    return build_ask_gubun_response(comp, p, premium, term=t_str)
+                term = match_term_in_text(p, utterance)
                 if not term:
-                    return build_ask_term_response("흥국생명", prod_name, premium, ["10년납", "15년납", "20년납", "30년납"])
-                s_factor = matched['s_factor'] if matched else 1100.0
-                calc_res = calculate_life("흥국생명", prod_name, premium, s_factor, term, "전략", continuous_mode)
+                    valid_terms = p['terms'] if p['terms'] else ["10년납", "15년납", "20년납"]
+                    return build_ask_term_response(comp, prod_name, premium, valid_terms, gubun=gubun or "")
+                if is_corp_incentive_target(comp, prod_name, term) and not contract_type:
+                    return build_ask_contract_type_response(comp, prod_name, premium, term, gubun=gubun or "")
+                item = match_master_item(p, term, gubun or "")
+                calc_res = calculate_life(comp, prod_name, premium, item['s_factor'], term, "전략", continuous_mode, contract_type=contract_type or "개인")
                 return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['달러종신', '백만인']):
-                if not term:
-                    return build_ask_term_response("메트라이프", "백만인을 위한 달러종신보험 Plus", premium, ["5년납(250%)", "7년납(400%)", "10년납(400%)", "15년납", "20년납"])
-                matched = search_life_product("메트라이프", "달러종신", term=term)
-                s_factor = matched['s_factor'] if matched else 647.55
-                calc_res = calculate_life("메트라이프", matched['product'], premium, s_factor, term, "전략", continuous_mode)
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['하나로', '하나로H']):
-                matched = search_life_product("한화생명", utterance, term=term)
-                prod_name = matched['product'] if matched else "하나로 H종신"
-                if not term:
-                    return build_ask_term_response("한화생명", prod_name, premium, ["10년납", "15년납(법인시상)", "20년납"])
-                if not contract_type:
-                    return build_ask_contract_type_response("한화생명", prod_name, premium, term)
-                s_factor = matched['s_factor'] if matched else 1300.0
-                calc_res = calculate_life("한화생명", prod_name, premium, s_factor, term, "전략", continuous_mode, contract_type=contract_type or "개인")
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['맥스원픽', '원픽종신', '원픽']):
-                matched = search_life_product("푸본현대", utterance, term=term)
-                prod_name = matched['product'] if matched else "MAX 종신보험 원픽"
-                if not term:
-                    return build_ask_term_response("푸본현대", prod_name, premium, ["5년납", "7년납(법인시상)", "20년납"])
-                if not contract_type:
-                    return build_ask_contract_type_response("푸본현대", prod_name, premium, term)
-                s_factor = matched['s_factor'] if matched else 300.0
-                calc_res = calculate_life("푸본현대", prod_name, premium, s_factor, term, "전략", continuous_mode, contract_type=contract_type or "개인")
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['당당한인생', '당당한']):
-                matched = search_life_product("IM라이프", utterance, term=term)
-                prod_name = matched['product'] if matched else "당당한 인생종신"
-                if not term:
-                    return build_ask_term_response("IM라이프", prod_name, premium, ["5년납", "7년납(법인시상)", "20년납"])
-                if not contract_type:
-                    return build_ask_contract_type_response("IM라이프", prod_name, premium, term)
-                s_factor = matched['s_factor'] if matched else 873.2
-                calc_res = calculate_life("IM라이프", prod_name, premium, s_factor, term, "전략", continuous_mode, contract_type=contract_type or "개인")
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['건강더한']):
-                if not term:
-                    return build_ask_term_response("한화생명", "건강더한종신", premium, ["7년납", "10년납", "15년납", "20년납"])
-                calc_res = calculate_life("한화생명", "건강더한종신", premium, 1100.0, term, "전략", continuous_mode)
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['알행플']):
-                if not term:
-                    return build_ask_term_response("DB생명", "알행플종신", premium, ["7년납", "10년납", "15년납", "20년납"])
-                calc_res = calculate_life("DB생명", "알행플종신", premium, 1020.0, term, "전략", continuous_mode)
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['새로담는', '브레인케어']):
-                if not term:
-                    return build_ask_term_response("라이나생명", "새로담는건강보험", premium, ["10년납", "15년납", "20년납", "30년납"])
-                calc_res = calculate_life("라이나생명", "새로담는건강보험", premium, 1000.0, term, "전략", continuous_mode)
-                return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['m케어', '엠케어']):
-                if not term:
-                    return build_ask_term_response("미래에셋", "M-케어건강보험", premium, ["10년납", "15년납", "20년납", "30년납"])
-                calc_res = calculate_life("미래에셋", "M-케어건강보험", premium, 825.0, term, "전략", continuous_mode)
-                return build_kakao_response(calc_res)
+            elif len(all_candidates) > 1:
+                m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
+                t_str = m_term.group(0) if m_term else ""
+                first_comp = all_candidates[0]['company']
+                return build_ask_similar_product_response(first_comp, all_candidates, premium, term=t_str)
             elif any(k in utterance for k in ['퍼펙트', '간편', '굿앤굿', '주력']):
                 calc_res = calculate_nonlife("현대해상", "주력보종", premium, "주력", continuous_mode)
                 return build_kakao_response(calc_res)
