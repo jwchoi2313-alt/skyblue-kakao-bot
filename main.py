@@ -468,7 +468,77 @@ def search_life_product(company: str, query: str, term: str = "") -> Optional[Di
             matched = [p for p in candidates if "채우는" in p['product']]
             if matched:
                 return pick_best_term_product(matched, term, default_term="10년납")
-                
+    elif comp_clean == "흥국":
+        if any(k in q_norm for k in ['오튼튼', '5.10.5', '5105', '다사랑암']):
+            matched = [p for p in candidates if '오튼튼' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+        elif any(k in q_norm for k in ['3.10.5', '3105', '고당', '간편건강']):
+            matched = [p for p in candidates if '3.10.5' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+        elif any(k in q_norm for k in ['다사랑통합', '다사랑']):
+            matched = [p for p in candidates if '다(多)사랑통합' in p['product'] or '다사랑' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+        elif any(k in q_norm for k in ['건강', '종합', '인보험']):
+            matched = [p for p in candidates if '오튼튼' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+        elif any(k in q_norm for k in ['3.5.5', '355', '3n5']):
+            matched = [p for p in candidates if '3n5' in p['product'].lower()]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+        elif any(k in q_norm for k in ['3.1.1', '311']):
+            matched = [p for p in candidates if '3.1.1' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+        elif any(k in q_norm for k in ['리턴100', '리턴', '플렉스']):
+            matched = [p for p in candidates if '리턴100' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년↑")
+        elif any(k in q_norm for k in ['치매', '시니어']):
+            matched = [p for p in candidates if '치매담은' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+        elif any(k in q_norm for k in ['미리받는', '트리플']):
+            matched = [p for p in candidates if '미리받는' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년납이상")
+        else:
+            matched = [p for p in candidates if '오튼튼' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년↑")
+    elif comp_clean == "신한":
+        if any(k in q_norm for k in ['슈퍼원', '원', 'one', '통합', '건강', '3.10.5', '3105']):
+            matched = [p for p in candidates if '슈퍼원' in p['product'] or '통합건강' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년납이상")
+        elif any(k in q_norm for k in ['모아더드림', '더드림']):
+            matched = [p for p in candidates if '모아더드림' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="7년납이상")
+        elif any(k in q_norm for k in ['세븐플러스', '세븐plus', '세븐']):
+            matched = [p for p in candidates if '세븐Plus' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년납")
+        elif any(k in q_norm for k in ['든든한', '더든든한']):
+            matched = [p for p in candidates if 'The든든한' in p['product'] or '든든한' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+        elif any(k in q_norm for k in ['리필종신', '리필']):
+            matched = [p for p in candidates if '리필종신' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납")
+        elif any(k in q_norm for k in ['연금', '원더라이프', '변액연금']):
+            matched = [p for p in candidates if '연금' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="10년납이상")
+        else:
+            matched = [p for p in candidates if '슈퍼원' in p['product'] or '통합건강' in p['product']]
+            if matched:
+                return pick_best_term_product(matched, term, default_term="20년납이상")
+
     # 일반 공백 무시 부분일치 검색
     matched = []
     for p in candidates:
@@ -477,9 +547,14 @@ def search_life_product(company: str, query: str, term: str = "") -> Optional[Di
             matched.append(p)
     if matched:
         return pick_best_term_product(matched, term, default_term="10년납")
-        
-    # 토큰 스코어링 검색
-    tokens = [t for t in re.split(r'[\s,\(\)]+', q_norm) if len(t) >= 2]
+
+    # 토큰 스코어링 검색 (공백 분리 단어 기준)
+    q_words = re.sub(r'\d+[\d,]*\s*만?\s*원?', ' ', query)
+    q_words = re.sub(r'\d+\s*년\s*납?|전기납', ' ', q_words)
+    for c_alias in [company, comp_clean, '생명', '라이프', '보험']:
+        q_words = q_words.replace(c_alias, ' ')
+    tokens = [t for t in re.split(r'[\s,\(\)\/\-\.]+', q_words.strip()) if len(t) >= 2]
+
     scored = []
     for p in candidates:
         p_name = p['product'].replace(" ", "").replace("-", "").lower()
@@ -488,10 +563,17 @@ def search_life_product(company: str, query: str, term: str = "") -> Optional[Di
         if m_y and re.search(rf'(?<!\d){m_y.group(1)}년', p.get('term', '')):
             score += 15
         scored.append((score, p))
-        
+
     scored.sort(key=lambda x: x[0], reverse=True)
     if scored and scored[0][0] > 0:
         return scored[0][1]
+
+    def_prod = ALL_COMPANIES.get(company, {}).get('default_prod', '')
+    if def_prod:
+        matched_def = [p for p in candidates if def_prod in p['product']]
+        if matched_def:
+            return pick_best_term_product(matched_def, term, default_term="10년납")
+
     return candidates[0]
 
 
@@ -1155,6 +1237,10 @@ def get_suggested_terms_for_life(comp: str, prod_name: str) -> List[str]:
         return ["15년납", "20년납", "30년납"]
     elif "연금" in p:
         return ["10년납", "15년납", "20년납", "전기납"]
+    elif "오튼튼" in p or "다사랑" in p or "3.10.5" in p:
+        return ["10년납", "15년납", "20년납", "30년납"]
+    elif "리턴100" in p:
+        return ["10년납", "15년납", "20년납"]
     else:
         return ["10년납", "15년납", "20년납", "30년납"]
 
@@ -1581,7 +1667,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "스카이블루에셋 카카오 챗봇 스킬 서버",
-        "version": "2.6.0",
+        "version": "2.6.1",
         "total_life_products": len(LIFE_PRODUCTS)
     }
 
@@ -1819,10 +1905,13 @@ async def kakao_skill_calculate(request: Request):
             if term and not term.endswith("납"):
                 term += "납"
 
-            if any(k in utterance for k in ['오튼튼', '다사랑']):
+            if any(k in utterance for k in ['오튼튼', '다사랑', '3.10.5', '3105']):
+                matched = search_life_product("흥국생명", utterance, term=term)
+                prod_name = matched['product'] if matched else "오튼튼5.10.5건강보험, 다(多)사랑암"
                 if not term:
-                    return build_ask_term_response("흥국생명", "다사랑·오튼튼(종합)", premium, ["10년납", "15년납", "20년납", "30년납"])
-                calc_res = calculate_life("흥국생명", "다사랑·오튼튼(종합)", premium, 1100.0, term, "전략", continuous_mode)
+                    return build_ask_term_response("흥국생명", prod_name, premium, ["10년납", "15년납", "20년납", "30년납"])
+                s_factor = matched['s_factor'] if matched else 1100.0
+                calc_res = calculate_life("흥국생명", prod_name, premium, s_factor, term, "전략", continuous_mode)
                 return build_kakao_response(calc_res)
             elif any(k in utterance for k in ['달러종신', '백만인']):
                 if not term:
