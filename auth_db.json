@@ -1,11 +1,18 @@
 {
   "admins": [
-    "initial_admin_key"
+    "initial_admin_key",
+    "admin_jeongwoo"
   ],
   "approved": {
     "test_suite_user": {
       "name": "테스트엔진 (Auto)",
       "approved_at": "2026-11-05 00:00:00",
+      "role": "admin"
+    },
+    "admin_jeongwoo": {
+      "name": "최정우 본부장 (Admin)",
+      "branch": "안양비전본부",
+      "approved_at": "2026-11-05 11:13:32",
       "role": "admin"
     }
   },
