@@ -1,12 +1,5 @@
 {
   "admins": [],
-  "approved": {
-    "test_suite_user": {
-      "name": "테스트엔진 (Auto)",
-      "approved_at": "2026-11-05 00:00:00",
-      "role": "admin"
-    }
-  },
-  "pending": {},
+  "participants": {},
   "blocked": {}
 }
