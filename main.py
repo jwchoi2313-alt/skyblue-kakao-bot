@@ -2362,6 +2362,13 @@ def get_admin_users(key: str = ""):
         return {"error": "unauthorized"}
     return AUTH_CACHE
 
+@app.post("/admin/reload")
+def admin_reload(key: str = ""):
+    if key != "skyblue2026admin":
+        return {"error": "unauthorized"}
+    load_auth_db()
+    return {"ok": True, "msg": "Auth DB reloaded from GitHub"}
+
 @app.get("/admin/participants")
 def get_admin_participants(key: str = ""):
     if key != "skyblue2026admin":
