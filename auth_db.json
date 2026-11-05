@@ -2,7 +2,19 @@
   "admins": [
     "initial_admin_key"
   ],
-  "approved": {},
-  "pending": {},
+  "approved": {
+    "test_suite_user": {
+      "name": "테스트엔진 (Auto)",
+      "approved_at": "2026-11-05 00:00:00",
+      "role": "admin"
+    }
+  },
+  "pending": {
+    "user_hong": {
+      "name": "홍길동 안양비전1지점",
+      "requested_at": "2026-11-05 11:13:31",
+      "last_utterance": "홍길동 안양비전1지점"
+    }
+  },
   "blocked": {}
 }
