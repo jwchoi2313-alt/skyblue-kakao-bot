@@ -854,7 +854,10 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
     if exact_matches:
         exact_matches.sort(key=lambda x: x[0])
         min_diff = exact_matches[0][0]
-        candidates = [p for diff, p in exact_matches if diff <= min_diff + 3]
+        if min_diff == 0:
+            candidates = [p for diff, p in exact_matches if diff == 0]
+        else:
+            candidates = [p for diff, p in exact_matches if diff <= min_diff + 2]
     elif partial_matches:
         partial_matches.sort(key=lambda x: x[0], reverse=True)
         candidates = [p for _, p in partial_matches[:6]]
