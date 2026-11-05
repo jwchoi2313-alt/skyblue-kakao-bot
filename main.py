@@ -511,7 +511,7 @@ ALL_COMPANIES = {
     },
     "DB생명": {
         "category": "생명보험",
-        "aliases": ["DB생명", "디비생명", "동부생명"],
+        "aliases": ["DB생명", "디비생명", "동부생명", "DB", "디비"],
         "default_prod": "알행플종신",
         "default_term": "10년납",
         "flyer": "DB생명_11월.jpg",
