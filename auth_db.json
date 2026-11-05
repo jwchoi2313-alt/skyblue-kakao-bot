@@ -1,27 +1,12 @@
 {
-  "admins": [
-    "initial_admin_key",
-    "admin_jeongwoo"
-  ],
+  "admins": [],
   "approved": {
     "test_suite_user": {
       "name": "테스트엔진 (Auto)",
       "approved_at": "2026-11-05 00:00:00",
       "role": "admin"
-    },
-    "admin_jeongwoo": {
-      "name": "최정우 본부장 (Admin)",
-      "branch": "안양비전본부",
-      "approved_at": "2026-11-05 11:13:32",
-      "role": "admin"
     }
   },
   "pending": {},
-  "blocked": {
-    "user_hong": {
-      "name": "홍길동 안양비전1지점",
-      "blocked_at": "2026-11-05 11:13:33",
-      "reason": "관리자 강퇴/차단"
-    }
-  }
+  "blocked": {}
 }
