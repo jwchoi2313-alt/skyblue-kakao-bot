@@ -1,5 +1,7 @@
 {
-  "admins": [],
+  "admins": [
+    "initial_admin_key"
+  ],
   "approved": {},
   "pending": {},
   "blocked": {}
