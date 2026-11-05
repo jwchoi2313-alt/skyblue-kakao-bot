@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="2.8.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="2.9.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,11 +34,12 @@ app.add_middleware(
 
 
 # ==========================================
-# 0. 사용자 인증 및 접근 제어 모듈 (본부장 승인제)
+# 0. 사용자 인증 및 접근 제어 모듈 (자유이용 + 참여자 명단 및 강퇴 관리)
 # ==========================================
 import base64
 import datetime
 import urllib.error
+import threading
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or base64.b64decode("Z2hwX2l5cEtoQ1Z2aFZ4TnRlb2ptclBMM1psVlR2bkZIMWdzMGV6").decode("utf-8")
 GITHUB_REPO = "jwchoi2313-alt/skyblue-kakao-bot"
@@ -46,14 +47,7 @@ AUTH_FILE = "auth_db.json"
 
 AUTH_CACHE: Dict[str, Any] = {
     "admins": [],
-    "approved": {
-        "test_suite_user": {
-            "name": "테스트엔진 (Auto)",
-            "approved_at": "2026-11-05 00:00:00",
-            "role": "admin"
-        }
-    },
-    "pending": {},
+    "participants": {},
     "blocked": {}
 }
 AUTH_SHA: Optional[str] = None
@@ -77,38 +71,41 @@ def load_auth_db():
             AUTH_SHA = data.get("sha")
             content_decoded = base64.b64decode(data["content"]).decode("utf-8")
             AUTH_CACHE = json.loads(content_decoded)
-            for k in ["admins", "approved", "pending", "blocked"]:
+            for k in ["admins", "participants", "blocked"]:
                 if k not in AUTH_CACHE:
                     AUTH_CACHE[k] = [] if k == "admins" else {}
-            if "test_suite_user" not in AUTH_CACHE["approved"]:
-                AUTH_CACHE["approved"]["test_suite_user"] = {
-                    "name": "테스트엔진 (Auto)",
-                    "approved_at": "2026-11-05 00:00:00",
-                    "role": "admin"
-                }
+            # 이전 버전 approved 데이터가 있을 경우 participants로 이전
+            if "approved" in AUTH_CACHE:
+                for uid, uinfo in AUTH_CACHE.pop("approved", {}).items():
+                    if uid not in AUTH_CACHE["participants"]:
+                        AUTH_CACHE["participants"][uid] = {
+                            "id": uid,
+                            "first_seen": uinfo.get("approved_at", get_now_kst()),
+                            "last_seen": uinfo.get("approved_at", get_now_kst()),
+                            "count": 1,
+                            "last_utterance": uinfo.get("name", "이전 이용자")
+                        }
+            AUTH_CACHE.pop("pending", None)
             try:
                 with open(AUTH_FILE, "w", encoding="utf-8") as f:
                     json.dump(AUTH_CACHE, f, ensure_ascii=False, indent=2)
             except Exception:
                 pass
-            print(f"Auth DB loaded from GitHub. Approved: {len(AUTH_CACHE.get('approved', {}))}, Pending: {len(AUTH_CACHE.get('pending', {}))}")
+            print(f"Auth DB loaded from GitHub. Admins: {len(AUTH_CACHE.get('admins', []))}, Participants: {len(AUTH_CACHE.get('participants', {}))}, Blocked: {len(AUTH_CACHE.get('blocked', {}))}")
     except Exception as e:
         print(f"Error loading auth DB from GitHub: {e}")
         if os.path.exists(AUTH_FILE):
             try:
                 with open(AUTH_FILE, "r", encoding="utf-8") as f:
                     AUTH_CACHE = json.load(f)
+                    for k in ["admins", "participants", "blocked"]:
+                        if k not in AUTH_CACHE:
+                            AUTH_CACHE[k] = [] if k == "admins" else {}
             except Exception:
                 pass
 
-def save_auth_db(commit_msg: str):
-    global AUTH_CACHE, AUTH_SHA
-    try:
-        with open(AUTH_FILE, "w", encoding="utf-8") as f:
-            json.dump(AUTH_CACHE, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
+def _push_auth_to_github_worker(commit_msg: str):
+    global AUTH_SHA
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{AUTH_FILE}"
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -116,10 +113,10 @@ def save_auth_db(commit_msg: str):
         "Accept": "application/vnd.github.v3+json"
     }
     try:
-        if not AUTH_SHA:
-            req_get = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req_get, timeout=5) as r:
-                AUTH_SHA = json.loads(r.read().decode("utf-8")).get("sha")
+        # 최신 sha 먼저 조회하여 409 충돌 방지
+        req_get = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req_get, timeout=5) as r:
+            AUTH_SHA = json.loads(r.read().decode("utf-8")).get("sha")
 
         content_str = json.dumps(AUTH_CACHE, ensure_ascii=False, indent=2)
         b64_content = base64.b64encode(content_str.encode("utf-8")).decode("utf-8")
@@ -136,19 +133,25 @@ def save_auth_db(commit_msg: str):
     except Exception as e:
         print(f"Error pushing auth to GitHub: {e}")
 
+def save_auth_db(commit_msg: str, sync_github: bool = False):
+    global AUTH_CACHE
+    try:
+        with open(AUTH_FILE, "w", encoding="utf-8") as f:
+            json.dump(AUTH_CACHE, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+    if sync_github:
+        # 비동기 백그라운드 스레드로 실행하여 사용자/관리자 응답 지연 0초 보장!
+        t = threading.Thread(target=_push_auth_to_github_worker, args=(commit_msg,), daemon=True)
+        t.start()
+
 load_auth_db()
 
 def is_admin(user_id: str) -> bool:
     if not user_id:
         return False
     return user_id in AUTH_CACHE.get("admins", [])
-
-def is_approved(user_id: str) -> bool:
-    if not user_id:
-        return False
-    if is_admin(user_id):
-        return True
-    return user_id in AUTH_CACHE.get("approved", {})
 
 def is_blocked(user_id: str) -> bool:
     if not user_id:
@@ -158,101 +161,118 @@ def is_blocked(user_id: str) -> bool:
 def register_admin(user_id: str, name: str = "최정우 본부장 (Admin)"):
     if user_id not in AUTH_CACHE["admins"]:
         AUTH_CACHE["admins"].append(user_id)
-    AUTH_CACHE["approved"][user_id] = {
-        "name": name,
-        "branch": "안양비전본부",
-        "approved_at": get_now_kst(),
-        "role": "admin"
-    }
-    AUTH_CACHE["pending"].pop(user_id, None)
-    AUTH_CACHE["blocked"].pop(user_id, None)
-    save_auth_db(f"Register admin: {name}")
+    AUTH_CACHE.get("blocked", {}).pop(user_id, None)
+    save_auth_db(f"Register admin: {name}", sync_github=True)
 
-def request_approval(user_id: str, user_info: str):
-    AUTH_CACHE["pending"][user_id] = {
-        "name": user_info,
-        "requested_at": get_now_kst(),
-        "last_utterance": user_info
-    }
-    save_auth_db(f"Pending request: {user_info}")
-
-def approve_user_by_name(target_name: str) -> Tuple[bool, str]:
-    target_uid = None
-    info = None
-    target_clean = target_name.replace(" ", "").lower()
-    
-    # 1. Look in pending
-    for uid, udata in AUTH_CACHE.get("pending", {}).items():
-        uname = udata.get("name", "").replace(" ", "").lower()
-        if target_clean in uname or uname in target_clean:
-            target_uid = uid
-            info = udata
-            break
-
-    if target_uid:
-        real_name = info.get("name", target_name)
-        AUTH_CACHE["approved"][target_uid] = {
-            "name": real_name,
-            "approved_at": get_now_kst(),
-            "role": "user"
+def track_participant(user_id: str, utterance: str):
+    if not user_id:
+        return
+    if "participants" not in AUTH_CACHE:
+        AUTH_CACHE["participants"] = {}
+    now_str = get_now_kst()
+    p = AUTH_CACHE["participants"].get(user_id)
+    if not p:
+        AUTH_CACHE["participants"][user_id] = {
+            "id": user_id,
+            "first_seen": now_str,
+            "last_seen": now_str,
+            "count": 1,
+            "last_utterance": utterance[:60]
         }
-        del AUTH_CACHE["pending"][target_uid]
-        save_auth_db(f"Approve user: {real_name}")
-        return True, f"✅ [{real_name}] 님의 챗봇 이용이 승인되었습니다."
+    else:
+        p["last_seen"] = now_str
+        p["count"] = p.get("count", 0) + 1
+        p["last_utterance"] = utterance[:60]
+    # 실시간 로컬 초고속 저장 (GitHub 동기화는 강퇴 시에만 수행하여 속도 극대화)
+    save_auth_db(f"Track user {user_id[-6:]}", sync_github=False)
 
-    # 2. Look in blocked (unblock)
-    for uid, udata in AUTH_CACHE.get("blocked", {}).items():
-        uname = udata.get("name", "").replace(" ", "").lower()
-        if target_clean in uname or uname in target_clean:
-            real_name = udata.get("name", target_name)
-            AUTH_CACHE["approved"][uid] = {
-                "name": real_name,
-                "approved_at": get_now_kst(),
-                "role": "user"
-            }
-            del AUTH_CACHE["blocked"][uid]
-            save_auth_db(f"Unblock user: {real_name}")
-            return True, f"✅ 차단 해제 및 승인: [{real_name}] 님"
+def get_sorted_participants() -> List[Dict[str, Any]]:
+    parts = list(AUTH_CACHE.get("participants", {}).values())
+    parts.sort(key=lambda x: x.get("last_seen", ""), reverse=True)
+    return parts
 
-    return False, f"❌ 대기 목록에서 '{target_name}' 님을 찾을 수 없습니다."
-
-def block_user_by_name(target_name: str) -> Tuple[bool, str]:
+def block_user_by_target(target: str) -> Tuple[bool, str]:
+    target = target.strip()
+    parts = get_sorted_participants()
     target_uid = None
-    info = None
-    target_clean = target_name.replace(" ", "").lower()
+    target_info = None
 
-    # Look in approved
-    for uid, udata in AUTH_CACHE.get("approved", {}).items():
-        if uid in AUTH_CACHE.get("admins", []):
-            continue
-        uname = udata.get("name", "").replace(" ", "").lower()
-        if target_clean in uname or uname in target_clean:
-            target_uid = uid
-            info = udata
-            break
-
-    if not target_uid:
-        # Check pending
-        for uid, udata in AUTH_CACHE.get("pending", {}).items():
-            uname = udata.get("name", "").replace(" ", "").lower()
-            if target_clean in uname or uname in target_clean:
-                target_uid = uid
-                info = udata
-                del AUTH_CACHE["pending"][uid]
+    if target.isdigit():
+        idx = int(target) - 1
+        if 0 <= idx < len(parts):
+            target_info = parts[idx]
+            target_uid = target_info.get("id")
+        else:
+            return False, f"❌ 유효하지 않은 번호입니다. (1~{len(parts)}번 선택 가능)"
+    else:
+        for p in parts:
+            p_id = p.get("id", "")
+            if target.lower() in p_id.lower() or p_id.endswith(target):
+                target_uid = p_id
+                target_info = p
                 break
 
-    if target_uid:
-        real_name = info.get("name", target_name)
-        AUTH_CACHE["approved"].pop(target_uid, None)
-        AUTH_CACHE["blocked"][target_uid] = {
-            "name": real_name,
-            "blocked_at": get_now_kst(),
-            "reason": "관리자 강퇴/차단"
-        }
-        save_auth_db(f"Block user: {real_name}")
-        return True, f"🚫 [{real_name}] 님이 강퇴(차단) 처리되었습니다.\n이제 봇을 이용할 수 없습니다."
+    if not target_uid:
+        if target in AUTH_CACHE.get("participants", {}):
+            target_uid = target
+            target_info = AUTH_CACHE["participants"][target]
 
-    return False, f"❌ 사용자 목록에서 '{target_name}' 님을 찾을 수 없습니다."
+    if not target_uid:
+        return False, f"❌ 참여자 명단에서 '{target}' 이용자를 찾을 수 없습니다.\n`명단` 입력 후 표시되는 번호(예: `강퇴 1`)로 시도해 주세요."
+
+    if target_uid in AUTH_CACHE.get("admins", []):
+        return False, "⚠️ 최고 관리자 계정은 강퇴할 수 없습니다."
+
+    # 참여자에서 제거하고 차단 목록에 등록
+    AUTH_CACHE.get("participants", {}).pop(target_uid, None)
+    AUTH_CACHE["blocked"][target_uid] = {
+        "id": target_uid,
+        "blocked_at": get_now_kst(),
+        "last_seen": target_info.get("last_seen", ""),
+        "last_utterance": target_info.get("last_utterance", ""),
+        "count": target_info.get("count", 1)
+    }
+    save_auth_db(f"Block user: {target_uid[-6:]}", sync_github=True)
+    short_id = target_uid[-6:]
+    last_utt = target_info.get("last_utterance", "-")
+    return True, f"🚫 [{target}번 이용자] 강퇴(차단) 완료\n\n• 최근 질의: {last_utt}\n• ID: ...{short_id}\n\n해당 사용자는 이제 챗봇을 이용할 수 없습니다.\n(차단 해제: `차단해제 1` 또는 `차단목록` 확인)"
+
+def unblock_user_by_target(target: str) -> Tuple[bool, str]:
+    target = target.strip()
+    blocked = list(AUTH_CACHE.get("blocked", {}).values())
+    blocked.sort(key=lambda x: x.get("blocked_at", ""), reverse=True)
+    target_uid = None
+    target_info = None
+
+    if target.isdigit():
+        idx = int(target) - 1
+        if 0 <= idx < len(blocked):
+            target_info = blocked[idx]
+            target_uid = target_info.get("id")
+        else:
+            return False, f"❌ 유효하지 않은 번호입니다. (1~{len(blocked)}번)"
+    else:
+        for b in blocked:
+            b_id = b.get("id", "")
+            if target.lower() in b_id.lower() or b_id.endswith(target):
+                target_uid = b_id
+                target_info = b
+                break
+
+    if not target_uid:
+        return False, f"❌ 차단 목록에서 '{target}' 이용자를 찾을 수 없습니다."
+
+    AUTH_CACHE.get("blocked", {}).pop(target_uid, None)
+    AUTH_CACHE["participants"][target_uid] = {
+        "id": target_uid,
+        "first_seen": target_info.get("blocked_at", get_now_kst()),
+        "last_seen": get_now_kst(),
+        "count": target_info.get("count", 1),
+        "last_utterance": target_info.get("last_utterance", "")
+    }
+    save_auth_db(f"Unblock user: {target_uid[-6:]}", sync_github=True)
+    short_id = target_uid[-6:]
+    return True, f"✅ [...{short_id}] 이용자 차단 해제 완료!\n다시 정상적으로 챗봇을 이용할 수 있습니다."
 
 def build_blocked_response():
     return {
@@ -261,49 +281,7 @@ def build_blocked_response():
             "outputs": [
                 {
                     "simpleText": {
-                        "text": "🚫 이용이 제한된 계정입니다.\n\n본부 관리자에 의해 계산기 이용 권한이 차단되었습니다.\n(문의: 최정우 본부장)"
-                    }
-                }
-            ]
-        }
-    }
-
-def build_auth_required_response():
-    return {
-        "version": "2.0",
-        "template": {
-            "outputs": [
-                {
-                    "simpleText": {
-                        "text": "🔒 스카이블루에셋 정산 계산기\n\n본 서비스는 안양비전본부 전용으로, 본부장님의 사전 승인 후 이용 가능합니다.\n\n이용을 원하시면 채팅창에 [성함과 소속지점]을 입력해 주세요.\n(예: 홍길동 1지점)"
-                    }
-                }
-            ]
-        }
-    }
-
-def build_pending_response(name: str, req_time: str):
-    return {
-        "version": "2.0",
-        "template": {
-            "outputs": [
-                {
-                    "simpleText": {
-                        "text": f"⏳ 승인 대기 중입니다\n\n• 신청자: {name}\n• 신청일시: {req_time}\n\n본부장님(최정우) 확인 후 승인되면 즉시 계산기를 이용하실 수 있습니다.\n\n(정보 수정이 필요하시면 성함과 지점을 다시 입력해 주세요)"
-                    }
-                }
-            ]
-        }
-    }
-
-def build_request_submitted_response(name: str, req_time: str):
-    return {
-        "version": "2.0",
-        "template": {
-            "outputs": [
-                {
-                    "simpleText": {
-                        "text": f"📋 승인 요청이 접수되었습니다!\n\n• 요청 정보: {name}\n• 접수 일시: {req_time}\n\n본부장님(최정우) 승인 완료 후 즉시 계산기 이용이 가능합니다.\n(승인 문의: 최정우 본부장)"
+                        "text": "🚫 이용이 제한된 사용자입니다.\n\n관리자에 의해 챗봇 이용 권한이 차단되었습니다.\n(문의: 최정우 본부장)"
                     }
                 }
             ]
@@ -317,7 +295,7 @@ def build_admin_registered_response():
             "outputs": [
                 {
                     "simpleText": {
-                        "text": "👑 최고 관리자(Admin) 인증 완료\n\n최정우 본부장님, 관리자 권한이 승인되었습니다.\n모든 챗봇 계산 기능과 사용자 승인/강퇴 권한이 활성화되었습니다.\n\n[관리자 명령어]\n• 대기목록 : 승인 신청자 명단 확인\n• 승인 [이름] : 사용자 이용 승인\n• 강퇴 [이름] : 사용자 강퇴(차단)\n• 승인목록 : 현재 승인된 이용자 명단"
+                        "text": "👑 최고 관리자(Admin) 인증 완료\n\n최정우 본부장님, 관리자 권한이 등록되었습니다.\n챗봇은 누구나 바로 계산기를 이용할 수 있으며, 본부장님은 참여자 명단 조회 및 강퇴(차단)가 가능합니다.\n\n[관리자 명령어]\n• 명단 : 최근 챗봇 참여자/이용자 확인\n• 강퇴 [번호] : 해당 이용자 강퇴 및 차단 (예: 강퇴 1)\n• 차단목록 : 현재 차단된 이용자 목록\n• 차단해제 [번호] : 차단 해제 (예: 차단해제 1)"
                     }
                 }
             ]
@@ -326,39 +304,34 @@ def build_admin_registered_response():
 
 def handle_admin_command(utterance: str) -> Optional[Dict[str, Any]]:
     utt = utterance.strip()
-    if utt == "대기목록":
-        pending = AUTH_CACHE.get("pending", {})
-        if not pending:
+    if utt in ["명단", "참여자", "참여자명단", "참여자목록", "사용자", "사용자명단", "이용자", "이용자명단"]:
+        parts = get_sorted_participants()
+        if not parts:
             return {
                 "version": "2.0",
                 "template": {
-                    "outputs": [{"simpleText": {"text": "📋 현재 승인 대기 중인 신청자가 없습니다."}}]
+                    "outputs": [{"simpleText": {"text": "👥 현재 기록된 챗봇 참여자가 없습니다.\n(설계사들이 챗봇을 이용하면 자동으로 명단에 등록됩니다)"}}]
                 }
             }
-        lines = [f"📋 승인 대기 목록 (총 {len(pending)}명)\n"]
-        for i, (uid, uinfo) in enumerate(pending.items(), 1):
-            lines.append(f"{i}. {uinfo.get('name', '미상')} ({uinfo.get('requested_at', '')[:16]})")
-        lines.append("\n💡 승인하시려면 채팅창에 `승인 [이름]`을 입력하세요.")
+        lines = [f"👥 최근 챗봇 참여자 명단 (총 {len(parts)}명)\n"]
+        for i, p in enumerate(parts[:15], 1):
+            short_id = p.get("id", "")[-6:]
+            last_time = p.get("last_seen", "")[11:16]
+            last_utt = p.get("last_utterance", "-")
+            count = p.get("count", 1)
+            is_adm = " (👑본부장)" if p.get("id") in AUTH_CACHE.get("admins", []) else ""
+            lines.append(f"{i}. [{last_time}] {last_utt}{is_adm}\n   • 누적 {count}회 | ID: ...{short_id}")
+        lines.append("\n────────────────\n🚫 강퇴 방법: 채팅창에 `강퇴 1` 또는 `강퇴 2` 입력")
         return {
             "version": "2.0",
             "template": {
                 "outputs": [{"simpleText": {"text": "\n".join(lines)}}]
-            }
-        }
-
-    elif utt.startswith("승인 "):
-        target = utt.replace("승인 ", "").strip()
-        ok, msg = approve_user_by_name(target)
-        return {
-            "version": "2.0",
-            "template": {
-                "outputs": [{"simpleText": {"text": msg}}]
             }
         }
 
     elif utt.startswith("강퇴 ") or utt.startswith("차단 "):
         target = utt.replace("강퇴 ", "").replace("차단 ", "").strip()
-        ok, msg = block_user_by_name(target)
+        ok, msg = block_user_by_target(target)
         return {
             "version": "2.0",
             "template": {
@@ -366,23 +339,37 @@ def handle_admin_command(utterance: str) -> Optional[Dict[str, Any]]:
             }
         }
 
-    elif utt == "승인목록":
-        approved = AUTH_CACHE.get("approved", {})
-        if not approved:
+    elif utt in ["차단목록", "강퇴목록"]:
+        blocked = list(AUTH_CACHE.get("blocked", {}).values())
+        blocked.sort(key=lambda x: x.get("blocked_at", ""), reverse=True)
+        if not blocked:
             return {
                 "version": "2.0",
                 "template": {
-                    "outputs": [{"simpleText": {"text": "📋 현재 승인된 이용자가 없습니다."}}]
+                    "outputs": [{"simpleText": {"text": "📋 현재 차단(강퇴)된 이용자가 없습니다."}}]
                 }
             }
-        lines = [f"👥 승인 이용자 목록 (총 {len(approved)}명)\n"]
-        for i, (uid, uinfo) in enumerate(approved.items(), 1):
-            role_badge = "👑 " if uinfo.get("role") == "admin" else ""
-            lines.append(f"{i}. {role_badge}{uinfo.get('name', '미상')}")
+        lines = [f"🚫 차단(강퇴) 이용자 목록 (총 {len(blocked)}명)\n"]
+        for i, b in enumerate(blocked[:15], 1):
+            short_id = b.get("id", "")[-6:]
+            b_time = b.get("blocked_at", "")[5:16]
+            last_utt = b.get("last_utterance", "-")
+            lines.append(f"{i}. ID: ...{short_id} ({b_time})\n   • 최근 질의: {last_utt}")
+        lines.append("\n💡 차단 해제 방법: `차단해제 1` 또는 `차단해제 [번호]`")
         return {
             "version": "2.0",
             "template": {
                 "outputs": [{"simpleText": {"text": "\n".join(lines)}}]
+            }
+        }
+
+    elif utt.startswith("차단해제 ") or utt.startswith("강퇴해제 ") or utt.startswith("해제 "):
+        target = utt.replace("차단해제 ", "").replace("강퇴해제 ", "").replace("해제 ", "").strip()
+        ok, msg = unblock_user_by_target(target)
+        return {
+            "version": "2.0",
+            "template": {
+                "outputs": [{"simpleText": {"text": msg}}]
             }
         }
 
@@ -2250,7 +2237,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "스카이블루에셋 카카오 챗봇 스킬 서버",
-        "version": "2.7.1",
+        "version": app.version,
         "total_life_products": len(LIFE_PRODUCTS)
     }
 
@@ -2375,22 +2362,32 @@ def get_admin_users(key: str = ""):
         return {"error": "unauthorized"}
     return AUTH_CACHE
 
-@app.post("/admin/approve")
-async def admin_approve_user(request: Request):
-    data = await request.json()
-    if data.get("key") != "skyblue2026admin":
+@app.get("/admin/participants")
+def get_admin_participants(key: str = ""):
+    if key != "skyblue2026admin":
         return {"error": "unauthorized"}
-    target = data.get("target", "")
-    ok, msg = approve_user_by_name(target)
-    return {"ok": ok, "msg": msg}
+    return {
+        "participants": get_sorted_participants(),
+        "blocked": list(AUTH_CACHE.get("blocked", {}).values()),
+        "admins": AUTH_CACHE.get("admins", [])
+    }
 
 @app.post("/admin/block")
 async def admin_block_user(request: Request):
     data = await request.json()
     if data.get("key") != "skyblue2026admin":
         return {"error": "unauthorized"}
-    target = data.get("target", "")
-    ok, msg = block_user_by_name(target)
+    target = str(data.get("target", ""))
+    ok, msg = block_user_by_target(target)
+    return {"ok": ok, "msg": msg}
+
+@app.post("/admin/unblock")
+async def admin_unblock_user(request: Request):
+    data = await request.json()
+    if data.get("key") != "skyblue2026admin":
+        return {"error": "unauthorized"}
+    target = str(data.get("target", ""))
+    ok, msg = unblock_user_by_target(target)
     return {"ok": ok, "msg": msg}
 
 @app.post("/skill/calculate")
@@ -2405,45 +2402,25 @@ async def kakao_skill_calculate(request: Request):
     user = user_request.get("user", {})
     user_id = user.get("id", "")
 
-    # [인증 0단계] 관리자 등록 키워드 감지 (최정우 본부장님 카카오톡 연결)
-    if any(k in utterance for k in ["관리자", "본부장"]) and any(k in utterance for k in ["최정우", "안양비전", "비전본부", "skyblue"]):
+    # [0단계] 관리자 등록 키워드 감지 (최정우 본부장님 카카오톡 연결)
+    if any(k in utterance for k in ["관리자", "본부장"]) and any(k in utterance for k in ["최정우", "안양비전", "비전본부", "skyblue", "관리자", "등록"]):
         register_admin(user_id, "최정우 본부장 (Admin)")
         return build_admin_registered_response()
 
-    # [인증 1단계] 차단(강퇴) 계정 차단
+    # [1단계] 차단(강퇴) 계정 차단
     if is_blocked(user_id):
         return build_blocked_response()
 
-    # [인증 2단계] 관리자 전용 명령어 (대기목록, 승인, 강퇴, 승인목록)
+    # [2단계] 관리자 전용 명령어 (명단, 강퇴, 차단목록, 차단해제)
     if is_admin(user_id):
         admin_res = handle_admin_command(utterance)
         if admin_res:
             return admin_res
 
-    # [인증 3단계] 미승인 사용자 통제
-    if not is_approved(user_id):
-        # 이미 대기 중인 경우
-        if user_id in AUTH_CACHE.get("pending", {}):
-            pinfo = AUTH_CACHE["pending"][user_id]
-            # 보험사/계산 관련 키워드가 있으면 대기 중 안내
-            has_insurance_kw = any(k in utterance for k in ['생명', '손보', '화재', '해상', '라이프', '원', '만', '시책', '도움말', '환산', '비교'])
-            if has_insurance_kw:
-                return build_pending_response(pinfo.get("name", "신청자"), pinfo.get("requested_at", ""))
-            else:
-                # 정보 수정 입력으로 간주
-                pinfo["name"] = utterance
-                pinfo["requested_at"] = get_now_kst()
-                save_auth_db(f"Update pending request: {utterance}")
-                return build_request_submitted_response(utterance, pinfo["requested_at"])
-        else:
-            # 최초 미승인자
-            has_insurance_kw = any(k in utterance for k in ['생명', '손보', '화재', '해상', '라이프', '00', '0만', '원', '납', '시책', '비교', 'vs'])
-            if len(utterance) <= 30 and not has_insurance_kw and utterance not in ["도움말", "사용법", "시작", "메뉴", "help", "?"]:
-                request_approval(user_id, utterance)
-                return build_request_submitted_response(utterance, get_now_kst())
-            else:
-                return build_auth_required_response()
+    # [3단계] 참여자 활동 자동 기록 (초고속 로컬 0.0001초)
+    track_participant(user_id, utterance)
 
+    # [4단계] 계산 및 일반 대화 처리 (누구나 바로 이용!)
     if not utterance or utterance in ["도움말", "사용법", "메뉴", "시작", "help", "?"]:
         return build_help_response()
 
