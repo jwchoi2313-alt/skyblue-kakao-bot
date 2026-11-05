@@ -577,7 +577,80 @@ def search_life_product(company: str, query: str, term: str = "") -> Optional[Di
     return candidates[0]
 
 
-def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none") -> Dict[str, Any]:
+
+def get_sky_jongshin_bonus(comp: str, prod: str, term: str, premium: int, is_corp: bool = False) -> Tuple[int, str]:
+    """스카이블루에셋 11월 본사 종신전략상품 추가지원안 (구간별 고정 시상금액, 익월 50% + 15회차 50%)"""
+    c = comp.lower()
+    p = prod.lower()
+    t = term.lower()
+    
+    # 1. DB알행종 (10년납, 7년납) - 개인/법인 모두 지급
+    if ('db' in c or '디비' in c) and any(k in p for k in ['알행종', '알행플', '알차고']):
+        if '10년' in t:
+            if premium >= 24000000: return 60000000, "DB알행종 10년납 SKY본사추가 6,000만원(익월3000+15회3000)"
+            elif premium >= 18000000: return 45000000, "DB알행종 10년납 SKY본사추가 4,500만원(익월2250+15회2250)"
+            elif premium >= 12000000: return 30000000, "DB알행종 10년납 SKY본사추가 3,000만원(익월1500+15회1500)"
+            elif premium >= 8400000: return 21000000, "DB알행종 10년납 SKY본사추가 2,100만원(익월1050+15회1050)"
+            elif premium >= 6000000: return 15000000, "DB알행종 10년납 SKY본사추가 1,500만원(익월750+15회750)"
+            elif premium >= 3600000: return 9000000, "DB알행종 10년납 SKY본사추가 900만원(익월450+15회450)"
+            elif premium >= 2400000: return 6000000, "DB알행종 10년납 SKY본사추가 600만원(익월300+15회300)"
+            elif premium >= 1200000: return 3000000, "DB알행종 10년납 SKY본사추가 300만원(익월150+15회150)"
+        elif '7년' in t:
+            if premium >= 24000000: return 40000000, "DB알행종 7년납 SKY본사추가 4,000만원(익월2000+15회2000)"
+            elif premium >= 18000000: return 30000000, "DB알행종 7년납 SKY본사추가 3,000만원(익월1500+15회1500)"
+            elif premium >= 12000000: return 20000000, "DB알행종 7년납 SKY본사추가 2,000만원(익월1000+15회1000)"
+            elif premium >= 8400000: return 15000000, "DB알행종 7년납 SKY본사추가 1,500만원(익월750+15회750)"
+            elif premium >= 6000000: return 10000000, "DB알행종 7년납 SKY본사추가 1,000만원(익월500+15회500)"
+            elif premium >= 3600000: return 6000000, "DB알행종 7년납 SKY본사추가 600만원(익월300+15회300)"
+            elif premium >= 2400000: return 4000000, "DB알행종 7년납 SKY본사추가 400만원(익월200+15회200)"
+            elif premium >= 1200000: return 2000000, "DB알행종 7년납 SKY본사추가 200만원(익월100+15회100)"
+
+    # 2. 한화생명 하나로 (15년납·법인계약만)
+    elif ('한화' in c) and ('하나로' in p):
+        if is_corp and ('15년' in t or '20년' in t):
+            if premium >= 24000000: return 60000000, "한화하나로 15년납 SKY법인추가 6,000만원(익월3000+15회3000)"
+            elif premium >= 18000000: return 45000000, "한화하나로 15년납 SKY법인추가 4,500만원(익월2250+15회2250)"
+            elif premium >= 12000000: return 30000000, "한화하나로 15년납 SKY법인추가 3,000만원(익월1500+15회1500)"
+            elif premium >= 8400000: return 21000000, "한화하나로 15년납 SKY법인추가 2,100만원(익월1050+15회1050)"
+            elif premium >= 6000000: return 15000000, "한화하나로 15년납 SKY법인추가 1,500만원(익월750+15회750)"
+            elif premium >= 3600000: return 9000000, "한화하나로 15년납 SKY법인추가 900만원(익월450+15회450)"
+            elif premium >= 2400000: return 2400000, "한화하나로 15년납 SKY법인추가 240만원(익월120+15회120)"
+            elif premium >= 1200000: return 1200000, "한화하나로 15년납 SKY법인추가 120만원(익월60+15회60)"
+
+    # 3. 푸본현대 맥스원픽 / IM당당한인생 (7년납·법인계약만)
+    elif (('푸본' in c and '원픽' in p) or ('im' in c and '당당한' in p)):
+        if is_corp and '7년' in t:
+            label = "푸본맥스원픽" if '푸본' in c else "IM당당한인생"
+            if premium >= 24000000: return 40000000, f"{label} 7년납 SKY법인추가 4,000만원(익월2000+15회2000)"
+            elif premium >= 18000000: return 30000000, f"{label} 7년납 SKY법인추가 3,000만원(익월1500+15회1500)"
+            elif premium >= 12000000: return 20000000, f"{label} 7년납 SKY법인추가 2,000만원(익월1000+15회1000)"
+            elif premium >= 8400000: return 15000000, f"{label} 7년납 SKY법인추가 1,500만원(익월750+15회750)"
+            elif premium >= 6000000: return 10000000, f"{label} 7년납 SKY법인추가 1,000만원(익월500+15회500)"
+            elif premium >= 3600000: return 6000000, f"{label} 7년납 SKY법인추가 600만원(익월300+15회300)"
+            elif premium >= 2400000: return 2400000, f"{label} 7년납 SKY법인추가 240만원(익월120+15회120)"
+            elif premium >= 1200000: return 1200000, f"{label} 7년납 SKY법인추가 120만원(익월60+15회60)"
+
+    return 0, ""
+
+
+def get_sky_health_bonus(comp: str, prod: str, premium: int) -> Tuple[float, str]:
+    """스카이블루에셋 11월 본사 건강전략상품 추가시상안 (P 10만↑ 100%, P 20만↑ 200% 익월지급)"""
+    c = comp.lower()
+    p = prod.lower()
+    
+    # 1. DB건강 4종: {생활비암, 내가고른, 건강100, 치매간병}
+    if ('db' in c or '디비' in c) and any(k in p for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합']):
+        if premium >= 200000: return 2.0, "SKY본사 건강추가 200%(익월)"
+        elif premium >= 100000: return 1.0, "SKY본사 건강추가 100%(익월)"
+            
+    # 2. 흥국건강 5종: {오튼튼, 3.10.5, 고당+, 3.8.5.5, 다사랑3N5, 치매담은(시니어, PLUS)}
+    elif '흥국' in c and any(k in p for k in ['오튼튼', '3.10.5', '고당', '3.8.5.5', '3n5', '다사랑', '치매담은', '시니어', '건강', '암']):
+        if premium >= 200000: return 2.0, "SKY본사200"
+        elif premium >= 100000: return 1.0, "SKY본사100"
+            
+    return 0.0, ""
+
+def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none", contract_type: str = "개인") -> Dict[str, Any]:
     """17개 생보사 11월 공식 시책표 정밀 판정 (메트라이프 납기별 차이, 흥국 2종 연속, 신한 3~7번 연계, 라이나, 미래에셋 완벽 반영)"""
     comp = comp_name.replace('생명', '').replace('라이프', '').strip().lower()
     prod = product_name.replace(" ", "").lower()
@@ -612,7 +685,15 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
     elif '흥국' in comp:
         is_strat = (incentive_type == "전략" or any(k in prod for k in ['오튼튼', '다사랑', '치매', '암', '건강', '3.10.5']))
         base_next = 4.0
-        sky_next = 2.0 if (premium >= 200000 and is_strat) else 0.0
+        sky_next = 0.0
+        sky_health_desc = ""
+        if is_strat:
+            if premium >= 200000:
+                sky_next = 2.0
+                sky_health_desc = "SKY본사200"
+            elif premium >= 100000:
+                sky_next = 1.0
+                sky_health_desc = "SKY본사100"
         install_period = 6.0
         install_strat = 2.0 if is_strat else 0.0
         
@@ -649,7 +730,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             applied_cont_rate = c1_rate + c2_rate
             applied_desc = f"[연속 2종 모두포함 +{(c1_amount+c2_amount)//10000}만 원({int((c1_rate+c2_rate)*100)}%) 합산]"
 
-        basis = f"익월 {int((base_next+sky_next)*100)}%(기본400+SKY{int(sky_next*100)}) + 13회차 {int((install_period+install_strat)*100)}%(1~3주600+전략{int(install_strat*100)})"
+        basis = f"익월 {int((base_next+sky_next)*100)}%(원수사400+{sky_health_desc}) + 13회차 {int((install_period+install_strat)*100)}%(1~3주600+전략{int(install_strat*100)})"
         if applied_desc:
             basis += f" {applied_desc}"
 
@@ -674,10 +755,25 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             else:
                 return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (건강더한종신 10년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '하나로' in prod:
-            if '10년' in term:
-                return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (하나로H종신 10년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
-            else:
-                return {"next_month": 5.0, "split": 2.0, "total": 7.0, "basis": "익월 500% + 13회차 200% (하나로H종신 15/20년납 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+            base_next = 3.5 if '10년' in term else 5.0
+            base_split = 1.5 if '10년' in term else 2.0
+            is_corp = (contract_type == "법인")
+            sky_amount, sky_desc = get_sky_jongshin_bonus("한화생명", prod, term, premium, is_corp=is_corp)
+            sky_next = 0.0
+            sky_split = 0.0
+            if sky_amount > 0 and premium > 0:
+                sky_rate = sky_amount / premium
+                sky_next = sky_rate * 0.5
+                sky_split = sky_rate * 0.5
+            tot_next = base_next + sky_next
+            tot_split = base_split + sky_split
+            tot_rate = tot_next + tot_split
+            basis = f"원수사 {int((base_next+base_split)*100)}%(익월{int(base_next*100)}+13회{int(base_split*100)})"
+            if sky_desc:
+                basis += f" + {sky_desc}"
+            elif not is_corp and ('15년' in term or '20년' in term):
+                basis += " (개인계약: SKY본사법인지원 제외)"
+            return {"next_month": tot_next, "split": tot_split, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
         elif '필요할때' in prod:
             if '12년' in term:
                 return {"next_month": 6.0, "split": 2.5, "total": 8.5, "basis": "익월 600% + 13회차 250% (필요할때쓰는종신 12년납 850%)", "cont_bonus": 0.0, "cont_desc": ""}
@@ -696,17 +792,39 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
 
     # 4. DB생명
     elif 'db' in comp or '디비' in comp or '동부' in comp:
-        if '알행플' in prod:
-            if '7년' in term:
-                return {"next_month": 4.0, "split": 1.0, "total": 5.0, "basis": "익월 400% + 13회차 100% (알행플종신 7년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
-            else:
-                return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "익월 400% + 13회차 200% (알행플종신 10년납 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+        if any(k in prod for k in ['알행플', '알행종', '알차고']):
+            base_next = 4.0
+            base_split = 1.0 if '7년' in term else 2.0
+            sky_amount, sky_desc = get_sky_jongshin_bonus("DB생명", prod, term, premium, is_corp=True)
+            sky_next = 0.0
+            sky_split = 0.0
+            if sky_amount > 0 and premium > 0:
+                sky_rate = sky_amount / premium
+                sky_next = sky_rate * 0.5
+                sky_split = sky_rate * 0.5
+            tot_next = base_next + sky_next
+            tot_split = base_split + sky_split
+            tot_rate = tot_next + tot_split
+            basis = f"원수사 {int((base_next+base_split)*100)}%(익월{int(base_next*100)}+13회{int(base_split*100)})"
+            if sky_desc:
+                basis += f" + {sky_desc}"
+            return {"next_month": tot_next, "split": tot_split, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합']):
+            base_next = 4.0
+            base_split = 2.0
+            sky_rate, sky_desc = get_sky_health_bonus("DB생명", prod, premium)
+            tot_next = base_next + sky_rate
+            tot_split = base_split
+            basis = f"원수사 600%(익월400+13회200)"
+            if sky_desc:
+                basis += f" + {sky_desc}"
+            return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
         elif '리턴' in prod:
-            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "익월 400% + 13회차 200% (알행리턴종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "원수사 600% (익월 400% + 13회차 200%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '올케어' in prod:
-            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (뉴-올케어암종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "원수사 800% (익월 400% + 13회차 400%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "익월 400% + 13회차 200% (DB생명 종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "원수사 600% (익월 400% + 13회차 200%)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 5. 신한라이프 (2번째장 3~7번 연계는 연속포함 시에만 합산)
     elif '신한' in comp:
@@ -870,7 +988,24 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
     # 10. 푸본현대생명
     elif '푸본' in comp:
         if '원픽' in prod:
-            return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (MAX 원픽종신 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            base_next = 3.5
+            base_split = 1.5
+            is_corp = (contract_type == "법인")
+            sky_amount, sky_desc = get_sky_jongshin_bonus("푸본현대", prod, term, premium, is_corp=is_corp)
+            sky_next = 0.0
+            sky_split = 0.0
+            if sky_amount > 0 and premium > 0:
+                sky_rate = sky_amount / premium
+                sky_next = sky_rate * 0.5
+                sky_split = sky_rate * 0.5
+            tot_next = base_next + sky_next
+            tot_split = base_split + sky_split
+            basis = f"원수사 500%(익월350+13회150)"
+            if sky_desc:
+                basis += f" + {sky_desc}"
+            elif not is_corp and '7년' in term:
+                basis += " (개인계약: SKY본사법인지원 제외)"
+            return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
         else:
             return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (마이픽 건강 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
@@ -897,6 +1032,30 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
     elif '하나' in comp:
         return {"next_month": 5.0, "split": 19.0, "total": 24.0, "basis": "익월 500% + 13회차 1,900% (하나로라이트 최대 2,400%)", "cont_bonus": 0.0, "cont_desc": ""}
 
+    # 16. IM라이프
+    elif 'im' in comp or '아이엠' in comp:
+        if '당당한' in prod:
+            base_next = 3.0 if '7년' in term else 2.5
+            base_split = 1.0 if '7년' in term else 0.0
+            is_corp = (contract_type == "법인")
+            sky_amount, sky_desc = get_sky_jongshin_bonus("IM라이프", prod, term, premium, is_corp=is_corp)
+            sky_next = 0.0
+            sky_split = 0.0
+            if sky_amount > 0 and premium > 0:
+                sky_rate = sky_amount / premium
+                sky_next = sky_rate * 0.5
+                sky_split = sky_rate * 0.5
+            tot_next = base_next + sky_next
+            tot_split = base_split + sky_split
+            basis = f"원수사 {int((base_next+base_split)*100)}%(익월{int(base_next*100)}+13회{int(base_split*100)})"
+            if sky_desc:
+                basis += f" + {sky_desc}"
+            elif not is_corp and '7년' in term:
+                basis += " (개인계약: SKY본사법인지원 제외)"
+            return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            return {"next_month": 2.5, "split": 2.5, "total": 5.0, "basis": "익월 250% + 13회차 250% (IM라이프 주력 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+
     return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (기본 전략 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
 
@@ -907,7 +1066,8 @@ def calculate_life(
     s_factor: float = 1000.0,
     term: str = "20년납",
     incentive_type: str = "전략",
-    continuous_mode: str = "none"
+    continuous_mode: str = "none",
+    contract_type: str = "개인"
 ) -> Dict[str, Any]:
     comp_clean = company.replace('생명', '').replace('라이프', '').strip()
     
@@ -932,7 +1092,7 @@ def calculate_life(
     installment_comm = round(s_grade * inst_rate)
     total_comm = next_month_comm + installment_comm
     
-    inc_info = get_life_incentive(comp_clean, product_name, term, premium, incentive_type, continuous_mode)
+    inc_info = get_life_incentive(comp_clean, product_name, term, premium, incentive_type, continuous_mode, contract_type=contract_type)
     next_month_inc_rate = inc_info.get("next_month", 0.0)
     split_inc_rate = inc_info.get("split", 0.0)
     basis_desc = inc_info.get("basis", "")
@@ -1228,11 +1388,15 @@ def get_suggested_terms_for_life(comp: str, prod_name: str) -> List[str]:
     elif "건강더한" in p:
         return ["7년납", "10년납", "15년납", "20년납"]
     elif "하나로" in p:
-        return ["10년납", "15년납", "20년납"]
+        return ["10년납", "15년납(법인시상)", "20년납"]
+    elif "원픽" in p:
+        return ["5년납", "7년납(법인시상)", "20년납"]
+    elif "당당한" in p:
+        return ["5년납", "7년납(법인시상)", "20년납"]
     elif "필요할때" in p:
         return ["10년납", "12년납", "15년납", "20년납"]
-    elif "알행플" in p:
-        return ["7년납", "10년납", "15년납", "20년납"]
+    elif "알행플" in p or "알행종" in p:
+        return ["7년납(SKY시상)", "10년납(SKY시상)", "15년납", "20년납"]
     elif "쑥쑥" in p or "어린이" in p:
         return ["15년납", "20년납", "30년납"]
     elif "연금" in p:
@@ -1273,6 +1437,62 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
             "quickReplies": quick_replies
         }
     }
+
+def is_corp_incentive_target(comp: str, prod_name: str) -> bool:
+    """한화생명 하나로, 푸본현대 맥스원픽, IM라이프 당당한인생 3개 상품은 법인계약만 추가지급 대상인지 확인"""
+    c = comp.lower()
+    p = prod_name.replace(" ", "").lower()
+    if ('한화' in c) and ('하나로' in p):
+        return True
+    if ('푸본' in c) and ('원픽' in p):
+        return True
+    if ('im' in c or '아이엠' in c) and ('당당한' in p):
+        return True
+    return False
+
+
+def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, term: str) -> Dict[str, Any]:
+    """한화 하나로, 푸본 맥스원픽, IM 당당한인생에 대해 개인계약인지 법인계약인지 확인하는 인터랙션 (사용자 지시 완벽 반영)"""
+    prem_man = premium // 10000
+    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    clean_prod = clean_product_display_name(prod_name)
+    term_str = f" · {term}" if term else ""
+    
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": (
+                            f"📋 {comp} · {clean_prod} ({prem_str}{term_str})\n\n"
+                            "본 상품의 SKY 본사 추가 시상은 **법인계약**에만 지급됩니다.\n"
+                            "계약자가 개인인가요, 법인인가요?\n\n"
+                            "아래 버튼을 눌러 선택해 주세요!"
+                        )
+                    }
+                }
+            ],
+            "quickReplies": [
+                {
+                    "messageText": f"{comp} {clean_prod} {prem_str} {term} 법인계약".strip(),
+                    "action": "message",
+                    "label": "🏢 법인계약 (SKY시상 포함)"
+                },
+                {
+                    "messageText": f"{comp} {clean_prod} {prem_str} {term} 개인계약".strip(),
+                    "action": "message",
+                    "label": "👤 개인계약"
+                },
+                {
+                    "messageText": "사용법",
+                    "action": "message",
+                    "label": "💡 사용법 안내"
+                }
+            ]
+        }
+    }
+
 
 
 def build_ask_product_and_amount_response(comp: str) -> Dict[str, Any]:
@@ -1381,6 +1601,7 @@ def calculate_company_for_compare(comp_name: str, premium: int, text: str, conti
         s_factor = matched['s_factor'] if matched else 1000.0
         prod_name = matched['product'] if matched else default_prod
         
+        c_type = "법인" if any(k in text for k in ['법인', '법인계약']) else "개인"
         return calculate_life(
             company=comp_name,
             product_name=prod_name,
@@ -1388,7 +1609,8 @@ def calculate_company_for_compare(comp_name: str, premium: int, text: str, conti
             s_factor=s_factor,
             term=term,
             incentive_type="전략",
-            continuous_mode=continuous_mode
+            continuous_mode=continuous_mode,
+            contract_type=c_type
         )
 
 
@@ -1667,7 +1889,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "스카이블루에셋 카카오 챗봇 스킬 서버",
-        "version": "2.6.1",
+        "version": "2.7.0",
         "total_life_products": len(LIFE_PRODUCTS)
     }
 
@@ -1806,6 +2028,12 @@ async def kakao_skill_calculate(request: Request):
         # 2. 회사명 및 금액 추출
         matched_comps = find_companies_in_text(utterance)
         premium = parse_premium(utterance)
+        # 계약자 형태 (개인 vs 법인) 추출
+        contract_type = ""
+        if any(k in utterance for k in ['법인', '법인계약']):
+            contract_type = "법인"
+        elif any(k in utterance for k in ['개인', '개인계약']):
+            contract_type = "개인"
         
         # 연속시상 모드 판정
         continuous_mode = "none"
@@ -1884,8 +2112,12 @@ async def kakao_skill_calculate(request: Request):
                 if not term:
                     suggested_terms = get_suggested_terms_for_life(comp, prod_name)
                     return build_ask_term_response(comp, prod_name, calc_prem, suggested_terms)
+
+                # 한화 하나로, 푸본 맥스원픽, IM 당당한인생 3개 상품은 법인계약만 추가지급 -> 개인/법인 질의!
+                if is_corp_incentive_target(comp, prod_name) and not contract_type:
+                    return build_ask_contract_type_response(comp, prod_name, calc_prem, term)
                     
-                # 납입기간이 지정된 경우 -> 해당 납기로 정확히 즉시 계산!
+                # 납입기간 및 계약형태가 확정된 경우 -> 해당 납기로 정확히 즉시 계산!
                 s_factor = matched['s_factor'] if matched else 1000.0
                 calc_res = calculate_life(
                     company=comp,
@@ -1894,7 +2126,8 @@ async def kakao_skill_calculate(request: Request):
                     s_factor=s_factor,
                     term=term,
                     incentive_type="전략",
-                    continuous_mode=continuous_mode
+                    continuous_mode=continuous_mode,
+                    contract_type=contract_type or "개인"
                 )
                 return build_kakao_response(calc_res)
 
@@ -1920,7 +2153,37 @@ async def kakao_skill_calculate(request: Request):
                 s_factor = matched['s_factor'] if matched else 647.55
                 calc_res = calculate_life("메트라이프", matched['product'], premium, s_factor, term, "전략", continuous_mode)
                 return build_kakao_response(calc_res)
-            elif any(k in utterance for k in ['건강더한', '하나로H']):
+            elif any(k in utterance for k in ['하나로', '하나로H']):
+                matched = search_life_product("한화생명", utterance, term=term)
+                prod_name = matched['product'] if matched else "하나로 H종신"
+                if not term:
+                    return build_ask_term_response("한화생명", prod_name, premium, ["10년납", "15년납(법인시상)", "20년납"])
+                if not contract_type:
+                    return build_ask_contract_type_response("한화생명", prod_name, premium, term)
+                s_factor = matched['s_factor'] if matched else 1300.0
+                calc_res = calculate_life("한화생명", prod_name, premium, s_factor, term, "전략", continuous_mode, contract_type=contract_type or "개인")
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['맥스원픽', '원픽종신', '원픽']):
+                matched = search_life_product("푸본현대", utterance, term=term)
+                prod_name = matched['product'] if matched else "MAX 종신보험 원픽"
+                if not term:
+                    return build_ask_term_response("푸본현대", prod_name, premium, ["5년납", "7년납(법인시상)", "20년납"])
+                if not contract_type:
+                    return build_ask_contract_type_response("푸본현대", prod_name, premium, term)
+                s_factor = matched['s_factor'] if matched else 300.0
+                calc_res = calculate_life("푸본현대", prod_name, premium, s_factor, term, "전략", continuous_mode, contract_type=contract_type or "개인")
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['당당한인생', '당당한']):
+                matched = search_life_product("IM라이프", utterance, term=term)
+                prod_name = matched['product'] if matched else "당당한 인생종신"
+                if not term:
+                    return build_ask_term_response("IM라이프", prod_name, premium, ["5년납", "7년납(법인시상)", "20년납"])
+                if not contract_type:
+                    return build_ask_contract_type_response("IM라이프", prod_name, premium, term)
+                s_factor = matched['s_factor'] if matched else 873.2
+                calc_res = calculate_life("IM라이프", prod_name, premium, s_factor, term, "전략", continuous_mode, contract_type=contract_type or "개인")
+                return build_kakao_response(calc_res)
+            elif any(k in utterance for k in ['건강더한']):
                 if not term:
                     return build_ask_term_response("한화생명", "건강더한종신", premium, ["7년납", "10년납", "15년납", "20년납"])
                 calc_res = calculate_life("한화생명", "건강더한종신", premium, 1100.0, term, "전략", continuous_mode)
