@@ -750,7 +750,10 @@ GUBUN_KEYWORDS = [
     '라이프밸런스형', '라이프밸런스', '밸런스형', '밸런스', '프리미엄보장형',
     '종합설계형', '3대질환보장형', '3대질환',
     '보증형', '미보증형', '계약자적립액보증형', '계약자적립액미보증형',
-    '비갱신형', '비갱신', '갱신형', '갱신'
+    '비갱신형', '비갱신', '갱신형', '갱신',
+    '300천이상', '250천이상', '200천이상', '150천이상', '100천이상',
+    '250달러이상', '200달러이상', '150달러이상', '100달러이상',
+    '3천만이상', '2천만이상', '1억이상'
 ]
 
 GUBUN_SYNONYMS = {
@@ -765,32 +768,6 @@ GUBUN_SYNONYMS = {
     '기본': ['기본형', '기본납입형', '기본보장형'],
     '체증': ['체증형', '1형 (5%체증형)', '2형 (10%체증형)']
 }
-
-LIFE_CATALOG: Dict[Tuple[str, str], Dict[str, Any]] = {}
-for d in LIFE_PRODUCTS:
-    d['company'] = d.get('company', '').replace('\n', '').strip()
-    sheet = d.get('sheet', '').strip()
-    prod = d.get('product', '').strip()
-    key = (sheet, prod)
-    if key not in LIFE_CATALOG:
-        LIFE_CATALOG[key] = {
-            'sheet': sheet,
-            'company': d.get('company', '').strip(),
-            'full_product': prod,
-            'norm_name': normalize_text(prod),
-            'gubuns': [],
-            'terms': [],
-            'items': []
-        }
-    g = d.get('gubun', '').strip()
-    t = d.get('term', '').strip()
-    # 납기형 표기(10년납, 20년납 이상)가 gubun에 단독 기재된 경우 실제 구분(종)이 아니므로 제외
-    if g and not re.search(r'^\d+\s*년', g):
-        if g not in LIFE_CATALOG[key]['gubuns']:
-            LIFE_CATALOG[key]['gubuns'].append(g)
-    if t and t not in LIFE_CATALOG[key]['terms']:
-        LIFE_CATALOG[key]['terms'].append(t)
-    LIFE_CATALOG[key]['items'].append(d)
 
 REGULATORY_PATTERNS = [
     r'\(무\)',
@@ -817,6 +794,34 @@ def clean_prod_short_name(prod: str) -> str:
     p = re.sub(r'\s+', ' ', p).strip()
     return p if len(p) >= 2 else prod
 
+LIFE_CATALOG: Dict[Tuple[str, str], Dict[str, Any]] = {}
+for d in LIFE_PRODUCTS:
+    d['company'] = d.get('company', '').replace('\n', '').strip()
+    sheet = d.get('sheet', '').strip()
+    prod = d.get('product', '').strip()
+    key = (sheet, prod)
+    if key not in LIFE_CATALOG:
+        LIFE_CATALOG[key] = {
+            'sheet': sheet,
+            'company': d.get('company', '').strip(),
+            'full_product': prod,
+            'norm_name': normalize_text(prod),
+            'clean_norm': normalize_text(clean_prod_short_name(prod)),
+            'gubuns': [],
+            'terms': [],
+            'items': []
+        }
+    g = d.get('gubun', '').strip()
+    t = d.get('term', '').strip()
+    # 납기형 표기(10년납, 20년납 이상)가 gubun에 단독 기재된 경우 실제 구분(종)이 아니므로 제외
+    if g and not re.search(r'^\d+\s*년', g):
+        if g not in LIFE_CATALOG[key]['gubuns']:
+            LIFE_CATALOG[key]['gubuns'].append(g)
+    if t and t not in LIFE_CATALOG[key]['terms']:
+        LIFE_CATALOG[key]['terms'].append(t)
+    LIFE_CATALOG[key]['items'].append(d)
+
+
 def extract_gubun_from_query(query: str) -> Optional[str]:
     q_norm = normalize_text(query)
     for g in sorted(GUBUN_KEYWORDS, key=len, reverse=True):
@@ -825,12 +830,17 @@ def extract_gubun_from_query(query: str) -> Optional[str]:
     return None
 
 def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]]:
-    comp_clean = company.replace('생명', '').replace('라이프', '').strip().lower()
+    comp_clean = company.replace('생명', '').replace('라이프', '').replace('화재', '').replace('손보', '').replace('연금', '').strip().lower()
     if comp_clean in ['kb', '케이비']: comp_clean = 'KB'
     elif comp_clean in ['디비', 'db']: comp_clean = 'DB'
     elif comp_clean in ['아이엠', 'im']: comp_clean = 'IM'
+    elif comp_clean in ['미래', '미래에셋']: comp_clean = '미래'
+    elif comp_clean in ['ibk', '기업']: comp_clean = 'IBK'
 
-    sheet_prods = [p for (s, _), p in LIFE_CATALOG.items() if s == comp_clean or comp_clean in s.lower() or comp_clean in p['company'].lower()]
+    sheet_prods = [
+        p for (s, _), p in LIFE_CATALOG.items()
+        if s.lower() == comp_clean.lower() or s.lower() in comp_clean.lower() or comp_clean.lower() in s.lower() or comp_clean.lower() in p['company'].lower()
+    ]
     if not sheet_prods:
         return []
 
@@ -867,8 +877,26 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
     if not q_norm:
         return sheet_prods[:6]
 
-    # [3단계] 구분 제거 후 완전 일치 (최우선)
-    exact_matches = [p for p in sheet_prods if p['norm_name'] == q_norm]
+    # [3단계] 원본 발화(공백·특수문자만 제거) 내에 상품명 전체가 포함되어 있는 경우 (최우선 부분문자열 일치)
+    raw_norm = normalize_text(utterance)
+    # 회사명 제거한 순수 상품명 검색
+    contained_in_raw = [p for p in sheet_prods if p['norm_name'] in raw_norm and len(p['norm_name']) >= 3]
+    if len(contained_in_raw) == 1:
+        return contained_in_raw
+    elif len(contained_in_raw) > 1:
+        max_l = max(len(p['norm_name']) for p in contained_in_raw)
+        longest = [p for p in contained_in_raw if len(p['norm_name']) == max_l]
+        if len(longest) == 1:
+            return longest
+        if detected_gubun:
+            d_norm = normalize_text(detected_gubun)
+            g_filter = [c for c in longest if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            if len(g_filter) == 1:
+                return g_filter
+        return longest[:6]
+
+    # [4단계] 구분 제거 후 정규화 텍스트 완전 일치 (원본 norm 또는 clean_norm)
+    exact_matches = [p for p in sheet_prods if p['norm_name'] == q_norm or p.get('clean_norm') == q_norm]
     if len(exact_matches) == 1:
         return exact_matches
     elif len(exact_matches) > 1:
@@ -881,7 +909,7 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
                 return g_filter
         return exact_matches
 
-    # [4단계] 쿼리가 상품명을 완전히 포함하고 있는 경우 (예: "3n5딱좋은요즘건강보험" in q_norm)
+    # [5단계] 쿼리가 상품명을 포함하는 경우
     contains_matches = [p for p in sheet_prods if p['norm_name'] in q_norm and len(p['norm_name']) >= 2]
     if len(contains_matches) == 1:
         return contains_matches
@@ -897,7 +925,7 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
                 return g_filter
         return longest[:6]
 
-    # [5단계] 상품명이 쿼리를 포함하고 있는 경우 (사용자가 상품명의 일부만 입력한 경우)
+    # [6단계] 상품명이 쿼리를 포함하는 경우 (사용자가 단축 상품명 입력)
     sub_matches = [p for p in sheet_prods if q_norm in p['norm_name'] and len(q_norm) >= 2]
     if len(sub_matches) == 1:
         return sub_matches
@@ -911,25 +939,25 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
                 return g_filter[:6]
         return sub_matches[:6]
 
-    # [6단계] 숫자 버전 패턴 매칭 (3.10.5, 5.10.5, 311, 335, 355 등 - 단일 숫자는 절대 매칭 금지!)
-    num_matches = []
-    q_vers = [v for v in re.findall(r'\d+n\d+|\d+', q_norm) if len(v) >= 2 and v not in ['10', '15', '20', '30']]
+    # [7단계] 숫자 버전 패턴 매칭 (3.10.5, 5.10.5 등 특수 버전코드만)
+    q_vers = [v for v in re.findall(r'\d+n\d+|\d+', q_norm) if len(v) >= 3 and v not in ['100', '10', '15', '20', '30']]
     if q_vers:
+        num_matches = []
         for p in sheet_prods:
-            p_vers = [v for v in re.findall(r'\d+n\d+|\d+', p['norm_name']) if len(v) >= 2 and v not in ['10', '15', '20', '30']]
+            p_vers = [v for v in re.findall(r'\d+n\d+|\d+', p['norm_name']) if len(v) >= 3 and v not in ['100', '10', '15', '20', '30']]
             if any(v in p_vers for v in q_vers):
                 num_matches.append(p)
-    if len(num_matches) == 1:
-        return num_matches
-    elif len(num_matches) > 1:
-        if detected_gubun:
-            d_norm = normalize_text(detected_gubun)
-            g_filter = [c for c in num_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
-            if len(g_filter) == 1:
-                return g_filter
-        return num_matches[:6]
+        if len(num_matches) == 1:
+            return num_matches
+        elif len(num_matches) > 1:
+            if detected_gubun:
+                d_norm = normalize_text(detected_gubun)
+                g_filter = [c for c in num_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+                if len(g_filter) == 1:
+                    return g_filter
+            return num_matches[:6]
 
-    # [7단계] 2-gram 유사도 매칭 (최후의 수단)
+    # [8단계] 2-gram 유사도 매칭 (최후의 수단)
     fuzzy_matches = []
     for p in sheet_prods:
         pn = p['norm_name']
@@ -988,18 +1016,36 @@ def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) ->
     return None
 
 def match_term_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Optional[str]:
-    m = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
-    if not m:
+    if not prod_group:
         return None
-    term_str = m.group(0)
-    if not term_str.endswith('납') and term_str != '전기납':
-        term_str += '납'
+    valid_terms = prod_group.get('terms', [])
+    if not valid_terms:
+        return "20년납"
 
-    if prod_group:
-        for t in prod_group.get('terms', []):
-            if term_str in t or t in term_str:
+    # 1. 유효 납기가 1개뿐이거나 '-'인 경우 -> 묻지 않고 즉시 반환!
+    if len(valid_terms) == 1:
+        return valid_terms[0]
+    if valid_terms == ['-'] or valid_terms == ['']:
+        return '-'
+
+    u_clean = utterance.replace(" ", "")
+
+    # 2. 발화 내에 유효 납기가 직접 포함되어 있는지 검사 (예: 66세미만, 90세납, 10년만기, 1형 (5%체증형) 등)
+    for t in valid_terms:
+        if t and t != '-' and t.replace(" ", "") in u_clean:
+            return t
+
+    # 3. 일반적인 납기 정규식 검사 (10년납, 20년납, 전기납 등)
+    m = re.search(r'(\d+)\s*년\s*납?|전기납|(\d+)\s*세\s*납?|(\d+)\s*년\s*만기', utterance)
+    if m:
+        term_str = m.group(0).replace(" ", "")
+        for t in valid_terms:
+            t_clean = t.replace(" ", "")
+            if term_str in t_clean or t_clean in term_str:
                 return t
-    return term_str
+        return term_str
+
+    return None
 
 def match_master_item(prod_group: Dict[str, Any], term: str, gubun: str) -> Dict[str, Any]:
     items = prod_group.get('items', [])
