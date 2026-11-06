@@ -744,14 +744,27 @@ GUBUN_KEYWORDS = [
     '일반가입', '일반심사형', '일반가입형', '일반형', '일반',
     '체증형', '평준형', '체감형',
     '기본형', '기본납입형', '기본보장형', '기본',
-    '해약환급금미지급형', '해지환급금미지급형', '미지급형', '미지급',
+    '해약환급금미지급형', '해지환급금미지급형', '해약환급금이없는유형', '미지급형', '미지급',
     '해약환급금일부지급형', '해지환급금일부지급형', '일부지급형',
     '표준형', '상생협력형',
     '라이프밸런스형', '라이프밸런스', '밸런스형', '밸런스', '프리미엄보장형',
     '종합설계형', '3대질환보장형', '3대질환',
     '보증형', '미보증형', '계약자적립액보증형', '계약자적립액미보증형',
-    '갱신형'
+    '비갱신형', '비갱신', '갱신형', '갱신'
 ]
+
+GUBUN_SYNONYMS = {
+    '비갱신형': ['해약환급금 미지급형', '해지환급금 미지급형', '해약환급금이없는유형', '미지급형', '표준형'],
+    '비갱신': ['해약환급금 미지급형', '해지환급금 미지급형', '해약환급금이없는유형', '미지급형', '표준형'],
+    '미지급형': ['해약환급금 미지급형', '해지환급금 미지급형'],
+    '미지급': ['해약환급금 미지급형', '해지환급금 미지급형'],
+    '갱신형': ['갱신형', '갱신'],
+    '갱신': ['갱신형'],
+    '일반': ['일반가입', '일반심사형', '일반가입형', '일반형'],
+    '간편': ['간편가입', '간편심사형', '간편고지형', '간편가입형'],
+    '기본': ['기본형', '기본납입형', '기본보장형'],
+    '체증': ['체증형', '1형 (5%체증형)', '2형 (10%체증형)']
+}
 
 LIFE_CATALOG: Dict[Tuple[str, str], Dict[str, Any]] = {}
 for d in LIFE_PRODUCTS:
@@ -832,69 +845,106 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
 
     q_norm_raw = normalize_text(cleaned_raw)
 
-    # [우선 검증] 원본 정제 텍스트 그대로 정확히 일치하는 단일 상품이 있으면 즉시 반환 (루프 방지)
+    # [0단계 우선 검증] 원본 정제 텍스트 그대로 정확히 일치하는 단일 상품이 있으면 즉시 반환 (루프 방지)
     if q_norm_raw:
         exact_raw = [p for p in sheet_prods if p['norm_name'] == q_norm_raw]
         if len(exact_raw) == 1:
             return exact_raw
 
-    # 2. 구분(종: 일반/간편/기본/체증형 등) 키워드 분리 정제
+    # 2. 구분(종: 일반/간편/기본/체증형/비갱신/갱신/미지급 등) 키워드 분리
     detected_gubun = extract_gubun_from_query(utterance)
-    cleaned = cleaned_raw
+    q_norm = q_norm_raw
     if detected_gubun:
-        cleaned = cleaned.replace(detected_gubun, ' ')
+        d_norm = normalize_text(detected_gubun)
+        if d_norm and d_norm in q_norm:
+            q_norm = q_norm.replace(d_norm, '')
+        if detected_gubun in ['비갱신형', '비갱신']:
+            for syn in ['비갱신형', '비갱신', '해약환급금미지급형', '해지환급금미지급형', '해약환급금이없는유형', '미지급형', '미지급']:
+                q_norm = q_norm.replace(syn, '')
+        elif detected_gubun in ['갱신형', '갱신']:
+            q_norm = q_norm.replace('갱신형', '').replace('갱신', '')
 
-    q_norm = normalize_text(cleaned)
     if not q_norm:
         return sheet_prods[:6]
 
-    # 3. 구분 분리 후 완전 일치
+    # [3단계] 구분 제거 후 완전 일치 (최우선)
     exact_matches = [p for p in sheet_prods if p['norm_name'] == q_norm]
     if len(exact_matches) == 1:
         return exact_matches
+    elif len(exact_matches) > 1:
+        if detected_gubun:
+            d_norm = normalize_text(detected_gubun)
+            g_filter = [c for c in exact_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            if len(g_filter) == 1:
+                return g_filter
+            elif len(g_filter) > 1:
+                return g_filter
+        return exact_matches
 
-    # 4. 부분 일치 (Substring Match): 띄어쓰기 및 앞뒤 수식어 무관 매칭
-    sub_matches = [p for p in sheet_prods if q_norm in p['norm_name'] or p['norm_name'] in q_norm]
+    # [4단계] 쿼리가 상품명을 완전히 포함하고 있는 경우 (예: "3n5딱좋은요즘건강보험" in q_norm)
+    contains_matches = [p for p in sheet_prods if p['norm_name'] in q_norm and len(p['norm_name']) >= 2]
+    if len(contains_matches) == 1:
+        return contains_matches
+    elif len(contains_matches) > 1:
+        max_len = max(len(p['norm_name']) for p in contains_matches)
+        longest = [p for p in contains_matches if len(p['norm_name']) == max_len]
+        if len(longest) == 1:
+            return longest
+        if detected_gubun:
+            d_norm = normalize_text(detected_gubun)
+            g_filter = [c for c in longest if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            if len(g_filter) == 1:
+                return g_filter
+        return longest[:6]
 
-    # 5. 숫자 패턴 매칭 (3.10.5, 5.10.5, 311, 335, 355 등)
+    # [5단계] 상품명이 쿼리를 포함하고 있는 경우 (사용자가 상품명의 일부만 입력한 경우)
+    sub_matches = [p for p in sheet_prods if q_norm in p['norm_name'] and len(q_norm) >= 2]
+    if len(sub_matches) == 1:
+        return sub_matches
+    elif len(sub_matches) > 1:
+        if detected_gubun:
+            d_norm = normalize_text(detected_gubun)
+            g_filter = [c for c in sub_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            if len(g_filter) == 1:
+                return g_filter
+            elif len(g_filter) > 1:
+                return g_filter[:6]
+        return sub_matches[:6]
+
+    # [6단계] 숫자 버전 패턴 매칭 (3.10.5, 5.10.5, 311, 335, 355 등 - 단일 숫자는 절대 매칭 금지!)
     num_matches = []
-    nums_in_q = re.findall(r'\d+', q_norm)
-    if nums_in_q:
+    q_vers = [v for v in re.findall(r'\d+n\d+|\d+', q_norm) if len(v) >= 2 and v not in ['10', '15', '20', '30']]
+    if q_vers:
         for p in sheet_prods:
-            if p in sub_matches or p in exact_matches: continue
-            nums_in_p = re.findall(r'\d+', p['norm_name'])
-            if nums_in_p and any(num in nums_in_p for num in nums_in_q):
+            p_vers = [v for v in re.findall(r'\d+n\d+|\d+', p['norm_name']) if len(v) >= 2 and v not in ['10', '15', '20', '30']]
+            if any(v in p_vers for v in q_vers):
                 num_matches.append(p)
+    if len(num_matches) == 1:
+        return num_matches
+    elif len(num_matches) > 1:
+        if detected_gubun:
+            d_norm = normalize_text(detected_gubun)
+            g_filter = [c for c in num_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            if len(g_filter) == 1:
+                return g_filter
+        return num_matches[:6]
 
-    # 6. 유사도 (2-gram 퍼지) 매칭: 오타나 심한 띄어쓰기 결함 대비
+    # [7단계] 2-gram 유사도 매칭 (최후의 수단)
     fuzzy_matches = []
-    if not sub_matches and not num_matches:
-        for p in sheet_prods:
-            pn = p['norm_name']
-            matches = sum(1 for i in range(len(q_norm)-1) if q_norm[i:i+2] in pn)
-            if matches >= 1:
-                fuzzy_matches.append((matches, p))
-        if fuzzy_matches:
-            fuzzy_matches.sort(key=lambda x: x[0], reverse=True)
+    for p in sheet_prods:
+        pn = p['norm_name']
+        matches = sum(1 for i in range(len(q_norm)-1) if q_norm[i:i+2] in pn)
+        if matches >= 2:
+            fuzzy_matches.append((matches, p))
+    if fuzzy_matches:
+        fuzzy_matches.sort(key=lambda x: x[0], reverse=True)
+        top_score = fuzzy_matches[0][0]
+        top_fuzzies = [p for s, p in fuzzy_matches if s == top_score]
+        if len(top_fuzzies) == 1:
+            return top_fuzzies
+        return top_fuzzies[:6]
 
-    # 후보군 취합
-    all_cands = []
-    seen = set()
-    for p in exact_matches + sub_matches + num_matches + [p for _, p in fuzzy_matches]:
-        if p['full_product'] not in seen:
-            seen.add(p['full_product'])
-            all_cands.append(p)
-
-    # detected_gubun이 존재하는 경우 후보 좁히기
-    if detected_gubun and len(all_cands) > 1:
-        d_norm = normalize_text(detected_gubun)
-        gubun_filtered = [c for c in all_cands if d_norm in c['norm_name']]
-        if len(gubun_filtered) == 1:
-            return gubun_filtered
-        elif len(gubun_filtered) > 1:
-            all_cands = gubun_filtered
-
-    return all_cands[:6]
+    return []
 
 def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Optional[str]:
     if not prod_group:
@@ -906,6 +956,7 @@ def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) ->
         return gubuns[0]
 
     u_norm = normalize_text(utterance)
+    # 1. 직접 포함 검사
     for g in gubuns:
         g_norm = normalize_text(g)
         if g_norm in u_norm:
@@ -915,7 +966,23 @@ def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) ->
     if detected:
         d_norm = normalize_text(detected)
         for g in gubuns:
-            if d_norm in normalize_text(g):
+            if d_norm in normalize_text(g) or normalize_text(g) in d_norm:
+                return g
+        syns = GUBUN_SYNONYMS.get(detected, [])
+        for syn in syns:
+            s_norm = normalize_text(syn)
+            for g in gubuns:
+                if s_norm in normalize_text(g) or normalize_text(g) in s_norm:
+                    return g
+
+    # 비갱신 vs 갱신형 전용 매핑
+    if any(k in u_norm for k in ['비갱신', '미지급', '무해지']):
+        for g in gubuns:
+            if any(k in normalize_text(g) for k in ['미지급', '표준형', '비갱신']):
+                return g
+    if any(k in u_norm for k in ['갱신', '갱신형']):
+        for g in gubuns:
+            if '갱신' in normalize_text(g):
                 return g
 
     return None
@@ -1029,7 +1096,7 @@ def get_sky_health_bonus(comp: str, prod: str, premium: int) -> Tuple[float, str
             
     return 0.0, ""
 
-def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none", contract_type: str = "개인") -> Dict[str, Any]:
+def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none", contract_type: str = "개인", gubun: str = "") -> Dict[str, Any]:
     """17개 생보사 11월 공식 시책표 정밀 판정 (메트라이프 납기별 차이, 흥국 2종 연속, 신한 3~7번 연계, 라이나, 미래에셋 완벽 반영)"""
     comp = comp_name.replace('생명', '').replace('라이프', '').strip().lower()
     prod = product_name.replace(" ", "").lower()
@@ -1350,12 +1417,95 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             basis = f"익월 250%({int(premium*next_m):,}원) + 13회차 구간시상 {split_amount//10000}만 원({int(split_rate*100)}%) = 총 {int(tot_rate*100)}%"
             return {"next_month": next_m, "split": split_rate, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 8. KB라이프
+    # 8. KB라이프 (11월 공식 시책: 5.10.5 비갱신형 전용, 갱신형/비갱신형 구간시상 정밀 판정)
     elif 'kb' in comp:
-        if '연금' in prod:
-            return {"next_month": 2.0, "split": 5.0, "total": 7.0, "basis": "익월 200% + 13회차 500% (100세 든든 연금 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+        prod_low = product_name.replace(" ", "").lower()
+        gubun_low = gubun.replace(" ", "").lower() if gubun else ""
+
+        # 연금 / 종신 / 정기 라인업
+        if '100세' in prod_low or ('든든' in prod_low and '연금' in prod_low):
+            m_y = re.search(r'(\d+)\s*년', term)
+            years = int(m_y.group(1)) if m_y else 10
+            if years >= 10:
+                return {"next_month": 2.0, "split": 5.0, "total": 7.0, "basis": "익월 200% + 13회차 500% (100세 든든 연금 10년납↑ 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (100세 든든 연금 5·7년납 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '트리플' in prod_low:
+            return {"next_month": 2.0, "split": 2.0, "total": 4.0, "basis": "익월 200% + 13회차 200% (트리플레벨업 연금 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '경영인' in prod_low:
+            return {"next_month": 1.0, "split": 1.5, "total": 2.5, "basis": "익월 100% + 13회차 150% (경영인정기Ⅲ 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '리턴' in prod_low:
+            m_y = re.search(r'(\d+)\s*년', term)
+            years = int(m_y.group(1)) if m_y else 10
+            if years >= 10:
+                return {"next_month": 2.0, "split": 2.0, "total": 4.0, "basis": "익월 200% + 13회차 200% (KB리턴종신 10년납↑ 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 2.0, "split": 1.0, "total": 3.0, "basis": "익월 200% + 13회차 100% (KB리턴종신 10년납미만 300%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '약속플러스' in prod_low:
+            return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (약속플러스종신 300%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '넥스트' in prod_low:
+            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (넥스트레벨업 연금 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '7년의약속' in prod_low:
+            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (7년의약속 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # 딱좋은 건강보험 상품군 (5.10.5, 3.10.5, 3.N.5, 딱좋은 0540, 골든라이프 간병 등)
         else:
-            return {"next_month": 3.0, "split": 22.5, "total": 25.5, "basis": "익월 300% + 13회차 2,250% (딱좋은 건강군 최대 2,550%)", "cont_bonus": 0.0, "cont_desc": ""}
+            next_m = 3.0
+            
+            # 13회차 구간 시상금 (보험료 합산)
+            gugan_amt = 0
+            if premium >= 1000000: gugan_amt = 12000000
+            elif premium >= 500000: gugan_amt = 8000000
+            elif premium >= 400000: gugan_amt = 6800000
+            elif premium >= 300000: gugan_amt = 5400000
+            elif premium >= 200000: gugan_amt = 3600000
+            elif premium >= 100000: gugan_amt = 1800000
+            elif premium >= 50000: gugan_amt = 250000
+            
+            # 13회차 전략담보 시상금
+            strat_amt = 0
+            if premium >= 300000: strat_amt = 150000
+            elif premium >= 200000: strat_amt = 100000
+            elif premium >= 100000: strat_amt = 50000
+            elif premium >= 50000: strat_amt = 20000
+            
+            # 5.10.5 및 3.10.5 상품은 비갱신형밖에 없으므로 갱신형 시상금(400%)은 전면 제외!
+            is_5105 = ('5105' in prod_low or '5.10.5' in prod_low or '초경증' in prod_low or '3105' in prod_low or '3.10.5' in prod_low)
+            is_renew = False
+            if not is_5105:
+                if '갱신' in gubun_low or '갱신형' in prod_low or '갱신' in prod_low:
+                    is_renew = True
+            
+            renew_amt = 0
+            if is_renew:
+                if premium >= 300000: renew_amt = 1200000
+                elif premium >= 200000: renew_amt = 800000
+                elif premium >= 100000: renew_amt = 400000
+                elif premium >= 50000: renew_amt = 200000
+            
+            tot_split_amt = gugan_amt + renew_amt + strat_amt
+            split_rate = (tot_split_amt / premium) if premium > 0 else 0.0
+            tot_rate = next_m + split_rate
+            
+            gugan_p = int(round((gugan_amt / premium) * 100)) if premium > 0 else 0
+            renew_p = int(round((renew_amt / premium) * 100)) if premium > 0 else 0
+            strat_p = int(round((strat_amt / premium) * 100)) if premium > 0 else 0
+            
+            if is_5105:
+                basis = f"익월 300%({int(premium*next_m):,}원) + 13회차 구간 {gugan_amt//10000}만({gugan_p}%) + 전략담보 {strat_amt//10000}만({strat_p}%) = 총 {int(tot_rate*100)}% (5.10.5 비갱신형 전용: 갱신형 시상 제외)"
+            elif is_renew:
+                basis = f"익월 300%({int(premium*next_m):,}원) + 13회차 구간 {gugan_amt//10000}만({gugan_p}%) + 갱신형 {renew_amt//10000}만({renew_p}%) + 전략담보 {strat_amt//10000}만({strat_p}%) = 총 {int(tot_rate*100)}% (갱신형 기준)"
+            else:
+                basis = f"익월 300%({int(premium*next_m):,}원) + 13회차 구간 {gugan_amt//10000}만({gugan_p}%) + 전략담보 {strat_amt//10000}만({strat_p}%) = 총 {int(tot_rate*100)}% (비갱신형: 갱신형 시상 제외)"
+                
+            return {
+                "next_month": next_m,
+                "split": split_rate,
+                "total": tot_rate,
+                "basis": basis,
+                "cont_bonus": 0.0,
+                "cont_desc": ""
+            }
 
     # 9. 동양생명
     elif '동양' in comp:
@@ -1446,7 +1596,8 @@ def calculate_life(
     term: str = "20년납",
     incentive_type: str = "전략",
     continuous_mode: str = "none",
-    contract_type: str = "개인"
+    contract_type: str = "개인",
+    gubun: str = ""
 ) -> Dict[str, Any]:
     comp_clean = company.replace('생명', '').replace('라이프', '').strip()
     
@@ -1471,7 +1622,7 @@ def calculate_life(
     installment_comm = round(s_grade * inst_rate)
     total_comm = next_month_comm + installment_comm
     
-    inc_info = get_life_incentive(comp_clean, product_name, term, premium, incentive_type, continuous_mode, contract_type=contract_type)
+    inc_info = get_life_incentive(comp_clean, product_name, term, premium, incentive_type, continuous_mode, contract_type=contract_type, gubun=gubun)
     next_month_inc_rate = inc_info.get("next_month", 0.0)
     split_inc_rate = inc_info.get("split", 0.0)
     basis_desc = inc_info.get("basis", "")
@@ -1875,14 +2026,31 @@ def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: st
         })
     quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법"})
 
-    gubun_list_text = "\n".join([f"• {g}" for g in prod_group['gubuns'][:6]])
+    is_kb_health = ('kb' in comp.lower() and ('딱좋은' in prod_name or '건강' in prod_name))
+    if is_kb_health:
+        info_text = (
+            f"📋 {comp} · {prod_name} ({prem_str})\n\n"
+            f"이 상품은 갱신형 여부('종')에 따라 갱신형 시상금(+400%) 및 환산 성적이 다릅니다. 어떤 구분을 적용할까요?\n\n"
+            f"• 비갱신형 (해약환급금 미지급형)\n"
+            f"• 갱신형\n\n"
+            f"원하시는 구분 버튼을 눌러주세요!"
+        )
+    else:
+        gubun_list_text = "\n".join([f"• {g}" for g in prod_group['gubuns'][:6]])
+        info_text = (
+            f"📋 {comp} · {prod_name} ({prem_str})\n\n"
+            f"이 상품은 가입 유형('종')에 따라 환산 성적이 다릅니다. 어떤 구분을 적용할까요?\n\n"
+            f"{gubun_list_text}\n\n"
+            f"원하시는 구분 버튼을 눌러주세요!"
+        )
+
     return {
         "version": "2.0",
         "template": {
             "outputs": [
                 {
                     "simpleText": {
-                        "text": f"📋 {comp} · {prod_name} ({prem_str})\n\n이 상품은 가입 유형('종')에 따라 환산 성적이 다릅니다. 어떤 구분을 적용할까요?\n\n{gubun_list_text}\n\n원하시는 구분 버튼을 눌러주세요!"
+                        "text": info_text
                     }
                 }
             ],
@@ -2584,7 +2752,8 @@ async def kakao_skill_calculate(request: Request):
                     term=term,
                     incentive_type="전략",
                     continuous_mode=continuous_mode,
-                    contract_type=contract_type or "개인"
+                    contract_type=contract_type or "개인",
+                    gubun=gubun or ""
                 )
                 return build_kakao_response(calc_res)
 
@@ -2617,7 +2786,7 @@ async def kakao_skill_calculate(request: Request):
                 if is_corp_incentive_target(comp, prod_name, term) and not contract_type:
                     return build_ask_contract_type_response(comp, prod_name, premium, term, gubun=gubun or "")
                 item = match_master_item(p, term, gubun or "")
-                calc_res = calculate_life(comp, prod_name, premium, item['s_factor'], term, "전략", continuous_mode, contract_type=contract_type or "개인")
+                calc_res = calculate_life(comp, prod_name, premium, item['s_factor'], term, "전략", continuous_mode, contract_type=contract_type or "개인", gubun=gubun or "")
                 return build_kakao_response(calc_res)
             elif len(all_candidates) > 1:
                 m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
