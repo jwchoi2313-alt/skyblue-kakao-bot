@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.0.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -732,6 +732,7 @@ def normalize_text(text: str) -> str:
     if not text:
         return ""
     t = text.lower()
+    t = t.replace('(多)', '').replace('多', '').replace('(무)', '').replace('무배당', '')
     for en, ko in EN_KO_SYNONYMS.items():
         t = re.sub(rf'\b{en}\b|{en}', ko, t)
     t = t.replace('ⅰ', '1').replace('ⅱ', '2').replace('ⅲ', '3').replace('ⅳ', '4')
@@ -820,58 +821,80 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
     if not sheet_prods:
         return []
 
-    cleaned = utterance
+    # 1. 원본 쿼리 정제 (회사명, 납기, 금액, 계산어만 제거)
+    cleaned_raw = utterance
     for comp_token in [comp_clean, '생명', '라이프', '화재', '손보']:
-        cleaned = re.sub(rf'\b{comp_token}\b|{comp_token}', ' ', cleaned, flags=re.IGNORECASE)
+        cleaned_raw = re.sub(rf'\b{comp_token}\b|{comp_token}', ' ', cleaned_raw, flags=re.IGNORECASE)
+    cleaned_raw = re.sub(r'(\d+)\s*년\s*납?|전기납', ' ', cleaned_raw)
+    cleaned_raw = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)', ' ', cleaned_raw)
+    cleaned_raw = re.sub(r'계산|시책|얼마|수수료|알려줘|비교|안내|문의|설계', ' ', cleaned_raw)
+    cleaned_raw = re.sub(r'\b\d{5,}\b', ' ', cleaned_raw)  # 금액 성격의 5자리 이상 숫자만 제거
+
+    q_norm_raw = normalize_text(cleaned_raw)
+
+    # [우선 검증] 원본 정제 텍스트 그대로 정확히 일치하는 단일 상품이 있으면 즉시 반환 (루프 방지)
+    if q_norm_raw:
+        exact_raw = [p for p in sheet_prods if p['norm_name'] == q_norm_raw]
+        if len(exact_raw) == 1:
+            return exact_raw
+
+    # 2. 구분(종: 일반/간편/기본/체증형 등) 키워드 분리 정제
     detected_gubun = extract_gubun_from_query(utterance)
+    cleaned = cleaned_raw
     if detected_gubun:
         cleaned = cleaned.replace(detected_gubun, ' ')
-    cleaned = re.sub(r'(\d+)\s*년\s*납?|전기납', ' ', cleaned)
-    cleaned = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)', ' ', cleaned)
-    cleaned = re.sub(r'계산|시책|얼마|수수료|알려줘|비교|안내', ' ', cleaned)
-    cleaned = re.sub(r'\b\d+\b', ' ', cleaned)
 
     q_norm = normalize_text(cleaned)
     if not q_norm:
-        return sheet_prods
+        return sheet_prods[:6]
 
-    exact_matches = []
-    partial_matches = []
+    # 3. 구분 분리 후 완전 일치
+    exact_matches = [p for p in sheet_prods if p['norm_name'] == q_norm]
+    if len(exact_matches) == 1:
+        return exact_matches
 
-    for p in sheet_prods:
-        p_norm = p['norm_name']
-        if q_norm == p_norm:
-            exact_matches.append((0, p))
-        elif q_norm in p_norm:
-            exact_matches.append((len(p_norm) - len(q_norm), p))
-        elif p_norm in q_norm:
-            exact_matches.append((len(q_norm) - len(p_norm), p))
-        else:
-            matches = sum(1 for i in range(len(q_norm)-1) if q_norm[i:i+2] in p_norm)
-            if matches >= 2 or (len(q_norm) <= 3 and matches >= 1):
-                partial_matches.append((matches, p))
+    # 4. 부분 일치 (Substring Match): 띄어쓰기 및 앞뒤 수식어 무관 매칭
+    sub_matches = [p for p in sheet_prods if q_norm in p['norm_name'] or p['norm_name'] in q_norm]
 
-    if exact_matches:
-        exact_matches.sort(key=lambda x: x[0])
-        min_diff = exact_matches[0][0]
-        if min_diff == 0:
-            candidates = [p for diff, p in exact_matches if diff == 0]
-        else:
-            candidates = [p for diff, p in exact_matches if diff <= min_diff + 2]
-    elif partial_matches:
-        partial_matches.sort(key=lambda x: x[0], reverse=True)
-        candidates = [p for _, p in partial_matches[:6]]
-    else:
-        candidates = []
+    # 5. 숫자 패턴 매칭 (3.10.5, 5.10.5, 311, 335, 355 등)
+    num_matches = []
+    nums_in_q = re.findall(r'\d+', q_norm)
+    if nums_in_q:
+        for p in sheet_prods:
+            if p in sub_matches or p in exact_matches: continue
+            nums_in_p = re.findall(r'\d+', p['norm_name'])
+            if nums_in_p and any(num in nums_in_p for num in nums_in_q):
+                num_matches.append(p)
 
-    # detected_gubun이 존재하는 경우 후보 상품명(예: 기본형 vs 체증형)으로 정확히 좁힘
-    if detected_gubun and len(candidates) > 1:
+    # 6. 유사도 (2-gram 퍼지) 매칭: 오타나 심한 띄어쓰기 결함 대비
+    fuzzy_matches = []
+    if not sub_matches and not num_matches:
+        for p in sheet_prods:
+            pn = p['norm_name']
+            matches = sum(1 for i in range(len(q_norm)-1) if q_norm[i:i+2] in pn)
+            if matches >= 1:
+                fuzzy_matches.append((matches, p))
+        if fuzzy_matches:
+            fuzzy_matches.sort(key=lambda x: x[0], reverse=True)
+
+    # 후보군 취합
+    all_cands = []
+    seen = set()
+    for p in exact_matches + sub_matches + num_matches + [p for _, p in fuzzy_matches]:
+        if p['full_product'] not in seen:
+            seen.add(p['full_product'])
+            all_cands.append(p)
+
+    # detected_gubun이 존재하는 경우 후보 좁히기
+    if detected_gubun and len(all_cands) > 1:
         d_norm = normalize_text(detected_gubun)
-        gubun_filtered = [c for c in candidates if d_norm in c['norm_name']]
-        if gubun_filtered:
+        gubun_filtered = [c for c in all_cands if d_norm in c['norm_name']]
+        if len(gubun_filtered) == 1:
             return gubun_filtered
+        elif len(gubun_filtered) > 1:
+            all_cands = gubun_filtered
 
-    return candidates
+    return all_cands[:6]
 
 def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Optional[str]:
     if not prod_group:
