@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.2.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -747,7 +747,7 @@ GUBUN_KEYWORDS = [
     '해약환급금미지급형', '해지환급금미지급형', '해약환급금이없는유형', '미지급형', '미지급',
     '해약환급금일부지급형', '해지환급금일부지급형', '일부지급형',
     '표준형', '상생협력형',
-    '라이프밸런스형', '라이프밸런스', '밸런스형', '밸런스', '프리미엄보장형',
+    '라이프밸런스형', '라이프밸런스', '프리미엄보장형',
     '종합설계형', '3대질환보장형', '3대질환',
     '보증형', '미보증형', '계약자적립액보증형', '계약자적립액미보증형',
     '비갱신형', '비갱신', '갱신형', '갱신',
@@ -801,22 +801,56 @@ for d in LIFE_PRODUCTS:
     prod = d.get('product', '').strip()
     key = (sheet, prod)
     if key not in LIFE_CATALOG:
+        has_ganpyeon_in_name = any(k in prod for k in ['(간편)', '(간편한)', '간편가입', '간편심사'])
+        clean_p = clean_prod_short_name(prod)
+        search_keys = set()
+        norm_p = normalize_text(prod)
+        search_keys.add(norm_p)
+        search_keys.add(normalize_text(clean_p))
+
+        # 회사명 접두어 제거 버전
+        no_comp = re.sub(r'^(교보|한화|동양|신한|흥국|db|kb|kdb|abl|하나|푸본|im|ibk|라이나|메트|농협|미래)\s*', '', prod, flags=re.IGNORECASE)
+        search_keys.add(normalize_text(no_comp))
+        search_keys.add(normalize_text(clean_prod_short_name(no_comp)))
+
+        # (간편) 포함 상품인 경우: 간편 제거 및 일반 버전 추가 (일반/간편 동일 환산·시책)
+        if has_ganpyeon_in_name:
+            no_ganpyeon = re.sub(r'\(간편한?\)|간편한?가입?심사?', '', prod)
+            search_keys.add(normalize_text(no_ganpyeon))
+            search_keys.add(normalize_text(clean_prod_short_name(no_ganpyeon)))
+
+            no_comp_no_g = re.sub(r'^(교보|한화|동양|신한|흥국|db|kb|kdb|abl|하나|푸본|im|ibk|라이나|메트|농협|미래)\s*', '', no_ganpyeon, flags=re.IGNORECASE)
+            search_keys.add(normalize_text(no_comp_no_g))
+            search_keys.add(normalize_text(clean_prod_short_name(no_comp_no_g)))
+
+            ilban_ver = re.sub(r'\(간편한?\)|간편한?가입?심사?', '일반', prod)
+            search_keys.add(normalize_text(ilban_ver))
+            search_keys.add(normalize_text(clean_prod_short_name(ilban_ver)))
+
+        if '3밸런스' in prod:
+            search_keys.update(['3밸런스', '3밸런스보장보험', '3밸런스보장보험플러스', '3밸런스플러스', '3밸런스plus'])
+        if '밸런스건강' in prod:
+            search_keys.update(['밸런스건강', '밸런스건강보험'])
+
         LIFE_CATALOG[key] = {
             'sheet': sheet,
             'company': d.get('company', '').strip(),
             'full_product': prod,
-            'norm_name': normalize_text(prod),
-            'clean_norm': normalize_text(clean_prod_short_name(prod)),
+            'norm_name': norm_p,
+            'clean_norm': normalize_text(clean_p),
+            'search_keys': {k for k in search_keys if k},
+            'has_ganpyeon_merged': has_ganpyeon_in_name,
             'gubuns': [],
             'terms': [],
             'items': []
         }
     g = d.get('gubun', '').strip()
     t = d.get('term', '').strip()
-    # 납기형 표기(10년납, 20년납 이상)가 gubun에 단독 기재된 경우 실제 구분(종)이 아니므로 제외
+    # 납기형 표기(10년납, 20년납 이상)나 일반,간편 병합 표기는 별도 선택지 질문에서 제외
     if g and not re.search(r'^\d+\s*년', g):
-        if g not in LIFE_CATALOG[key]['gubuns']:
-            LIFE_CATALOG[key]['gubuns'].append(g)
+        if g not in ['-', '일반,간편', '일반심사 간편심사']:
+            if g not in LIFE_CATALOG[key]['gubuns']:
+                LIFE_CATALOG[key]['gubuns'].append(g)
     if t and t not in LIFE_CATALOG[key]['terms']:
         LIFE_CATALOG[key]['terms'].append(t)
     LIFE_CATALOG[key]['items'].append(d)
@@ -850,14 +884,14 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
         cleaned_raw = re.sub(rf'\b{comp_token}\b|{comp_token}', ' ', cleaned_raw, flags=re.IGNORECASE)
     cleaned_raw = re.sub(r'(\d+)\s*년\s*납?|전기납', ' ', cleaned_raw)
     cleaned_raw = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)', ' ', cleaned_raw)
-    cleaned_raw = re.sub(r'계산|시책|얼마|수수료|알려줘|비교|안내|문의|설계', ' ', cleaned_raw)
+    cleaned_raw = re.sub(r'계산|시책|얼마|수수료|알려줘|비교|안내|문의|설계|상품', ' ', cleaned_raw)
     cleaned_raw = re.sub(r'\b\d{5,}\b', ' ', cleaned_raw)  # 금액 성격의 5자리 이상 숫자만 제거
 
     q_norm_raw = normalize_text(cleaned_raw)
 
     # [0단계 우선 검증] 원본 정제 텍스트 그대로 정확히 일치하는 단일 상품이 있으면 즉시 반환 (루프 방지)
     if q_norm_raw:
-        exact_raw = [p for p in sheet_prods if p['norm_name'] == q_norm_raw]
+        exact_raw = [p for p in sheet_prods if p['norm_name'] == q_norm_raw or q_norm_raw in p.get('search_keys', set())]
         if len(exact_raw) == 1:
             return exact_raw
 
@@ -895,14 +929,14 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
                 return g_filter
         return longest[:6]
 
-    # [4단계] 구분 제거 후 정규화 텍스트 완전 일치 (원본 norm 또는 clean_norm)
-    exact_matches = [p for p in sheet_prods if p['norm_name'] == q_norm or p.get('clean_norm') == q_norm]
+    # [4단계] 구분 제거 후 정규화 텍스트 완전 일치 (원본 norm 또는 clean_norm 또는 search_keys)
+    exact_matches = [p for p in sheet_prods if p['norm_name'] == q_norm or p.get('clean_norm') == q_norm or q_norm in p.get('search_keys', set())]
     if len(exact_matches) == 1:
         return exact_matches
     elif len(exact_matches) > 1:
         if detected_gubun:
             d_norm = normalize_text(detected_gubun)
-            g_filter = [c for c in exact_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            g_filter = [c for c in exact_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', [])) or (c.get('has_ganpyeon_merged') and d_norm in ['일반', '간편'])]
             if len(g_filter) == 1:
                 return g_filter
             elif len(g_filter) > 1:
@@ -910,7 +944,7 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
         return exact_matches
 
     # [5단계] 쿼리가 상품명을 포함하는 경우
-    contains_matches = [p for p in sheet_prods if p['norm_name'] in q_norm and len(p['norm_name']) >= 2]
+    contains_matches = [p for p in sheet_prods if (p['norm_name'] in q_norm and len(p['norm_name']) >= 2) or any(k in q_norm and len(k) >= 2 for k in p.get('search_keys', set()))]
     if len(contains_matches) == 1:
         return contains_matches
     elif len(contains_matches) > 1:
@@ -920,19 +954,19 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
             return longest
         if detected_gubun:
             d_norm = normalize_text(detected_gubun)
-            g_filter = [c for c in longest if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            g_filter = [c for c in longest if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', [])) or (c.get('has_ganpyeon_merged') and d_norm in ['일반', '간편'])]
             if len(g_filter) == 1:
                 return g_filter
         return longest[:6]
 
     # [6단계] 상품명이 쿼리를 포함하는 경우 (사용자가 단축 상품명 입력)
-    sub_matches = [p for p in sheet_prods if q_norm in p['norm_name'] and len(q_norm) >= 2]
+    sub_matches = [p for p in sheet_prods if (q_norm in p['norm_name'] and len(q_norm) >= 2) or any(q_norm in k and len(q_norm) >= 2 for k in p.get('search_keys', set()))]
     if len(sub_matches) == 1:
         return sub_matches
     elif len(sub_matches) > 1:
         if detected_gubun:
             d_norm = normalize_text(detected_gubun)
-            g_filter = [c for c in sub_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', []))]
+            g_filter = [c for c in sub_matches if d_norm in c['norm_name'] or any(d_norm in normalize_text(g) for g in c.get('gubuns', [])) or (c.get('has_ganpyeon_merged') and d_norm in ['일반', '간편'])]
             if len(g_filter) == 1:
                 return g_filter
             elif len(g_filter) > 1:
@@ -1601,7 +1635,44 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
 
     # 14. 교보생명
     elif '교보' in comp:
-        return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (모두지킴종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 1) (간편)3밸런스보장보험PLUS (일반/간편 동일 환산·시책)
+        if '3밸런스' in prod:
+            if '5년' in term:
+                return {"next_month": 0.0, "split": 0.0, "total": 0.0, "basis": "3밸런스 5년납: 시상 지원 제외 (0%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif any(t in term for t in ['20년', '20년납']):
+                return {"next_month": 2.5, "split": 4.5, "total": 7.0, "basis": "익월 250% + 13차월 450% (3밸런스보장보험PLUS 20년납 700% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:  # 7년~15년납 (7~9년, 10~14년, 15~19년)
+                return {"next_month": 2.5, "split": 4.0, "total": 6.5, "basis": "익월 250% + 13차월 400% (3밸런스보장보험PLUS 7~15년납 650% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # 2) (간편)다시채움건강종신보험 (일반/간편 동일 시책)
+        elif '다시채움' in prod:
+            if any(t in term for t in ['10년미만', '10년납 미만', '미만']):
+                return {"next_month": 1.25, "split": 0.0, "total": 1.25, "basis": "익월 125% (다시채움 10년납 미만 125% · 일반/간편 동일 시책)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 2.5, "split": 2.5, "total": 5.0, "basis": "익월 250% + 13차월 250% (다시채움 10년납 이상 500% · 일반/간편 동일 시책)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # 3) (간편)실속건강종신보험 (일반/간편 동일 시책)
+        elif '실속건강' in prod:
+            if any(t in term for t in ['10년미만', '10년납 미만', '미만']):
+                return {"next_month": 0.75, "split": 0.0, "total": 0.75, "basis": "익월 75% (실속건강종신 10년납 미만 75% · 일반/간편 동일 시책)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 1.5, "split": 2.0, "total": 3.5, "basis": "익월 150% + 13차월 200% (실속건강종신[저해지] 10년납 이상 350% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # 4) (간편)경영인정기보험 (일반/간편 동일 시책)
+        elif '경영인' in prod:
+            return {"next_month": 2.7, "split": 2.3, "total": 5.0, "basis": "익월 270% + 13차월 230% (경영인정기 500% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # 5) (간편)밸런스건강보험 (일반/간편 동일 시책)
+        elif '밸런스건강' in prod:
+            return {"next_month": 2.5, "split": 0.5, "total": 3.0, "basis": "익월 250% + 13차월 50% (밸런스건강보험 10년납 이상 300% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # 6) (간편)모두지킴종신보험 (일반/간편 동일 시책)
+        elif '모두지킴' in prod:
+            return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13차월 300% (모두지킴종신 7~12년납 600% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # 7) 기타 교보 기본 보장성 (평생건강, K-실속종신, K-밸류업, 치매간병안심 등)
+        else:
+            return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (교보 보장성 기본 600% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 15. 하나생명
     elif '하나' in comp:
