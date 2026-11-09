@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.4.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -784,8 +784,8 @@ def normalize_text(text: str) -> str:
     t = t.replace('(多)', '').replace('多', '').replace('(무)', '').replace('무배당', '')
     for en, ko in EN_KO_SYNONYMS.items():
         t = re.sub(rf'\b{en}\b|{en}', ko, t)
-    t = t.replace('ⅰ', '1').replace('ⅱ', '2').replace('ⅲ', '3').replace('ⅳ', '4')
-    t = t.replace('i', '1').replace('ii', '2').replace('iii', '3')
+    t = t.replace('ⅲ', '3').replace('ⅱ', '2').replace('ⅰ', '1')
+    t = t.replace('iii', '3').replace('ii', '2').replace('i', '1')
     return re.sub(r'[\s\(\)\[\]\{\}\-\_\,\.\:\/\+\#\*\~]', '', t)
 
 GUBUN_KEYWORDS = [
@@ -880,6 +880,8 @@ for d in LIFE_PRODUCTS:
             search_keys.update(['3밸런스', '3밸런스보장보험', '3밸런스보장보험플러스', '3밸런스플러스', '3밸런스plus'])
         if '밸런스건강' in prod:
             search_keys.update(['밸런스건강', '밸런스건강보험'])
+        if '드림종신' in prod:
+            search_keys.update(['우리won드림종신', '우리won드림종신3', 'won드림종신', '드림종신', '드림종신3'])
 
         LIFE_CATALOG[key] = {
             'sheet': sheet,
@@ -963,12 +965,16 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
     # [3단계] 원본 발화(공백·특수문자만 제거) 내에 상품명 전체가 포함되어 있는 경우 (최우선 부분문자열 일치)
     raw_norm = normalize_text(utterance)
     # 회사명 제거한 순수 상품명 검색
-    contained_in_raw = [p for p in sheet_prods if p['norm_name'] in raw_norm and len(p['norm_name']) >= 3]
+    contained_in_raw = [
+        p for p in sheet_prods
+        if (p['norm_name'] in raw_norm or p['clean_norm'] in raw_norm or any(k in raw_norm for k in p.get('search_keys', set())))
+        and len(p['clean_norm']) >= 3
+    ]
     if len(contained_in_raw) == 1:
         return contained_in_raw
     elif len(contained_in_raw) > 1:
-        max_l = max(len(p['norm_name']) for p in contained_in_raw)
-        longest = [p for p in contained_in_raw if len(p['norm_name']) == max_l]
+        max_l = max(len(p['clean_norm']) for p in contained_in_raw)
+        longest = [p for p in contained_in_raw if len(p['clean_norm']) == max_l]
         if len(longest) == 1:
             return longest
         if detected_gubun:
@@ -1098,37 +1104,136 @@ def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) ->
 
     return None
 
-def match_term_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Optional[str]:
-    if not prod_group:
+def parse_term_to_years(t_str: str) -> Optional[int]:
+    m = re.search(r'(\d+)\s*년', t_str)
+    return int(m.group(1)) if m else None
+
+def resolve_term_against_valid_terms(user_term_str: str, valid_terms: List[str]) -> Optional[str]:
+    if not valid_terms:
+        return user_term_str
+
+    u_clean = user_term_str.replace(' ', '')
+
+    # 1. 완전 텍스트 일치 또는 포함
+    for t in valid_terms:
+        t_clean = t.replace(' ', '')
+        if u_clean == t_clean or u_clean in t_clean or t_clean in u_clean:
+            # 사용자가 '10년'처럼 명시했는데 '10년미만', '10년이하'에 오매칭되는 것 방지
+            if ('미만' in t or '이하' in t) and not ('미만' in user_term_str or '이하' in user_term_str):
+                continue
+            return t
+
+    # 2. 숫자(년수) 기반 정밀 매칭
+    req_y = parse_term_to_years(user_term_str)
+    if req_y is None:
+        for t in valid_terms:
+            if '전기' in user_term_str and '전기' in t:
+                return t
         return None
+
+    # 2-A: 단일 연도 완전 일치 우선 (범위/이상/미만 제외한 순수 연도)
+    for t in valid_terms:
+        if not any(k in t for k in ['~', '–', '-', '이상', '미만', '이하', '↑', '만기', '세', '/']):
+            y = parse_term_to_years(t)
+            if y == req_y:
+                return t
+
+    # 2-B: 구간/범위 매칭 (예: 5~6년, 7~9년, 10~14년, 10-14년, 15-19년)
+    for t in valid_terms:
+        m_range = re.search(r'(\d+)\s*[\~–\-]\s*(\d+)\s*년', t)
+        if m_range:
+            start_y, end_y = int(m_range.group(1)), int(m_range.group(2))
+            if start_y <= req_y <= end_y:
+                return t
+
+    # 2-C: N년이상 매칭 (예: 10년이상, 15년이상, 20년이상)
+    ge_candidates = []
+    for t in valid_terms:
+        if any(k in t for k in ['이상', '↑']):
+            y = parse_term_to_years(t)
+            if y is not None and req_y >= y:
+                ge_candidates.append((y, t))
+    if ge_candidates:
+        ge_candidates.sort(key=lambda x: x[0], reverse=True)
+        return ge_candidates[0][1]
+
+    # 2-D: N년미만 / 이하 매칭 (예: 10년미만, 9년납이하)
+    le_candidates = []
+    for t in valid_terms:
+        if '미만' in t:
+            y = parse_term_to_years(t)
+            if y is not None and req_y < y:
+                le_candidates.append((y, t))
+        elif '이하' in t:
+            y = parse_term_to_years(t)
+            if y is not None and req_y <= y:
+                le_candidates.append((y, t))
+    if le_candidates:
+        le_candidates.sort(key=lambda x: x[0])
+        return le_candidates[0][1]
+
+    # 2-E: 슬래시/쉼표 복합 매칭 (예: 10,11년납, 10년/12년, 15년/20년납)
+    for t in valid_terms:
+        nums = [int(n) for n in re.findall(r'\d+', t)]
+        if req_y in nums:
+            return t
+
+    return None
+
+def extract_requested_term_from_utterance(utterance: str, prod_group: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    u = utterance
+    if prod_group:
+        p_clean = clean_prod_short_name(prod_group.get('full_product', ''))
+        u = u.replace(p_clean, ' ')
+        for k in prod_group.get('search_keys', set()):
+            if len(k) >= 3:
+                u = u.replace(k, ' ')
+
+    m = re.search(r'(\d+)\s*년\s*(?:납\s*)?(?:이상|미만|이하|만기)?|전기납|(\d+)\s*세\s*납', u)
+    if m:
+        return m.group(0).replace(" ", "")
+    return None
+
+def match_term_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    반환: (matched_term, invalid_requested_term)
+    - matched_term: 유효한 조견표 납기 (계산 가능)
+    - invalid_requested_term: 사용자가 명시했으나 조견표에 존재하지 않는 납기 (예: 7년납 없음)
+    - 둘 다 None: 사용자가 납기를 입력하지 않음
+    """
+    if not prod_group:
+        return None, None
     valid_terms = prod_group.get('terms', [])
     if not valid_terms:
-        return "20년납"
-
-    # 1. 유효 납기가 1개뿐이거나 '-'인 경우 -> 묻지 않고 즉시 반환!
-    if len(valid_terms) == 1:
-        return valid_terms[0]
-    if valid_terms == ['-'] or valid_terms == ['']:
-        return '-'
+        return "20년납", None
 
     u_clean = utterance.replace(" ", "")
 
-    # 2. 발화 내에 유효 납기가 직접 포함되어 있는지 검사 (예: 66세미만, 90세납, 10년만기, 1형 (5%체증형) 등)
+    # 1. 발화 내에 유효 납기가 직접 포함되어 있는지 검사 (예: 1형 (5%체증형), 해약환급금일부지급형, 90세납, 10년만기 등)
     for t in valid_terms:
         if t and t != '-' and t.replace(" ", "") in u_clean:
-            return t
+            # 단, '10년'이 '10년미만'에 부분일치되는 오인식 방지
+            if ('미만' in t or '이하' in t) and not ('미만' in utterance or '이하' in utterance):
+                continue
+            return t, None
 
-    # 3. 일반적인 납기 정규식 검사 (10년납, 20년납, 전기납 등)
-    m = re.search(r'(\d+)\s*년\s*납?|전기납|(\d+)\s*세\s*납?|(\d+)\s*년\s*만기', utterance)
-    if m:
-        term_str = m.group(0).replace(" ", "")
-        for t in valid_terms:
-            t_clean = t.replace(" ", "")
-            if term_str in t_clean or t_clean in term_str:
-                return t
-        return term_str
+    # 2. 사용자가 발화한 납기 문자열 추출
+    req_term = extract_requested_term_from_utterance(utterance, prod_group)
 
-    return None
+    if req_term:
+        resolved = resolve_term_against_valid_terms(req_term, valid_terms)
+        if resolved:
+            return resolved, None
+        else:
+            return None, req_term
+
+    # 3. 사용자가 납기를 명시하지 않은 경우
+    if len(valid_terms) == 1:
+        return valid_terms[0], None
+    if valid_terms == ['-'] or valid_terms == ['']:
+        return '-', None
+
+    return None, None
 
 def match_master_item(prod_group: Dict[str, Any], term: str, gubun: str) -> Dict[str, Any]:
     items = prod_group.get('items', [])
@@ -1366,7 +1471,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (한화생명 주력 500%)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 4. DB생명
-    elif 'db' in comp or '디비' in comp or '동부' in comp:
+    elif ('kdb' not in comp) and ('db' in comp or '디비' in comp or '동부' in comp):
         if any(k in prod for k in ['알행플', '알행종', '알차고']):
             base_next = 4.0
             base_split = 1.0 if '7년' in term else 2.0
@@ -1669,11 +1774,58 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
 
     # 11. KDB생명
     elif 'kdb' in comp:
-        return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (버팀목종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '행복세븐' in prod:
+            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "원수사 600% (익월 400% + 13회차 200% · 20년납 전용)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '행복플러스' in prod:
+            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "총 800% (익월 400% + 13회차 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '서포트100' in prod:
+            if '20년' in term:
+                return {"next_month": 4.0, "split": 6.0, "total": 10.0, "basis": "총 1,000% (익월 400% + 13회차 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 3.0, "split": 4.0, "total": 7.0, "basis": "총 700% (익월 300% + 13회차 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['더블찬스', '버팀목']):
+            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200%", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['라이프핏', '암만생각해도', '암보험']):
+            return {"next_month": 5.0, "split": 7.0, "total": 12.0, "basis": "총 1,200% (익월 500% + 13회차 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['행복드림', '행복플러스up', '연금']):
+            if any(t in term for t in ['10년미만', '10년납 미만', '미만']):
+                return {"next_month": 1.5, "split": 0.0, "total": 1.5, "basis": "익월 150% (10년납 미만 150%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 3.5, "split": 1.0, "total": 4.5, "basis": "총 450% (익월 350% + 13회차 100%)", "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (버팀목종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 12. ABL생명
     elif 'abl' in comp:
-        return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (우리WON더채움종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '더채움' in prod:
+            return {"next_month": 3.0, "split": 5.0, "total": 8.0, "basis": "익월 300% + 13차월 500% (우리WON더채움종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '스테이블' in prod:
+            if '7년' in term:
+                return {"next_month": 3.0, "split": 2.0, "total": 5.0, "basis": "익월 300% + 13차월 200% (우리WON스테이블종신 7년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 3.0, "split": 4.0, "total": 7.0, "basis": "익월 300% + 13차월 400% (우리WON스테이블종신 10년납 이상 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['더드림', '드림종신']):
+            if '7년' in term:
+                return {"next_month": 3.0, "split": 1.5, "total": 4.5, "basis": "익월 300% + 13차월 150% (우리WON더드림종신 7년납 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif any(t in term for t in ['5년', '10년']):
+                return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (우리WON더드림종신 5/10년납 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (우리WON더드림종신 15년납 이상 100%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '더블종신' in prod:
+            if '7년' in term:
+                return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (우리WON더블종신 7년납 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif '10년' in term:
+                return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (우리WON더블종신 10년납 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (우리WON더블종신 15년납 이상 100%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['간편건강', '3.10.5', '건강n더보장', '케어간병', '톡톡튀는', '더담은암']):
+            return {"next_month": 2.5, "split": 8.0, "total": 10.5, "basis": "익월 250% + 13차월 800% (우리WON 건강/암/간병 10년납 이상 1,050%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '상속' in prod:
+            return {"next_month": 2.0, "split": 2.0, "total": 4.0, "basis": "익월 200% + 13차월 200% (우리WON상속종신 전 납기 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '세븐' in prod:
+            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13차월 400% (우리WON세븐종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13차월 300% (ABL생명 기본 보장성 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 13. 농협생명
     elif '농협' in comp:
@@ -2267,7 +2419,7 @@ def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: st
         }
     }
 
-def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str], gubun: str = "") -> Dict[str, Any]:
+def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str], gubun: str = "", invalid_term: Optional[str] = None) -> Dict[str, Any]:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
     clean_prod = clean_prod_short_name(prod_name)
@@ -2289,13 +2441,18 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
     quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
     
     gubun_str = f" · {gubun}" if gubun else ""
+    if invalid_term:
+        guide_text = f"⚠️ {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n해당 상품은 '{invalid_term}'이(가) 조견표에 없습니다.\n\n아래 실제 납기 버튼을 누르시면 해당 납기로 즉시 계산됩니다!"
+    else:
+        guide_text = f"📋 {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
+    
     return {
         "version": "2.0",
         "template": {
             "outputs": [
                 {
                     "simpleText": {
-                        "text": f"📋 {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
+                        "text": guide_text
                     }
                 }
             ],
@@ -2973,10 +3130,10 @@ async def kakao_skill_calculate(request: Request):
                     return build_ask_gubun_response(comp, prod_group, calc_prem, term=t_str)
 
                 # 2단계: 납입기간(term) 확인
-                term = match_term_in_text(prod_group, utterance)
+                term, invalid_term = match_term_in_text(prod_group, utterance)
                 if not term:
                     valid_terms = prod_group['terms'] if prod_group['terms'] else ["10년납", "15년납", "20년납"]
-                    return build_ask_term_response(comp, prod_name, calc_prem, valid_terms, gubun=gubun or "")
+                    return build_ask_term_response(comp, prod_name, calc_prem, valid_terms, gubun=gubun or "", invalid_term=invalid_term)
 
                 # 3단계: 법인계약 여부 확인 (한화 하나로 15년, 푸본 원픽 7년, IM 당당한 7년)
                 if is_corp_incentive_target(comp, prod_name, term) and not contract_type:
@@ -3021,10 +3178,10 @@ async def kakao_skill_calculate(request: Request):
                     m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
                     t_str = m_term.group(0) if m_term else ""
                     return build_ask_gubun_response(comp, p, premium, term=t_str)
-                term = match_term_in_text(p, utterance)
+                term, invalid_term = match_term_in_text(p, utterance)
                 if not term:
                     valid_terms = p['terms'] if p['terms'] else ["10년납", "15년납", "20년납"]
-                    return build_ask_term_response(comp, prod_name, premium, valid_terms, gubun=gubun or "")
+                    return build_ask_term_response(comp, prod_name, premium, valid_terms, gubun=gubun or "", invalid_term=invalid_term)
                 if is_corp_incentive_target(comp, prod_name, term) and not contract_type:
                     return build_ask_contract_type_response(comp, prod_name, premium, term, gubun=gubun or "")
                 item = match_master_item(p, term, gubun or "")
