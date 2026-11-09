@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.3.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -382,6 +382,55 @@ if os.path.exists(MASTER_JSON_PATH):
         LIFE_PRODUCTS = json.load(_f)
 else:
     LIFE_PRODUCTS = []
+
+# 손보 주차별 시책 마스터 데이터 로드
+NONLIFE_WEEKLY_PATH = os.path.join(os.path.dirname(__file__), 'nonlife_weekly_incentives.json')
+if os.path.exists(NONLIFE_WEEKLY_PATH):
+    try:
+        with open(NONLIFE_WEEKLY_PATH, 'r', encoding='utf-8') as _nwf:
+            NONLIFE_WEEKLY_DATA = json.load(_nwf)
+    except Exception as _e:
+        NONLIFE_WEEKLY_DATA = {}
+else:
+    NONLIFE_WEEKLY_DATA = {}
+
+def resolve_nonlife_week(requested_week: Optional[str] = None) -> Tuple[str, str, bool, Dict[str, Any]]:
+    """
+    주차별 손보 시책 데이터 매칭:
+    (반환: resolved_week, period_str, is_fallback, week_companies_dict)
+    """
+    weeks_data = NONLIFE_WEEKLY_DATA.get("weeks", {})
+    
+    # 1. 사용자가 '1주차', '2주차' 등 명시한 경우
+    if requested_week and requested_week in weeks_data:
+        w_obj = weeks_data[requested_week]
+        comps = w_obj.get("companies", {})
+        if comps:
+            return requested_week, w_obj.get("period", ""), False, comps
+        else:
+            fb_obj = weeks_data.get("1주차", {})
+            return "1주차", fb_obj.get("period", "11.01 ~ 11.08"), True, fb_obj.get("companies", {})
+
+    # 2. 날짜 기준 현재 주차 자동 판별 (11월 기준)
+    now_day = datetime.datetime.now().day
+    if now_day <= 8:
+        target_week = "1주차"
+    elif now_day <= 15:
+        target_week = "2주차"
+    elif now_day <= 22:
+        target_week = "3주차"
+    else:
+        target_week = "4주차"
+        
+    w_obj = weeks_data.get(target_week, {})
+    comps = w_obj.get("companies", {})
+    if comps:
+        return target_week, w_obj.get("period", ""), False, comps
+    else:
+        # 해당 주차 시책지 업로드 전: 직전 1주차로 계산하되 폴백 알림 플래그
+        fb_obj = weeks_data.get("1주차", {})
+        return "1주차", fb_obj.get("period", "11.01 ~ 11.08"), True, fb_obj.get("companies", {})
+
 EMBEDDED_RATES_DATA = json.loads('{"life_rules": {"next_month_rate": 3.32, "company_installments": {"흥국": {"default": 0.96, "건강": 0.96, "종신": 0.96, "오튼튼": 0.96, "다사랑": 0.96}, "한화": {"default": 1.56, "H종신": 1.56, "제로백": 1.56, "일반보장": 2.76}, "DB": {"default": 1.32, "건강": 1.32, "알행종": 1.56}, "신한": {"default": 0.84, "건강": 0.84, "종신": 1.56}, "KB": {"default": 3.48}, "메트": {"default": 3.84, "연금": 4.8, "종신": 3.84, "백만인": 2.52}, "농협": {"default": 1.56, "투스텝": 1.56, "기타": 0.6}, "동양": {"default": 1.08, "어린이": 1.08, "쑥쑥": 1.08, "단기납": 1.56, "종신": 1.8, "경영인": 2.28}, "라이나": {"default": 1.56, "건강": 1.56}, "교보": {"default": 2.76}, "KDB": {"default": 1.56}, "ABL": {"default": 1.56}, "미래": {"default": 2.76}, "하나": {"default": 0.96, "건강": 0.96, "일반": 1.56}, "푸본현대": {"default": 1.56, "표준": 6.12, "MAX원픽": 1.56, "마이픽": 1.56}, "IM": {"default": 2.04}, "IBK": {"default": 2.76}}, "incentives": {"흥국": {"전략": {"name": "흥국생명 전략 6종 (오튼튼/다사랑 등)", "next_month_base": 4.0, "next_month_sky": 2.0, "install_period_bonus": 6.0, "install_strategy_bonus": 2.0, "total_rate": 14.0, "note": "20만원 구간 기준, 본사 전략시책(+200%) 포함"}, "일반": {"name": "흥국생명 일반 건강", "next_month_base": 4.0, "next_month_sky": 0.0, "install_period_bonus": 6.0, "install_strategy_bonus": 0.0, "total_rate": 10.0, "note": "20만원 구간 기준"}}}}, "nonlife_rules": {"conversion_rate": 0.92, "next_month_rate": 6.1, "installment_rate": 1.32, "total_commission_rate": 7.42, "companies": ["현대해상", "메리츠", "KB손보", "한화손보", "DB손보", "롯데손보", "흥국화재", "농협손보", "하나손보"], "incentives": {"현대해상": {"주력": {"name": "현대해상 주력보종 (퍼펙트/간편/굿앤굿)", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 3.0, "install_sky_2nd": 1.7, "total_rate": 10.3, "note": "1주차 가동(200%) + 주력가동(300%) + SKY 2차년도(170%) 포함"}, "일반": {"name": "현대해상 일반 인보험", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 0.0, "install_sky_2nd": 1.7, "total_rate": 7.3, "note": "주력보종 가동시상(300%) 제외"}}, "KB손보": {"주력": {"name": "KB손해보험 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.6, "note": "익월 360% + 1주차 가동 200% + 주력 200%"}}, "한화손보": {"주력": {"name": "한화손해보험 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 0.5, "install_week_bonus": 4.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.5, "note": "익월 150% + 1주차 인보험 400% + 주력 200%"}}, "메리츠": {"주력": {"name": "메리츠화재 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 2.5, "install_week_bonus": 2.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.5, "note": "익월 350% + 1주차 가동 200% + 주력 200%"}}}}}')
 
 COMPANY_RATES = EMBEDDED_RATES_DATA
@@ -1795,13 +1844,37 @@ def calculate_life(
     }
 
 
+def calculate_company_for_compare(comp: str, premium: int, utterance: str, continuous_mode: str = "none") -> Dict[str, Any]:
+    info = ALL_COMPANIES.get(comp, {})
+    if info.get("category") == "손해보험":
+        m_week = re.search(r'([1-5])\s*주차?', utterance)
+        req_w = f"{m_week.group(1)}주차" if m_week else None
+        return calculate_nonlife(comp, "주력보종", premium, "주력", continuous_mode, requested_week=req_w)
+    else:
+        candidates = find_candidate_products(comp, utterance)
+        prod = candidates[0] if candidates else None
+        p_name = clean_prod_short_name(prod['full_product']) if prod else info.get("default_prod", "보장성")
+        gubun = match_gubun_in_text(prod, utterance) if prod else None
+        if not gubun and prod and prod.get("gubuns"):
+            gubun = prod["gubuns"][0]
+        term = prod.get("terms", ["20년납"])[0] if prod else "20년납"
+        s_factor = 1000.0
+        if prod:
+            item = match_master_item(prod, term, gubun or "")
+            s_factor = item.get('s_factor', 1000.0)
+        return calculate_life(comp, p_name, premium, s_factor=s_factor, term=term, gubun=gubun or "", continuous_mode=continuous_mode)
+
+
 def calculate_nonlife(
     company: str,
     product_name: str,
     premium: int,
     incentive_type: str = "주력",
-    continuous_mode: str = "none"
+    continuous_mode: str = "none",
+    requested_week: Optional[str] = None
 ) -> Dict[str, Any]:
+    resolved_week, period_str, is_fallback, week_comps = resolve_nonlife_week(requested_week)
+
     comp_matched = "현대해상"
     for c in NONLIFE_RULES['companies']:
         if c in company or company in c:
@@ -1818,7 +1891,12 @@ def calculate_nonlife(
     installment_comm = round(s_grade * inst_rate)
     total_comm = next_month_comm + installment_comm
     
-    inc_dict = NONLIFE_RULES.get('incentives', {}).get(comp_matched, {}).get(incentive_type, {})
+    comp_week_info = week_comps.get(comp_matched, {})
+    flyer_file = comp_week_info.get("flyer", ALL_COMPANIES.get(comp_matched, {}).get("flyer", f"{comp_matched}_1주.jpg"))
+    inc_dict = comp_week_info.get(incentive_type, {})
+    
+    if not inc_dict:
+        inc_dict = NONLIFE_RULES.get('incentives', {}).get(comp_matched, {}).get(incentive_type, {})
     if not inc_dict:
         inc_dict = NONLIFE_RULES.get('incentives', {}).get('현대해상', {}).get('주력', {})
         
@@ -1879,7 +1957,11 @@ def calculate_nonlife(
         "cont_bonus_rate": cont_bonus_rate,
         "cont_desc": cont_desc,
         "is_heungkuk": False,
-        "continuous_mode": continuous_mode
+        "continuous_mode": continuous_mode,
+        "week": resolved_week,
+        "period": period_str,
+        "is_fallback": is_fallback,
+        "flyer": flyer_file
     }
 
 
@@ -1943,8 +2025,17 @@ FLYER_MAP = {
     "흥국화재": "흥국화재_1주.jpg"
 }
 
-def find_flyer(comp_name: str) -> Tuple[str, str]:
+def find_flyer(comp_name: str, week: Optional[str] = None) -> Tuple[str, str]:
     c_norm = comp_name.replace(" ", "").lower()
+
+    # 1. 주차별 손보 전단지 우선 확인 (week 지정 또는 자동 활성 주차)
+    resolved_week, _, _, week_comps = resolve_nonlife_week(week)
+    for c in week_comps:
+        if c in comp_name or comp_name in c or c.replace(" ", "").lower() in c_norm or c_norm in c.replace(" ", "").lower():
+            fn = week_comps[c].get("flyer")
+            if fn:
+                return c, fn
+
     if "kb생명" in c_norm or "kb라이프" in c_norm or "케이비생명" in c_norm or "케이비라이프" in c_norm:
         return "KB라이프", "KB라이프_11월.png"
     if "신한생명" in c_norm or "신한라이프" in c_norm or c_norm == "신한":
@@ -1982,11 +2073,12 @@ def find_flyer(comp_name: str) -> Tuple[str, str]:
     return comp_name, "SKY_11월.jpg"
 
 
-def build_flyer_response(comp_name: str) -> Dict[str, Any]:
-    matched_k, filename = find_flyer(comp_name)
+def build_flyer_response(comp_name: str, week: Optional[str] = None) -> Dict[str, Any]:
+    matched_k, filename = find_flyer(comp_name, week=week)
     encoded_comp = urllib.parse.quote(matched_k)
     encoded_filename = urllib.parse.quote(filename)
-    flyer_url = f"https://skyblue-kakao-bot.onrender.com/flyer/{encoded_comp}"
+    week_param = f"?week={urllib.parse.quote(week)}" if week else ""
+    flyer_url = f"https://skyblue-kakao-bot.onrender.com/flyer/{encoded_comp}{week_param}"
     img_url = f"https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{encoded_filename}"
     
     return {
@@ -2458,17 +2550,46 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                     "label": f"🔥 연속포함 (+{int(round(prem * cont_bonus_rate // 10000))}만)"
                 })
             
-    quick_replies.extend([
-        {"messageText": f"{comp} {prod} 10만원 {term}".strip(), "action": "message", "label": "10만 계산"},
-        {"messageText": f"{comp} {prod} 20만원 {term}".strip(), "action": "message", "label": "20만 계산"},
-        {"messageText": f"{comp} vs 현대 20만 비교", "action": "message", "label": "비교하기"}
-    ])
+    week = calc_result.get("week", "")
+    period = calc_result.get("period", "")
+    is_fallback = calc_result.get("is_fallback", False)
+    
+    if cat == "손해보험":
+        quick_replies.extend([
+            {"messageText": f"1주차 {comp} 10만원", "action": "message", "label": "1주차 계산"},
+            {"messageText": f"2주차 {comp} 10만원", "action": "message", "label": "2주차 계산"},
+            {"messageText": f"{comp} vs 현대 20만 비교", "action": "message", "label": "비교하기"}
+        ])
+    else:
+        quick_replies.extend([
+            {"messageText": f"{comp} {prod} 10만원 {term}".strip(), "action": "message", "label": "10만 계산"},
+            {"messageText": f"{comp} {prod} 20만원 {term}".strip(), "action": "message", "label": "20만 계산"},
+            {"messageText": f"{comp} vs 현대 20만 비교", "action": "message", "label": "비교하기"}
+        ])
     
     basis_text = f"💡 시상 산출근거: {basis_desc}"
-    if is_heungkuk and c_mode == "none":
+    if cat == "손해보험":
+        if is_fallback:
+            basis_text += f"\n(※ 현재 11월 1주차({period}) 기준이며, 월요일 오후~화요일 오전 2주차 시책지 업로드 시 즉시 자동 갱신됩니다)"
+        elif period:
+            basis_text += f"\n(※ 11월 {week} 시책 기준 [적용기간: {period}])"
+    elif is_heungkuk and c_mode == "none":
         basis_text += f"\n(※ 10~11월 연속가동 또는 핑크멤버스 연속 시책은 아래 퀵버튼을 눌러 합산하실 수 있습니다)"
     elif not is_heungkuk and c_mode == "none" and cont_bonus_rate > 0:
         basis_text += f"\n(※ 전월 연속가동 시상은 아래 [🔥 연속포함] 버튼을 누르면 즉시 합산됩니다)"
+
+    if cat == "손해보험":
+        if is_fallback:
+            card_desc = f"{clean_product_display_name(prod)} · 11월 {week}({period}) [2주차 대기]"
+        else:
+            card_desc = f"{clean_product_display_name(prod)} · 11월 {week}({period})"
+        flyer_btn_label = f"📑 {comp} {week} 시책지 보기" if week else f"📑 {comp} 시책지 보기"
+        flyer_query = f"?week={urllib.parse.quote(week)}" if week else ""
+        flyer_btn_url = f"https://skyblue-kakao-bot.onrender.com/flyer/{urllib.parse.quote(comp)}{flyer_query}"
+    else:
+        card_desc = f"{clean_product_display_name(prod)} · {term}" if term else clean_product_display_name(prod)
+        flyer_btn_label = f"📑 {comp} 시책지 보기"
+        flyer_btn_url = f"https://skyblue-kakao-bot.onrender.com/flyer/{urllib.parse.quote(comp)}"
         
     return {
         "version": "2.0",
@@ -2478,7 +2599,7 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                     "itemCard": {
                         "imageTitle": {
                             "title": f"[{cat}] {comp}",
-                            "description": f"{clean_product_display_name(prod)} · {term}" if term else clean_product_display_name(prod)
+                            "description": card_desc
                         },
                         "title": f"총 수령액 {grand_total:,}원",
                         "itemList": item_list,
@@ -2488,9 +2609,9 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                         },
                         "buttons": [
                             {
-                                "label": "📑 " + comp + " 시책지 보기",
+                                "label": flyer_btn_label,
                                 "action": "webLink",
-                                "webLinkUrl": "https://skyblue-kakao-bot.onrender.com/flyer/" + urllib.parse.quote(comp)
+                                "webLinkUrl": flyer_btn_url
                             }
                         ]
                     }
@@ -2565,11 +2686,12 @@ def get_flyer_img(filename: str):
 
 
 @app.get("/flyer/{company_name}")
-def view_flyer_html(company_name: str):
-    matched_k, filename = find_flyer(company_name)
+def view_flyer_html(company_name: str, week: Optional[str] = None):
+    matched_k, filename = find_flyer(company_name, week=week)
     encoded_filename = urllib.parse.quote(filename)
     raw_cdn_url = f"https://raw.githubusercontent.com/jwchoi2313-alt/skyblue-kakao-bot/main/flyers/{encoded_filename}"
     local_img_url = f"/flyer-img/{filename}"
+    week_str = f" ({week})" if week else ""
     
     if "신한" in matched_k:
         pages = ["신한라이프_11월_p1.png", "신한라이프_11월_p2.png", "신한라이프_11월_p3.png"]
@@ -2582,7 +2704,7 @@ def view_flyer_html(company_name: str):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>{matched_k} 11월 공식 시책지</title>
+    <title>{matched_k} 11월{week_str} 공식 시책지</title>
     <style>
         body {{
             margin: 0;
@@ -2811,14 +2933,17 @@ async def kakao_skill_calculate(request: Request):
             calc_prem = premium
             info = ALL_COMPANIES[comp]
             
-            # 손해보험: 92% 고정 및 1주차 시책 즉시 계산
+            # 손해보험: 92% 고정 및 주차별 시책 즉시 계산
             if info['category'] == "손해보험":
+                m_week = re.search(r'([1-5])\s*주차?', utterance)
+                requested_week = f"{m_week.group(1)}주차" if m_week else None
+
                 prod_name = "주력보종"
                 for p in ['퍼펙트', '간편', '굿앤굿', '주력', '종합', '자녀', '나에게맞춘', '참좋은', '훼밀리', '아이러브', '행복플러스']:
                     if p in utterance:
                         prod_name = p
                         break
-                calc_res = calculate_nonlife(comp, prod_name, calc_prem, incentive_type="주력", continuous_mode=continuous_mode)
+                calc_res = calculate_nonlife(comp, prod_name, calc_prem, incentive_type="주력", continuous_mode=continuous_mode, requested_week=requested_week)
                 return build_kakao_response(calc_res)
                 
             # 생명보험: 계층형 질의 유도 및 정밀 S환산 계산
@@ -2911,7 +3036,9 @@ async def kakao_skill_calculate(request: Request):
                 first_comp = all_candidates[0]['company']
                 return build_ask_similar_product_response(first_comp, all_candidates, premium, term=t_str)
             elif any(k in utterance for k in ['퍼펙트', '간편', '굿앤굿', '주력']):
-                calc_res = calculate_nonlife("현대해상", "주력보종", premium, "주력", continuous_mode)
+                m_week = re.search(r'([1-5])\s*주차?', utterance)
+                requested_week = f"{m_week.group(1)}주차" if m_week else None
+                calc_res = calculate_nonlife("현대해상", "주력보종", premium, "주력", continuous_mode, requested_week=requested_week)
                 return build_kakao_response(calc_res)
 
         # 6. 해석 불가 질문 -> 사용자 지정 표준 폴백 메시지 반환

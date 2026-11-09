@@ -1,0 +1,228 @@
+{
+  "current_default_week": "1주차",
+  "weeks": {
+    "1주차": {
+      "period": "11.01 ~ 11.08",
+      "status": "active_completed",
+      "note": "11월 1주차 공식 시책 전단지 기준",
+      "companies": {
+        "현대해상": {
+          "flyer": "현대해상_1주.png",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "현대해상 주력보종 (퍼펙트/간편/굿앤굿)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 3.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 10.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 670%(2차년도170+1주가동200+주력300)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 브릿지 연속가동 달성 시 추가시상(+200%) 합산 가능"
+          },
+          "일반": {
+            "name": "현대해상 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 7.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 370%(2차년도170+1주가동200)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 브릿지 연속가동 달성 시 추가시상(+200%) 합산 가능"
+          }
+        },
+        "DB손보": {
+          "flyer": "DB손보_1주.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "DB손해보험 주력상품 (나에게맞춘/참좋은/훼밀리/아이러브/행복플러스)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 1.7,
+            "install_sky_add": 1.0,
+            "total_rate": 10.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 670%(2차년도170+주간200+주력200+자체100)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "전월(10월) 10만↑ 달성 시 연속가동 +200% 추가 합산 가능"
+          },
+          "일반": {
+            "name": "DB손해보험 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 1.7,
+            "install_sky_add": 1.0,
+            "total_rate": 8.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 470%(2차년도170+주간200+자체100)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "전월(10월) 10만↑ 달성 시 연속가동 +200% 추가 합산 가능"
+          }
+        },
+        "KB손보": {
+          "flyer": "KB손보_1주차.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "KB손해보험 주력보종 (간편+종합+자녀+LTC)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 9.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 570%(2차년도170+1주가동200+주력200)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 주력보종 연속가동 시 +200% 합산 가능"
+          },
+          "일반": {
+            "name": "KB손해보험 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 7.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 370%(2차년도170+1주가동200)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 연속가동 시 +200% 합산 가능"
+          }
+        },
+        "한화손보": {
+          "flyer": "한화손보_1주.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "한화손해보험 주력보종 (시그니처여성/간편/한아름/0540/건강쑥쑥)",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.5,
+            "install_week_bonus": 4.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 7.5,
+            "basis": "익월 150%(기본100+전략50) + 13회차 600%(주차400+주력200)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 연계시상 +200% 합산 가능"
+          },
+          "일반": {
+            "name": "한화손해보험 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.0,
+            "install_week_bonus": 4.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 5.0,
+            "basis": "익월 100%(기본100) + 13회차 400%(주차400)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 연계시상 +200% 합산 가능"
+          }
+        },
+        "메리츠": {
+          "flyer": "메리츠_11월_1주.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "메리츠화재 주요상품 (통합/간편/어린이)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 9.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 570%(2차년도170+가동200+주요상품200)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 주요상품 연속가동 시 +200% 합산 가능"
+          },
+          "일반": {
+            "name": "메리츠화재 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 7.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 370%(2차년도170+가동200)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 연속가동 시 +200% 합산 가능"
+          }
+        },
+        "롯데손보": {
+          "flyer": "롯데손보_1주.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "롯데손해보험 주력상품",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 9.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 570%(2차년도170+주차운전자200+얼리버드200)"
+          }
+        },
+        "흥국화재": {
+          "flyer": "흥국화재_1주.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "흥국화재 전략담보 (인보험+전략담보)",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.0,
+            "install_week_bonus": 4.0,
+            "install_main_bonus": 4.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 9.0,
+            "basis": "익월 100%(기본100) + 13회차 800%(인보험400+전략담보400)"
+          }
+        },
+        "농협손보": {
+          "flyer": "농협손보_1주.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "농협손해보험 주력 (3.10.5 고당지 SPOT)",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.0,
+            "install_week_bonus": 5.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 8.0,
+            "basis": "익월 100%(기본100) + 16회차 700%(주차가동500+신상품SPOT200)"
+          }
+        },
+        "하나손보": {
+          "flyer": "하나손보_1주.jpg",
+          "period": "11.01 ~ 11.08",
+          "주력": {
+            "name": "하나손해보험 주력 (주차가동 더블시상)",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.0,
+            "install_week_bonus": 3.0,
+            "install_main_bonus": 3.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 7.0,
+            "basis": "익월 100%(기본100) + 13회차 600%(주차가동300+더블시상300)"
+          }
+        }
+      }
+    },
+    "2주차": {
+      "period": "11.09 ~ 11.15",
+      "status": "waiting_upload",
+      "note": "월요일 오후 ~ 화요일 오전 구글 드라이브 업로드 시 전단지 일자 및 요율 자동 반영",
+      "companies": {}
+    },
+    "3주차": {
+      "period": "11.16 ~ 11.22",
+      "status": "waiting_upload",
+      "note": "3주차 시책지 업로드 시 자동 반영",
+      "companies": {}
+    },
+    "4주차": {
+      "period": "11.23 ~ 11.30",
+      "status": "waiting_upload",
+      "note": "4주차 시책지 업로드 시 자동 반영",
+      "companies": {}
+    }
+  }
+}
