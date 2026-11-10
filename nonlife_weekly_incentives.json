@@ -209,7 +209,7 @@
     "2주차": {
       "period": "11.09 ~ 11.15",
       "status": "partial_active",
-      "note": "11월 2주차 공식 시책 전단지 기준 (KB손보·메리츠 2주차 반영 완료 / 미업로드사는 1주차 기준 적용)",
+      "note": "11월 2주차 공식 시책 전단지 기준 (KB손보·메리츠·한화손보 2주차 반영 완료 / 미업로드사는 1주차 기준 적용)",
       "companies": {
         "KB손보": {
           "flyer": "KB손보 2주.jpg",
@@ -265,6 +265,34 @@
             "basis": "익월 360%(기본100+SKY260) + 13회차 370%(2차년도170+2주가동200)",
             "cont_bonus_rate": 2.0,
             "cont_desc": "10-11월 주요상품 연속가동 시 +200% 합산 가능"
+          }
+        },
+        "한화손보": {
+          "flyer": "한화손보 2주.jpg",
+          "period": "11.09 ~ 11.15",
+          "주력": {
+            "name": "한화손해보험 2주차 주력보종 (시그니처여성/간편/한아름/0540/건강쑥쑥/홈앤라이프)",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.5,
+            "install_week_bonus": 3.0,
+            "install_main_bonus": 1.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 5.5,
+            "basis": "익월 150%(기본100+전략50) + 13회차 400%(2차년도 주차300+주력100)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 연계시상 최대 +800% 합산 가능"
+          },
+          "일반": {
+            "name": "한화손해보험 2주차 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.0,
+            "install_week_bonus": 3.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 4.0,
+            "basis": "익월 100%(기본100) + 13회차 300%(2차년도 주차300)",
+            "cont_bonus_rate": 2.0,
+            "cont_desc": "10-11월 연계시상 최대 +800% 합산 가능"
           }
         }
       }
