@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.5.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.6.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2044,6 +2044,18 @@ def calculate_nonlife(
     total_comm = next_month_comm + installment_comm
     
     comp_week_info = week_comps.get(comp_matched, {})
+    comp_is_fallback = is_fallback
+    comp_period = period_str
+    comp_week = resolved_week
+
+    if not comp_week_info:
+        # 해당 주차에 이 회사의 전단지가 아직 업로드되지 않은 경우 1주차로 폴백
+        w1_data = NONLIFE_WEEKLY_DATA.get("weeks", {}).get("1주차", {})
+        comp_week_info = w1_data.get("companies", {}).get(comp_matched, {})
+        comp_is_fallback = True
+        comp_period = w1_data.get("period", "11.01 ~ 11.08")
+        comp_week = "1주차"
+
     flyer_file = comp_week_info.get("flyer", ALL_COMPANIES.get(comp_matched, {}).get("flyer", f"{comp_matched}_1주.jpg"))
     inc_dict = comp_week_info.get(incentive_type, {})
     
@@ -2110,9 +2122,9 @@ def calculate_nonlife(
         "cont_desc": cont_desc,
         "is_heungkuk": False,
         "continuous_mode": continuous_mode,
-        "week": resolved_week,
-        "period": period_str,
-        "is_fallback": is_fallback,
+        "week": comp_week,
+        "period": comp_period,
+        "is_fallback": comp_is_fallback,
         "flyer": flyer_file
     }
 
