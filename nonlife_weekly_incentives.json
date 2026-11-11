@@ -209,7 +209,7 @@
     "2주차": {
       "period": "11.09 ~ 11.15",
       "status": "partial_active",
-      "note": "11월 2주차 공식 시책 전단지 기준 (KB손보·메리츠·한화손보 2주차 반영 완료 / 미업로드사는 1주차 기준 적용)",
+      "note": "11월 2주차 공식 시책 전단지 기준 (KB손보·메리츠·한화·현대·DB·흥국·롯데 7개 사 반영 완료 / 미업로드사는 1주차 기준 적용)",
       "companies": {
         "KB손보": {
           "flyer": "KB손보 2주.jpg",
@@ -293,6 +293,120 @@
             "basis": "익월 100%(기본100) + 13회차 300%(2차년도 주차300)",
             "cont_bonus_rate": 2.0,
             "cont_desc": "10-11월 연계시상 최대 +800% 합산 가능"
+          }
+        },
+        "현대해상": {
+          "flyer": "현대해상 2주.png",
+          "period": "11.09 ~ 11.15",
+          "주력": {
+            "name": "현대해상 2주차 주력보종 (퍼펙트/간편/굿앤굿스타/굿앤굿1540)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 3.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 10.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 670%(2차년도170+2주가동200+주력300)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "10-11월 브릿지 연속가동 달성 시 최대 +300% 합산 가능"
+          },
+          "일반": {
+            "name": "현대해상 2주차 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 7.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 370%(2차년도170+2주가동200)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "10-11월 브릿지 연속가동 달성 시 최대 +300% 합산 가능"
+          }
+        },
+        "DB손보": {
+          "flyer": "DB손보 2주.png",
+          "period": "11.09 ~ 11.15",
+          "주력": {
+            "name": "DB손해보험 2주차 주력상품 (나에게맞춘/참좋은/훼밀리/아이러브/행복플러스)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 1.0,
+            "install_sky_2nd": 1.7,
+            "install_sky_add": 1.0,
+            "total_rate": 9.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 570%(2차년도170+주간200+주력100+플래티넘100)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "10-11월 연속가동 시 최대 +300% 추가 합산 가능"
+          },
+          "일반": {
+            "name": "DB손해보험 2주차 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 1.7,
+            "install_sky_add": 1.0,
+            "total_rate": 8.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 470%(2차년도170+주간200+플래티넘100)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "10-11월 연속가동 시 최대 +300% 추가 합산 가능"
+          }
+        },
+        "흥국화재": {
+          "flyer": "흥국화재 2주.png",
+          "period": "11.09 ~ 11.15",
+          "주력": {
+            "name": "흥국화재 2주차 전략담보 (인보험+전략담보)",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.0,
+            "install_week_bonus": 4.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 7.0,
+            "basis": "익월 100%(기본100) + 13회차 600%(인보험400+전략담보200)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "10-11월 연속가동 시 최대 +300% 추가 합산 가능"
+          },
+          "일반": {
+            "name": "흥국화재 2주차 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 0.0,
+            "install_week_bonus": 4.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 0.0,
+            "total_rate": 5.0,
+            "basis": "익월 100%(기본100) + 13회차 400%(인보험400)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "10-11월 연속가동 시 최대 +300% 추가 합산 가능"
+          }
+        },
+        "롯데손보": {
+          "flyer": "롯데손보 2주.png",
+          "period": "11.09 ~ 11.15",
+          "주력": {
+            "name": "롯데손해보험 2주차 주력상품 (운전자/얼리버드)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 2.5,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 9.8,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 620%(2차년도170+주차운전자250+얼리버드200)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "1-2주 연속가동 시 300% 추가 합산 가능"
+          },
+          "일반": {
+            "name": "롯데손해보험 2주차 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 0.0,
+            "install_main_bonus": 2.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 7.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 370%(2차년도170+얼리버드200)",
+            "cont_bonus_rate": 3.0,
+            "cont_desc": "1-2주 연속가동 시 300% 추가 합산 가능"
           }
         }
       }
