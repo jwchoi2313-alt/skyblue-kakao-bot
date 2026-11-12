@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.0")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1899,12 +1899,168 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 "cont_desc": ""
             }
 
-    # 9. 동양생명
+    # 9. 동양생명 (11월 전단지 및 하단 구간시상 완벽 반영)
     elif '동양' in comp:
-        if '알뜰' in prod:
-            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (알뜰플러스 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # (1) 우리WON하는쑥쑥어린이보장보험 (어린이, 쑥쑥)
+        if any(k in prod for k in ['쑥쑥', '어린이']):
+            if '태아' in prod or '태아' in gubun:
+                return {
+                    "next_month": 0.0,
+                    "split": 0.0,
+                    "total": 0.0,
+                    "basis": "쑥쑥어린이 태아형 시책 지급 없음",
+                    "cont_bonus": 0.0,
+                    "cont_desc": ""
+                }
+            next_m = 5.0  # 익월 500% (고정)
+            
+            # 하단 구간시상 (13회차): 주간마감 + 월마감 [저/무해지형 限]
+            # 주간마감: 10만 이상 800% 정률 (10만 80만, 20만 160만, 30만 240만, 50만 400만, 70만 560만)
+            weekly_rate = 8.0 if premium >= 100000 else 0.0
+            
+            # 월마감: 20만 800%(160만), 30만 이상 1,200%(360만, 600만, 840만, 1200만)
+            if premium >= 300000:
+                monthly_rate = 12.0
+            elif premium >= 200000:
+                monthly_rate = 8.0
+            else:
+                monthly_rate = 0.0
+                
+            split_rate = weekly_rate + monthly_rate
+            tot_rate = next_m + split_rate
+            weekly_percent = int(weekly_rate * 100)
+            monthly_percent = int(monthly_rate * 100)
+            tot_percent = int(tot_rate * 100)
+            
+            if monthly_rate > 0:
+                basis = f"익월 500% + 13회차 {int(split_rate*100)}%(주간 {weekly_percent}% + 월마감 {monthly_percent}%) [쑥쑥어린이 {tot_percent}%]"
+            elif weekly_rate > 0:
+                basis = f"익월 500% + 13회차 {weekly_percent}%(주간마감) [쑥쑥어린이 {tot_percent}%]"
+            else:
+                basis = "익월 500% (쑥쑥어린이 기본, 10만 미만 구간시상 제외)"
+                
+            return {
+                "next_month": next_m,
+                "split": split_rate,
+                "total": tot_rate,
+                "basis": basis,
+                "cont_bonus": 0.0,
+                "cont_desc": ""
+            }
+
+        # (2) 우리WON하는치매간병보험 & 우리WON하는보장보험 (보장, 간편보장, 건강보장, 암)
+        elif any(k in prod for k in ['치매', '간병', '보장', '건강한보장', '암']):
+            is_standard = ('표준형' in prod) or ('표준형' in gubun)
+            if is_standard:
+                return {
+                    "next_month": 2.0,
+                    "split": 0.0,
+                    "total": 2.0,
+                    "basis": "익월 200% (표준형, 구간시상 제외)",
+                    "cont_bonus": 0.0,
+                    "cont_desc": ""
+                }
+            else:
+                next_m = 4.0
+                weekly_rate = 8.0 if premium >= 100000 else 0.0
+                if premium >= 300000:
+                    monthly_rate = 12.0
+                elif premium >= 200000:
+                    monthly_rate = 8.0
+                else:
+                    monthly_rate = 0.0
+                    
+                split_rate = weekly_rate + monthly_rate
+                tot_rate = next_m + split_rate
+                weekly_percent = int(weekly_rate * 100)
+                monthly_percent = int(monthly_rate * 100)
+                tot_percent = int(tot_rate * 100)
+                
+                if monthly_rate > 0:
+                    basis = f"익월 400% + 13회차 {int(split_rate*100)}%(주간 {weekly_percent}% + 월마감 {monthly_percent}%) [무해지 {tot_percent}%]"
+                elif weekly_rate > 0:
+                    basis = f"익월 400% + 13회차 {weekly_percent}%(주간마감) [무해지 {tot_percent}%]"
+                else:
+                    basis = "익월 400% (무해지 기본, 10만 미만 구간시상 제외)"
+                    
+                return {
+                    "next_month": next_m,
+                    "split": split_rate,
+                    "total": tot_rate,
+                    "basis": basis,
+                    "cont_bonus": 0.0,
+                    "cont_desc": ""
+                }
+
+        # (3) 건강플러스종신보험
+        elif '건강플러스' in prod:
+            return {
+                "next_month": 3.0,
+                "split": 3.0,
+                "total": 6.0,
+                "basis": "익월 300% + 13회차 300% (건강플러스종신 600%)",
+                "cont_bonus": 0.0,
+                "cont_desc": ""
+            }
+
+        # (4) 우리WON하는알뜰플러스종신 / 간편알뜰플러스종신
+        elif '알뜰' in prod:
+            if '5년' in term:
+                return {"next_month": 5.0, "split": 0.5, "total": 5.5, "basis": "익월 500% + 13회차 50% (알뜰플러스 5년납 550%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif '10년' in term:
+                return {"next_month": 1.8, "split": 0.0, "total": 1.8, "basis": "익월 180% (알뜰플러스 10년납 180%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 5.0, "split": 1.0, "total": 6.0, "basis": "익월 500% + 13회차 100% (알뜰플러스 7년납 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # (5) 우리WON하는꿈나무우리아이보험
+        elif '꿈나무' in prod:
+            return {
+                "next_month": 4.0,
+                "split": 8.0,
+                "total": 12.0,
+                "basis": "익월 400% + 13회차 800% (꿈나무아이 무해지형 1,200%)",
+                "cont_bonus": 0.0,
+                "cont_desc": ""
+            }
+
+        # (6) 우리WON안심상속보험
+        elif '안심상속' in prod:
+            return {
+                "next_month": 4.0,
+                "split": 5.0,
+                "total": 9.0,
+                "basis": "익월 400% + 13회차 500% (안심상속 900%)",
+                "cont_bonus": 0.0,
+                "cont_desc": ""
+            }
+
+        # (7) 우리WON하는유니버셜종신
+        elif '유니버셜' in prod:
+            if '10년' in term:
+                return {"next_month": 0.5, "split": 0.0, "total": 0.5, "basis": "익월 50% (유니버셜 10년납 시책제외 50%)", "cont_bonus": 0.0, "cont_desc": ""}
+            else:
+                return {"next_month": 0.5, "split": 1.0, "total": 1.5, "basis": "익월 50% + 13회차 100% (유니버셜종신 150%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # (8) VIP플러스정기보험
+        elif 'vip' in prod or '정기' in prod:
+            return {
+                "next_month": 0.5,
+                "split": 0.0,
+                "total": 0.5,
+                "basis": "익월 50% (VIP플러스정기 50%)",
+                "cont_bonus": 0.0,
+                "cont_desc": ""
+            }
+
         else:
-            return {"next_month": 2.0, "split": 3.0, "total": 5.0, "basis": "익월 200% + 13회차 300% (우리WON 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {
+                "next_month": 0.0,
+                "split": 0.0,
+                "total": 0.0,
+                "basis": "동양생명 프로모션 지급 없음 (기타상품)",
+                "cont_bonus": 0.0,
+                "cont_desc": ""
+            }
 
     # 10. 푸본현대생명
     elif '푸본' in comp:
