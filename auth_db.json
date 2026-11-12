@@ -1,5 +1,7 @@
 {
   "admins": [],
   "participants": {},
-  "blocked": {}
+  "blocked": {},
+  "invite_code": "스카이본부장",
+  "authorized_users": {}
 }
