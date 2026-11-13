@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.1")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.2")
 
 app.add_middleware(
     CORSMiddleware,
@@ -947,6 +947,7 @@ def normalize_text(text: str) -> str:
     return re.sub(r'[\s\(\)\[\]\{\}\-\_\,\.\:\/\+\#\*\~]', '', t)
 
 GUBUN_KEYWORDS = [
+    '1/2종', '1,2종', '1·2종', '1종', '2종', '3종',
     '간편가입', '간편심사형', '간편고지형', '간편가입형', '간편',
     '일반가입', '일반심사형', '일반가입형', '일반형', '일반',
     '체증형', '평준형', '체감형',
@@ -1040,6 +1041,8 @@ for d in LIFE_PRODUCTS:
             search_keys.update(['밸런스건강', '밸런스건강보험'])
         if '드림종신' in prod:
             search_keys.update(['우리won드림종신', '우리won드림종신3', 'won드림종신', '드림종신', '드림종신3'])
+        if '더블업' in prod:
+            search_keys.update(['더블업', '더블업암', '더블업암치료', '더블업암치료보장', '더블업암치료보장간편포함', '백년친구더블업', '백년친구더블업암치료보장'])
 
         LIFE_CATALOG[key] = {
             'sheet': sheet,
@@ -1249,6 +1252,14 @@ def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) ->
             for g in gubuns:
                 if s_norm in normalize_text(g) or normalize_text(g) in s_norm:
                     return g
+
+    # 1/2종 및 3종 전용 매핑
+    if '1/2종' in gubuns:
+        if any(k in utterance for k in ['1/2종', '1,2종', '1·2종', '1/2', '1종', '2종']):
+            return '1/2종'
+    if '3종' in gubuns:
+        if '3종' in utterance:
+            return '3종'
 
     # 비갱신 vs 갱신형 전용 매핑
     if any(k in u_norm for k in ['비갱신', '미지급', '무해지']):
@@ -1477,7 +1488,7 @@ def get_sky_health_bonus(comp: str, prod: str, premium: int) -> Tuple[float, str
     p = prod.lower()
     
     # 1. DB건강 4종: {생활비암, 내가고른, 건강100, 치매간병}
-    if ('db' in c or '디비' in c) and any(k in p for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합']):
+    if ('db' in c or '디비' in c) and any(k in p for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합', '더블업', '암치료']):
         if premium >= 200000: return 2.0, "SKY본사 건강추가 200%(익월)"
         elif premium >= 100000: return 1.0, "SKY본사 건강추가 100%(익월)"
             
@@ -1647,7 +1658,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             if sky_desc:
                 basis += f" + {sky_desc}"
             return {"next_month": tot_next, "split": tot_split, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
-        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합']):
+        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합', '더블업', '암치료']):
             base_next = 4.0
             base_split = 2.0
             sky_rate, sky_desc = get_sky_health_bonus("DB생명", prod, premium)
@@ -2251,7 +2262,22 @@ def calculate_life(
         inst_rate = float(comp_inst_dict)
         
     next_month_comm = round(s_grade * next_month_rate)
-    installment_comm = round(s_grade * inst_rate)
+    if '더블업' in product_name:
+        # DB생명 백년친구 더블업 암치료보장 전용 분급 수수료 (사내 규정 100% 일치)
+        if '3종' in gubun or '3종' in product_name:
+            # 3종 10년납: 7~12회 36%(S환산) + 13~24회 12%(2차환산 3000) + 25~36회 84%(3차환산 1560)
+            installment_comm = round(s_grade * 0.36) + round(premium * 3.00 * 0.12) + round(premium * 1.56 * 0.84)
+            inst_rate = round(installment_comm / s_grade, 4) if s_grade > 0 else 1.4817
+        elif '20년' in term:
+            # 1/2종 20년납: 7~12회 36% + 13~24회 36% + 25~36회 84% (합계 156%)
+            inst_rate = 1.56
+            installment_comm = round(s_grade * inst_rate)
+        else:
+            # 1/2종 10년납: 7~12회 36%(S환산) + 13~24회 12%(2차환산 3360) + 25~36회 84%(3차환산 1800)
+            installment_comm = round(s_grade * 0.36) + round(premium * 3.36 * 0.12) + round(premium * 1.80 * 0.84)
+            inst_rate = round(installment_comm / s_grade, 4) if s_grade > 0 else 1.8175
+    else:
+        installment_comm = round(s_grade * inst_rate)
     total_comm = next_month_comm + installment_comm
     
     inc_info = get_life_incentive(comp_clean, product_name, term, premium, incentive_type, continuous_mode, contract_type=contract_type, gubun=gubun)
@@ -2354,7 +2380,22 @@ def calculate_nonlife(
     inst_rate = NONLIFE_RULES['installment_rate']
     
     next_month_comm = round(s_grade * next_month_rate)
-    installment_comm = round(s_grade * inst_rate)
+    if '더블업' in product_name:
+        # DB생명 백년친구 더블업 암치료보장 전용 분급 수수료 (사내 규정 100% 일치)
+        if '3종' in gubun or '3종' in product_name:
+            # 3종 10년납: 7~12회 36%(S환산) + 13~24회 12%(2차환산 3000) + 25~36회 84%(3차환산 1560)
+            installment_comm = round(s_grade * 0.36) + round(premium * 3.00 * 0.12) + round(premium * 1.56 * 0.84)
+            inst_rate = round(installment_comm / s_grade, 4) if s_grade > 0 else 1.4817
+        elif '20년' in term:
+            # 1/2종 20년납: 7~12회 36% + 13~24회 36% + 25~36회 84% (합계 156%)
+            inst_rate = 1.56
+            installment_comm = round(s_grade * inst_rate)
+        else:
+            # 1/2종 10년납: 7~12회 36%(S환산) + 13~24회 12%(2차환산 3360) + 25~36회 84%(3차환산 1800)
+            installment_comm = round(s_grade * 0.36) + round(premium * 3.36 * 0.12) + round(premium * 1.80 * 0.84)
+            inst_rate = round(installment_comm / s_grade, 4) if s_grade > 0 else 1.8175
+    else:
+        installment_comm = round(s_grade * inst_rate)
     total_comm = next_month_comm + installment_comm
     
     comp_week_info = week_comps.get(comp_matched, {})

@@ -11165,5 +11165,44 @@
     "factor3": null,
     "adj_coef": 0.35,
     "table_num": 1
+  },
+  {
+    "sheet": "DB",
+    "company": "DB",
+    "product": "백년친구 더블업 암치료보장 (간편포함)",
+    "gubun": "1/2종",
+    "term": "10년납",
+    "s_factor": 1314.0,
+    "raw_factor": 1800.0,
+    "factor2": 3360.0,
+    "factor3": 1800.0,
+    "adj_coef": 0.73,
+    "table_num": 1
+  },
+  {
+    "sheet": "DB",
+    "company": "DB",
+    "product": "백년친구 더블업 암치료보장 (간편포함)",
+    "gubun": "1/2종",
+    "term": "20년납",
+    "s_factor": 1320.0,
+    "raw_factor": 2640.0,
+    "factor2": 0.0,
+    "factor3": 0.0,
+    "adj_coef": 0.5,
+    "table_num": 1
+  },
+  {
+    "sheet": "DB",
+    "company": "DB",
+    "product": "백년친구 더블업 암치료보장 (간편포함)",
+    "gubun": "3종",
+    "term": "10년납",
+    "s_factor": 1489.0,
+    "raw_factor": 2040.0,
+    "factor2": 3000.0,
+    "factor3": 1560.0,
+    "adj_coef": 0.73,
+    "table_num": 1
   }
 ]
