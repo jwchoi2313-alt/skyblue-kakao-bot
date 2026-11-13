@@ -2708,7 +2708,8 @@ def build_ask_similar_product_response(comp: str, candidates: list, premium: int
     for i, c in enumerate(candidates[:6]):
         short_name = clean_prod_short_name(c['full_product'])
         btn_label = make_similar_btn_label(i+1, short_name)
-        msg_parts = [comp, short_name]
+        c_comp = c.get('company') or comp
+        msg_parts = [c_comp, short_name]
         if gubun: msg_parts.append(gubun)
         if term: msg_parts.append(term)
         msg_parts.append(prem_str)
@@ -2719,14 +2720,22 @@ def build_ask_similar_product_response(comp: str, candidates: list, premium: int
         })
     quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법"})
 
-    prod_list_text = "\n".join([f"{i+1}. {clean_prod_short_name(c['full_product'])}" for i, c in enumerate(candidates[:6])])
+    # 여러 회사가 섞여 있으면 회사명을 함께 표기
+    has_diff_comps = len({c.get('company', comp) for c in candidates}) > 1
+    if has_diff_comps:
+        prod_list_text = "\n".join([f"{i+1}. [{c.get('company', '')}] {clean_prod_short_name(c['full_product'])}" for i, c in enumerate(candidates[:6])])
+        title_head = "🔍 상품 선택"
+    else:
+        prod_list_text = "\n".join([f"{i+1}. {clean_prod_short_name(c['full_product'])}" for i, c in enumerate(candidates[:6])])
+        title_head = f"🔍 {comp}"
+
     return {
         "version": "2.0",
         "template": {
             "outputs": [
                 {
                     "simpleText": {
-                        "text": f"🔍 {comp} ({prem_str})\n\n유사한 상품이 여러 개 있습니다. 어떤 상품으로 계산해 드릴까요?\n\n{prod_list_text}\n\n원하시는 상품 버튼을 눌러주세요!"
+                        "text": f"{title_head} ({prem_str})\n\n유사한 상품이 여러 개 있습니다. 어떤 상품으로 계산해 드릴까요?\n\n{prod_list_text}\n\n원하시는 상품 버튼을 눌러주세요!"
                     }
                 }
             ],
@@ -3576,6 +3585,19 @@ async def kakao_skill_calculate(request: Request):
                 q_norm = normalize_text(cleaned)
                 if q_norm and (q_norm in p_norm or p_norm in q_norm or any(k == q_norm or (len(k)>=3 and k in q_norm) for k in p.get('search_keys', set()))):
                     all_candidates.append(p)
+
+            if len(all_candidates) > 1:
+                # 쿼리 토큰 가중치로 최우선 매칭 판별
+                scored = []
+                for p in all_candidates:
+                    score = 0
+                    for token in ['암치료', '암', '치료', '종신', '건강', '더블업']:
+                        if token in utterance and token in p['full_product']:
+                            score += 5
+                    scored.append((score, p))
+                scored.sort(key=lambda x: x[0], reverse=True)
+                if scored[0][0] >= scored[1][0] + 5:
+                    all_candidates = [scored[0][1]]
 
             if len(all_candidates) == 1:
                 p = all_candidates[0]
