@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.3")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.4")
 
 app.add_middleware(
     CORSMiddleware,
@@ -167,15 +167,8 @@ def reset_authorized_users():
     save_auth_db("Reset all authorized users", sync_github=True)
 
 def is_authorized(user_id: str) -> bool:
-    if not user_id:
-        return False
-    if user_id in AUTH_CACHE.get("admins", []):
-        return True
-    if any(user_id.startswith(p) for p in ["test", "sim_user_"]):
-        return True
-    if user_id in ["test_suite_user", "test_sim", "test_click", "test"]:
-        return True
-    return user_id in AUTH_CACHE.get("authorized_users", {})
+    # 2026-11-13 본부장님 지침: 초대코드 입력 절차 완전 폐지 (누구나 즉시 이용)
+    return True
 
 def authorize_user(user_id: str, code_used: str):
     if not user_id:
@@ -406,55 +399,15 @@ def build_admin_registered_response():
 def handle_admin_command(utterance: str) -> Optional[Dict[str, Any]]:
     utt = utterance.strip()
 
-    # 초대코드 조회
-    if utt in ["초대코드", "코드", "코드확인", "비밀번호", "초대장"]:
-        code = get_invite_code()
-        auth_count = len(AUTH_CACHE.get("authorized_users", {}))
+    # 초대코드 관련 문의
+    if utt in ["초대코드", "코드", "코드확인", "비밀번호", "초대장"] or utt.startswith("코드변경 ") or utt.startswith("초대코드변경 ") or utt.startswith("초대코드 ") or utt in ["인증초기화", "인증리셋", "초대초기화"]:
         return {
             "version": "2.0",
             "template": {
                 "outputs": [
                     {
                         "simpleText": {
-                            "text": f"🔑 현재 챗봇 초대코드: [{code}]\n• 인증 완료 사용자: 총 {auth_count}명\n\n[초대코드 관리 명령어]\n• 코드변경 [새코드] : 초대코드 변경 (예: 코드변경 비전123)\n• 인증초기화 : 기존 인증자 전체 초기화 (새 코드로 전원 재인증 유도)\n• 명단 : 최근 이용자 명단 확인\n• 강퇴 [번호] : 특정 이용자 차단"
-                        }
-                    }
-                ]
-            }
-        }
-
-    # 초대코드 변경
-    elif utt.startswith("코드변경 ") or utt.startswith("초대코드변경 ") or utt.startswith("초대코드 "):
-        new_code = utt.replace("코드변경 ", "").replace("초대코드변경 ", "").replace("초대코드 ", "").strip()
-        if not new_code:
-            return {"version": "2.0", "template": {"outputs": [{"simpleText": {"text": "❌ 변경할 새 초대코드를 입력해 주세요. (예: `코드변경 비전2026`)"}}]}}
-        old_code = get_invite_code()
-        set_invite_code(new_code)
-        auth_count = len(AUTH_CACHE.get("authorized_users", {}))
-        return {
-            "version": "2.0",
-            "template": {
-                "outputs": [
-                    {
-                        "simpleText": {
-                            "text": f"✅ 챗봇 초대코드가 [{new_code}]로 변경되었습니다!\n\n• 변경 전: [{old_code}]\n• 변경 후: [{new_code}]\n• 현재 인증 유지: {auth_count}명\n\n※ 기존 인증된 설계사들은 계속 이용 가능합니다.\n기존 사용자들도 새 코드를 넣어야만 쓰게 하려면 `인증초기화`를 입력해 주세요."
-                        }
-                    }
-                ]
-            }
-        }
-
-    # 인증 사용자 초기화
-    elif utt in ["인증초기화", "초대초기화", "사용자초기화", "인증리셋"]:
-        reset_authorized_users()
-        code = get_invite_code()
-        return {
-            "version": "2.0",
-            "template": {
-                "outputs": [
-                    {
-                        "simpleText": {
-                            "text": f"🔄 인증 사용자 전체 초기화 완료!\n\n관리자를 제외한 모든 이용자의 인증이 초기화되었습니다.\n모든 설계사가 챗봇을 다시 이용하려면 현재 초대코드([{code}])를 새로 입력해야 합니다."
+                            "text": "💡 현재 챗봇은 초대코드 제한이 완전히 해제되어 누구나 자유롭게 즉시 이용할 수 있습니다.\n\n[관리자 명령어]\n• 명단 : 최근 참여자 명단 확인\n• 강퇴 [번호] : 특정 이용자 차단\n• 차단목록 : 현재 차단된 이용자 목록\n• 차단해제 [번호] : 차단 해제"
                         }
                     }
                 ]
@@ -469,17 +422,15 @@ def handle_admin_command(utterance: str) -> Optional[Dict[str, Any]]:
                     "outputs": [{"simpleText": {"text": "👥 현재 기록된 챗봇 참여자가 없습니다.\n(설계사들이 챗봇을 이용하면 자동으로 명단에 등록됩니다)"}}]
                 }
             }
-        auth_count = len(AUTH_CACHE.get("authorized_users", {}))
-        lines = [f"👥 최근 챗봇 참여자 명단 (총 {len(parts)}명, 인증 {auth_count}명)\n"]
+        lines = [f"👥 최근 챗봇 참여자 명단 (총 {len(parts)}명 - 전체 자유 이용)\n"]
         for i, p in enumerate(parts[:15], 1):
             short_id = p.get("id", "")[-6:]
             last_time = p.get("last_seen", "")[11:16]
             last_utt = p.get("last_utterance", "-")
             count = p.get("count", 1)
             is_adm = " (👑본부장)" if p.get("id") in AUTH_CACHE.get("admins", []) else ""
-            is_auth = " [인증]" if is_authorized(p.get("id", "")) else " [미인증]"
-            lines.append(f"{i}. [{last_time}] {last_utt}{is_adm}{is_auth}\n   • 누적 {count}회 | ID: ...{short_id}")
-        lines.append(f"\n────────────────\n🔑 현재 초대코드: [{get_invite_code()}]\n🚫 강퇴: `강퇴 1` | 🔑 코드변경: `코드변경 [새코드]`")
+            lines.append(f"{i}. [{last_time}] {last_utt}{is_adm}\n   • 누적 {count}회 | ID: ...{short_id}")
+        lines.append(f"\n────────────────\n🚫 강퇴: `강퇴 1` | 💡 초대코드 없이 누구나 즉시 계산 가능")
         return {
             "version": "2.0",
             "template": {
@@ -3459,17 +3410,20 @@ async def kakao_skill_calculate(request: Request):
     # [3단계] 참여자 활동 자동 기록 (초고속 로컬 0.0001초)
     track_participant(user_id, utterance)
 
-    # [4단계] 초대코드 인증 검증 (초대한 사람만 입장!)
-    if not is_authorized(user_id):
-        if check_invite_code_match(utterance):
-            authorize_user(user_id, utterance.strip())
-            return build_invite_code_success_response()
-        else:
-            return build_invite_code_required_response()
-
-    # 이미 인증된 사용자가 초대코드를 다시 입력한 경우 친절 안내
+    # 초대코드 입력 시 친절 안내 (2026-11-13 본부장님 지침: 초대코드 폐지)
     if check_invite_code_match(utterance) and not is_admin(user_id):
-        return build_already_authorized_response()
+        return {
+            "version": "2.0",
+            "template": {
+                "outputs": [
+                    {
+                        "simpleText": {
+                            "text": "💡 현재 챗봇은 초대코드 입력 없이 누구나 바로 이용하실 수 있습니다!\n\n상품명과 보험료를 입력하시면 즉시 수수료와 시책을 계산해 드립니다.\n(예: `DB 더블업 20만 10년납`, `흥국 20만`)"
+                        }
+                    }
+                ]
+            }
+        }
 
     # [5단계] 계산 및 일반 대화 처리 (인증 완료된 설계사)
     if not utterance or utterance in ["도움말", "사용법", "메뉴", "시작", "help", "?"]:
