@@ -3563,14 +3563,18 @@ async def kakao_skill_calculate(request: Request):
         # 5. 회사명은 없지만 대표 상품명이 직접 들어온 경우 (전체 생보사 카탈로그 자동 검색)
         if premium is not None:
             all_candidates = []
+            detected_g = extract_gubun_from_query(utterance)
             for (s, _), p in LIFE_CATALOG.items():
                 p_norm = p['norm_name']
                 m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
                 t_raw = m_term.group(0) if m_term else ""
                 cleaned = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)|계산|시책|얼마|수수료|알려줘|비교|안내|\b\d+\b', ' ', utterance)
                 if t_raw: cleaned = cleaned.replace(t_raw, ' ')
+                if detected_g: cleaned = cleaned.replace(detected_g, ' ')
+                for g_token in ['1/2종', '1,2종', '1·2종', '1종', '2종', '3종']:
+                    cleaned = cleaned.replace(g_token, ' ')
                 q_norm = normalize_text(cleaned)
-                if q_norm and (q_norm in p_norm or p_norm in q_norm):
+                if q_norm and (q_norm in p_norm or p_norm in q_norm or any(k == q_norm or (len(k)>=3 and k in q_norm) for k in p.get('search_keys', set()))):
                     all_candidates.append(p)
 
             if len(all_candidates) == 1:
