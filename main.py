@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.2")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.3")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1487,8 +1487,8 @@ def get_sky_health_bonus(comp: str, prod: str, premium: int) -> Tuple[float, str
     c = comp.lower()
     p = prod.lower()
     
-    # 1. DB건강 4종: {생활비암, 내가고른, 건강100, 치매간병}
-    if ('db' in c or '디비' in c) and any(k in p for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합', '더블업', '암치료']):
+    # 1. DB건강 4종: {생활비암, 내가고른, 건강100, 치매간병} (더블업 암치료는 별도 건강종신 추가지원안 적용)
+    if ('db' in c or '디비' in c) and any(k in p for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합']) and not any(k in p for k in ['더블업', '암치료']):
         if premium >= 200000: return 2.0, "SKY본사 건강추가 200%(익월)"
         elif premium >= 100000: return 1.0, "SKY본사 건강추가 100%(익월)"
             
@@ -1641,7 +1641,50 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
 
     # 4. DB생명
     elif ('kdb' not in comp) and ('db' in comp or '디비' in comp or '동부' in comp):
-        if any(k in prod for k in ['알행플', '알행종', '알차고']):
+        # 1. DB생명 백년친구 더블업 암치료보장 (11월 신상품 전용 시책)
+        if any(k in prod for k in ['더블업', '암치료']):
+            is_3jong = ('3종' in gubun or '3종' in prod)
+            if is_3jong:
+                base_next = 2.5   # 익월 250%
+                base_split = 5.5  # 13회차 550%
+                basis_desc = "원수사 800%(익월250+13회550)"
+            else:
+                base_next = 3.0   # 익월 300%
+                base_split = 4.0  # 13회차 400%
+                basis_desc = "원수사 700%(익월300+13회400)"
+
+            # 고능률 구간 시상 (2차년 13회차 시상, 3종은 실적 150% 인정)
+            effective_p = int(premium * 1.5) if is_3jong else premium
+            high_bonus = 0
+            if effective_p >= 3000000: high_bonus = 6000000
+            elif effective_p >= 2000000: high_bonus = 4000000
+            elif effective_p >= 1000000: high_bonus = 2000000
+            elif effective_p >= 500000: high_bonus = 1000000
+            elif effective_p >= 300000: high_bonus = 500000
+
+            high_split_rate = (high_bonus / premium) if (premium > 0 and high_bonus > 0) else 0.0
+            basis_parts = [basis_desc]
+            if high_bonus > 0:
+                mult_note = "(3종150%인정)" if is_3jong else ""
+                basis_parts.append(f"고능률 {high_bonus//10000}만{mult_note}(13회)")
+
+            # SKY 본사 건강종신 추가지원안: 10년납 (30만 이하 100%, 30만 초과 150% 15회차 지급)
+            sky_split_rate = 0.0
+            if '10년' in term or not term:
+                if premium > 300000:
+                    sky_split_rate = 1.5
+                    basis_parts.append("SKY 10년납 150%(15회)")
+                elif premium > 0:
+                    sky_split_rate = 1.0
+                    basis_parts.append("SKY 10년납 100%(15회)")
+
+            tot_next = base_next
+            tot_split = base_split + high_split_rate + sky_split_rate
+            tot_rate = tot_next + tot_split
+            basis = " + ".join(basis_parts)
+            return {"next_month": tot_next, "split": tot_split, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
+
+        elif any(k in prod for k in ['알행플', '알행종', '알차고']):
             base_next = 4.0
             base_split = 1.0 if '7년' in term else 2.0
             sky_amount, sky_desc = get_sky_jongshin_bonus("DB생명", prod, term, premium, is_corp=True)
@@ -1658,7 +1701,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             if sky_desc:
                 basis += f" + {sky_desc}"
             return {"next_month": tot_next, "split": tot_split, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
-        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합', '더블업', '암치료']):
+        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '치매간병', '치매', '간병', '7대질병', '올케어', '건강', '통합']):
             base_next = 4.0
             base_split = 2.0
             sky_rate, sky_desc = get_sky_health_bonus("DB생명", prod, premium)
