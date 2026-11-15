@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.6")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.7")
 
 app.add_middleware(
     CORSMiddleware,
@@ -672,7 +672,7 @@ ALL_COMPANIES = {
         "aliases": ["DB생명", "디비생명", "동부생명", "DB", "디비"],
         "default_prod": "알행플종신",
         "default_term": "10년납",
-        "flyer": "DB생명_11월.jpg",
+        "flyer": "DB생명_11월.png",
         "recommendations": ["알행플종신 10만 10년납", "알행플종신 20만 10년납"]
     },
     "신한라이프": {
@@ -2653,9 +2653,9 @@ FLYER_MAP = {
     "한화": "한화생명_11월.png",
     "흥국생명": "흥국생명_11월.png",
     "흥국": "흥국생명_11월.png",
-    "DB생명": "DB생명_11월.jpg",
-    "동부생명": "DB생명_11월.jpg",
-    "디비생명": "DB생명_11월.jpg",
+    "DB생명": "DB생명_11월.png",
+    "동부생명": "DB생명_11월.png",
+    "디비생명": "DB생명_11월.png",
     "DB손해보험": "DB손보_1주.jpg",
     "DB손보": "DB손보_1주.jpg",
     "디비손보": "DB손보_1주.jpg",
@@ -2713,8 +2713,10 @@ def find_flyer(comp_name: str, week: Optional[str] = None) -> Tuple[str, str]:
         return "신한라이프", "신한라이프_11월_p2.png"
     if "kb손" in c_norm:
         return "KB손해보험", "KB손보_1주차.jpg"
+    if "kdb" in c_norm:
+        return "KDB생명", "KDB생명_11월.jpg"
     if "db생명" in c_norm or "동부생명" in c_norm or "디비생명" in c_norm:
-        return "DB생명", "DB생명_11월.jpg"
+        return "DB생명", "DB생명_11월.png"
     if "db손" in c_norm or "동부화재" in c_norm or "디비손" in c_norm:
         return "DB손해보험", "DB손보_1주.jpg"
     if "흥국생명" in c_norm:
