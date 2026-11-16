@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.8")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.9")
 
 app.add_middleware(
     CORSMiddleware,
@@ -96,6 +96,40 @@ def get_last_calc(user_id: str) -> Optional[Dict[str, Any]]:
 def clear_last_calc(user_id: str) -> None:
     if user_id:
         LAST_CALC_CACHE.pop(user_id, None)
+
+# 상품명·금액을 되묻는 단계에서 사용자가 금액만 입력했을 때,
+# 되묻던 회사·상품·납기를 이어받아 계산을 완성하기 위한 임시 세션 (v3.8.9).
+# LAST_CALC_CACHE와 동일하게 순수 메모리에만 두고 auth_db.json에는 남기지 않는다.
+PENDING_ASK_CACHE: Dict[str, Dict[str, Any]] = {}
+PENDING_ASK_TTL_SEC = 600     # 10분
+
+def remember_pending_ask(user_id: str, ctx: Optional[Dict[str, Any]]) -> None:
+    if not user_id or not ctx:
+        return
+    if len(PENDING_ASK_CACHE) >= LAST_CALC_MAX_USERS and user_id not in PENDING_ASK_CACHE:
+        try:
+            oldest = min(PENDING_ASK_CACHE.items(), key=lambda kv: kv[1].get("ts", 0))[0]
+            PENDING_ASK_CACHE.pop(oldest, None)
+        except Exception:
+            PENDING_ASK_CACHE.clear()
+    saved = dict(ctx)
+    saved["ts"] = _now_ts()
+    PENDING_ASK_CACHE[user_id] = saved
+
+def get_pending_ask(user_id: str) -> Optional[Dict[str, Any]]:
+    if not user_id:
+        return None
+    ctx = PENDING_ASK_CACHE.get(user_id)
+    if not ctx:
+        return None
+    if _now_ts() - ctx.get("ts", 0) > PENDING_ASK_TTL_SEC:
+        PENDING_ASK_CACHE.pop(user_id, None)
+        return None
+    return ctx
+
+def clear_pending_ask(user_id: str) -> None:
+    if user_id:
+        PENDING_ASK_CACHE.pop(user_id, None)
 
 def get_now_kst() -> str:
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
@@ -1348,6 +1382,34 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
 
     return []
 
+def filter_candidates_by_leading_company(candidates: List[Dict[str, Any]], utterance: str) -> List[Dict[str, Any]]:
+    """발화 선두의 회사명이 후보 회사를 가리면 그 회사 후보만 남긴다 (v3.8.9).
+
+    상품 선택 버튼이 'KB …', '농협 …'처럼 회사명으로 시작하는데 그 이름이 회사 별칭에 없을 때
+    같은 상품 목록이 계속 되돌아오는 무한루프를 막는다.
+    """
+    if len(candidates) <= 1:
+        return candidates
+    u_norm = normalize_text(utterance)
+    if not u_norm:
+        return candidates
+    best = None  # (company, matched_token_len)
+    for c in candidates:
+        comp = (c.get('company') or '').strip()
+        if not comp:
+            continue
+        tokens = {comp, re.sub(r'(생명|라이프|손해보험|손보|화재|연금)$', '', comp).strip()}
+        for tok in tokens:
+            t_norm = normalize_text(tok)
+            if len(t_norm) >= 2 and u_norm.startswith(t_norm):
+                if best is None or len(t_norm) > best[1]:
+                    best = (comp, len(t_norm))
+    if not best:
+        return candidates
+    filtered = [c for c in candidates if (c.get('company') or '').strip() == best[0]]
+    return filtered if filtered else candidates
+
+
 def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> Optional[str]:
     if not prod_group:
         return ""
@@ -1509,6 +1571,20 @@ def match_term_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) -> 
             if ('미만' in t or '이하' in t) and not ('미만' in utterance or '이하' in utterance):
                 continue
             return t, None
+
+    # 1-B. 괄호 수식어를 뗀 핵심 표기도 인정 (예: '1형 (5%체증형)' → '1형')
+    #      납기 버튼이 짧게 표기돼도 같은 조견표 납기로 되돌아오게 한다 (경영인 정기 무한루프 방지)
+    core_hits = []
+    for t in valid_terms:
+        if not t or t == '-':
+            continue
+        core = re.sub(r'\(.*?\)', '', t).replace(" ", "").strip()
+        if len(core) >= 2 and core in u_clean:
+            if ('미만' in t or '이하' in t) and not ('미만' in utterance or '이하' in utterance):
+                continue
+            core_hits.append(t)
+    if len(core_hits) == 1:
+        return core_hits[0], None
 
     # 2. 사용자가 발화한 납기 문자열 추출
     req_term = extract_requested_term_from_utterance(utterance, prod_group)
@@ -2972,9 +3048,22 @@ def make_similar_btn_label(num: int, prod_name: str) -> str:
             label = label[:12] + "…"
     return label
 
-def build_ask_similar_product_response(comp: str, candidates: list, premium: int, term: str = "", gubun: str = "") -> dict:
+def continuous_phrase(mode: str) -> str:
+    """연속시상 선택을 되묻기 버튼 문구에 그대로 이어붙일 문구 (v3.8.9)"""
+    m = (mode or "none").lower()
+    if m in ("c2", "핑크"):
+        return "핑크멤버스 포함"
+    if m in ("c1", "10-11"):
+        return "10-11월 연속포함"
+    if "both" in m or "all" in m or m in ("full", "true"):
+        return "풀연속포함"
+    return ""
+
+
+def build_ask_similar_product_response(comp: str, candidates: list, premium: int, term: str = "", gubun: str = "", continuous_mode: str = "none") -> dict:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    cont_phrase = continuous_phrase(continuous_mode)
 
     quick_replies = []
     for i, c in enumerate(candidates[:6]):
@@ -2985,6 +3074,7 @@ def build_ask_similar_product_response(comp: str, candidates: list, premium: int
         if gubun: msg_parts.append(gubun)
         if term: msg_parts.append(term)
         msg_parts.append(prem_str)
+        if cont_phrase: msg_parts.append(cont_phrase)
         quick_replies.append({
             "messageText": " ".join(msg_parts),
             "action": "message",
@@ -3021,10 +3111,11 @@ def build_ask_similar_product_response(comp: str, candidates: list, premium: int
         }
     }
 
-def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: str = "") -> dict:
+def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: str = "", continuous_mode: str = "none") -> dict:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
     prod_name = clean_prod_short_name(prod_group['full_product'])
+    cont_phrase = continuous_phrase(continuous_mode)
 
     quick_replies = []
     for g in prod_group['gubuns'][:6]:
@@ -3034,6 +3125,7 @@ def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: st
         msg_parts = [comp, prod_name, g]
         if term: msg_parts.append(term)
         msg_parts.append(prem_str)
+        if cont_phrase: msg_parts.append(cont_phrase)
         quick_replies.append({
             "messageText": " ".join(msg_parts),
             "action": "message",
@@ -3073,10 +3165,11 @@ def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: st
         }
     }
 
-def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str], gubun: str = "", invalid_term: Optional[str] = None) -> Dict[str, Any]:
+def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List[str], gubun: str = "", invalid_term: Optional[str] = None, continuous_mode: str = "none") -> Dict[str, Any]:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
     clean_prod = clean_prod_short_name(prod_name)
+    cont_phrase = continuous_phrase(continuous_mode)
     
     quick_replies = []
     for t in terms[:8]:
@@ -3086,7 +3179,10 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
             btn_label = btn_label[:12] + "…"
         msg_parts = [comp, clean_prod]
         if gubun: msg_parts.append(gubun)
-        msg_parts.extend([prem_str, clean_t])
+        msg_parts.append(prem_str)
+        # 버튼 문구에는 조견표 원문 납기를 그대로 실어 다시 눌러도 같은 납기로 매칭되게 한다 (v3.8.9)
+        msg_parts.append(t if t else clean_t)
+        if cont_phrase: msg_parts.append(cont_phrase)
         quick_replies.append({
             "messageText": " ".join(msg_parts),
             "action": "message",
@@ -3095,10 +3191,14 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
     quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
     
     gubun_str = f" · {gubun}" if gubun else ""
+    cont_str = f"\n🔥 연속시상 조건({cont_phrase})이 함께 적용됩니다." if cont_phrase else ""
+    term_like = any(re.search(r'\d+\s*년|전기납|\d+\s*세', t) for t in terms)
     if invalid_term:
         guide_text = f"⚠️ {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n해당 상품은 '{invalid_term}'이(가) 조견표에 없습니다.\n\n아래 실제 납기 버튼을 누르시면 해당 납기로 즉시 계산됩니다!"
+    elif term_like:
+        guide_text = f"📋 {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!{cont_str}"
     else:
-        guide_text = f"📋 {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n생명보험사는 납입기간(*년납)에 따라 S환산 성적과 시상률이 다릅니다. 몇 년납으로 계산해 드릴까요?\n\n원하시는 납기 버튼을 누르시거나 직접 입력해 주세요!"
+        guide_text = f"📋 {comp} · {clean_prod}{gubun_str} ({prem_str})\n\n이 상품은 아래 구분(형/종)에 따라 S환산 성적과 시상률이 다릅니다. 어떤 조건으로 계산해 드릴까요?\n\n원하시는 버튼을 누르시거나 직접 입력해 주세요!{cont_str}"
     
     return {
         "version": "2.0",
@@ -3127,17 +3227,19 @@ def is_corp_incentive_target(comp: str, prod_name: str, term: str = "") -> bool:
         return ('7' in t) if t else True
     return False
 
-def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, term: str, gubun: str = "") -> Dict[str, Any]:
+def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, term: str, gubun: str = "", continuous_mode: str = "none") -> Dict[str, Any]:
     prem_man = premium // 10000
     prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
     clean_prod = clean_prod_short_name(prod_name)
     term_str = f" · {term}" if term else ""
     gubun_str = f" · {gubun}" if gubun else ""
+    cont_phrase = continuous_phrase(continuous_mode)
     
     msg_base = [comp, clean_prod]
     if gubun: msg_base.append(gubun)
     if term: msg_base.append(term)
     msg_base.append(prem_str)
+    if cont_phrase: msg_base.append(cont_phrase)
     
     return {
         "version": "2.0",
@@ -3171,6 +3273,119 @@ def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, te
                     "label": "💡 사용법 안내"
                 }
             ]
+        }
+    }
+
+
+def build_ask_product_and_amount_response(comp: str) -> Dict[str, Any]:
+    """회사명만 입력했을 때 상품과 금액을 함께 되묻는다 (v3.8.9: 누락 함수 복구)."""
+    info = ALL_COMPANIES.get(comp, {})
+    cat = info.get("category", "생명보험")
+    default_prod = info.get("default_prod", "주력보종" if cat == "손해보험" else "보장성")
+    default_term = info.get("default_term", "")
+    short_prod = clean_prod_short_name(default_prod)
+
+    quick_replies = []
+    amounts = [("10만원", "10만"), ("20만원", "20만"), ("30만원", "30만")]
+    if cat == "손해보험":
+        for amt, short in amounts:
+            quick_replies.append({"messageText": f"{comp} {amt}", "action": "message", "label": short})
+        guide_text = (
+            f"📋 {comp}\n\n"
+            "보종과 월 보험료를 함께 입력해 주세요. (예: `" + comp + " 20만`)\n"
+            "주력보종(퍼펙트/간편 등)은 금액만 입력하셔도 바로 계산됩니다!\n\n"
+            "아래 금액 버튼을 눌러도 됩니다."
+        )
+    else:
+        base_parts = [comp, short_prod]
+        for amt, short in amounts:
+            label = f"{short_prod} {short}"
+            if len(label) > 13:
+                label = label[:12] + "…"
+            msg_parts = base_parts + [amt] + ([default_term] if default_term else [])
+            quick_replies.append({"messageText": " ".join(msg_parts), "action": "message", "label": label})
+        example = " ".join([comp, short_prod, "20만", default_term]).replace("  ", " ")
+        guide_text = (
+            f"📋 {comp}\n\n"
+            "상품명과 월 보험료를 함께 입력해 주세요. (예: `" + example + "`)\n"
+            "금액만 입력하셔도 상품 → 납기 → 형(종) 순서로 여쭤보고 계산해 드립니다!\n\n"
+            "아래 버튼으로 바로 시작하셔도 됩니다."
+        )
+    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
+    quick_replies.append({"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"})
+
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [{"simpleText": {"text": guide_text}}],
+            "quickReplies": quick_replies[:6]
+        }
+    }
+
+
+def build_ask_amount_response(comp: str, prod_name: str = "", term: str = "") -> Dict[str, Any]:
+    """상품명은 있는데 금액이 없을 때 금액만 되묻는다 (v3.8.9: 누락 함수 복구)."""
+    info = ALL_COMPANIES.get(comp, {})
+    clean_prod = clean_prod_short_name(prod_name) if prod_name else ""
+    if not clean_prod:
+        clean_prod = info.get("default_prod", "")
+    term_str = f" · {term}" if term else ""
+
+    base_parts = [comp]
+    if clean_prod:
+        base_parts.append(clean_prod)
+    if term:
+        base_parts.append(term)
+
+    quick_replies = []
+    for amt, short in [("10만원", "10만"), ("20만원", "20만"), ("30만원", "30만"), ("50만원", "50만"), ("100만원", "100만")]:
+        quick_replies.append({"messageText": " ".join(base_parts + [amt]), "action": "message", "label": short})
+    quick_replies.append({"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"})
+
+    guide_text = (
+        f"📋 {comp} · {clean_prod}{term_str}\n\n"
+        "월 보험료(금액)가 아직 없습니다.\n"
+        "금액을 입력해 주시면 바로 계산해 드립니다. (예: `30만`, `300000`)\n\n"
+        "아래 금액 버튼을 눌러도 됩니다!"
+    )
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [{"simpleText": {"text": guide_text}}],
+            "quickReplies": quick_replies[:6]
+        }
+    }
+
+
+def build_heungkuk_continuous_inquiry_response() -> Dict[str, Any]:
+    """흥국생명 연속시상 질의(상품·금액 없음)에 연속 2종 선택지와 함께 되묻는다 (v3.8.9: 누락 함수 복구)."""
+    info = ALL_COMPANIES.get("흥국생명", {})
+    prod = clean_prod_short_name(info.get("default_prod", "오튼튼"))
+    term = info.get("default_term", "20년납")
+    base = f"흥국생명 {prod} 20만원 {term}".strip()
+
+    quick_replies = [
+        {"messageText": f"{base} 10-11월 연속포함", "action": "message", "label": "🔥 10~11월연속"},
+        {"messageText": f"{base} 핑크멤버스 포함", "action": "message", "label": "🌸 핑크멤버스"},
+        {"messageText": f"{base} 풀연속포함", "action": "message", "label": "💎 둘다포함"},
+        {"messageText": base, "action": "message", "label": "단건 시상"},
+        {"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"},
+    ]
+
+    guide_text = (
+        "🔥 흥국생명 연속시상 안내\n\n"
+        "흥국생명 연속시상은 2종입니다.\n"
+        "① 10~11월 연속가동 (전월 10만원↑ 달성 시)\n"
+        "② 핑크멤버스 연속시상\n\n"
+        "상품과 월 보험료를 함께 입력하시면 연속 조건까지 합산해 계산해 드립니다.\n"
+        f"(예: `흥국생명 {prod} 20만 {term} 10-11월 연속포함`)\n\n"
+        "아래 버튼으로 바로 확인하실 수 있습니다!"
+    )
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [{"simpleText": {"text": guide_text}}],
+            "quickReplies": quick_replies[:6]
         }
     }
 
@@ -3522,19 +3737,19 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
             })
         if "c1" not in c_mode and "both" not in c_mode and "all" not in c_mode and c1_man > 0:
             quick_replies.append({
-                "messageText": f"흥국생명 {prod} {prem_str} 10-11월 연속포함".strip(),
+                "messageText": " ".join(x for x in ["흥국생명", prod, prem_str, term, "10-11월 연속포함"] if x),
                 "action": "message",
                 "label": f"🔥 10~11월연속 (+{c1_man}만)"
             })
         if "c2" not in c_mode and "both" not in c_mode and "all" not in c_mode and c2_man > 0:
             quick_replies.append({
-                "messageText": f"흥국생명 {prod} {prem_str} 핑크멤버스 포함".strip(),
+                "messageText": " ".join(x for x in ["흥국생명", prod, prem_str, term, "핑크멤버스 포함"] if x),
                 "action": "message",
                 "label": f"🌸 핑크멤버스 (+{c2_man}만)"
             })
         if "both" not in c_mode and "all" not in c_mode and (c1_man + c2_man) > 0:
             quick_replies.append({
-                "messageText": f"흥국생명 {prod} {prem_str} 풀연속포함".strip(),
+                "messageText": " ".join(x for x in ["흥국생명", prod, prem_str, term, "풀연속포함"] if x),
                 "action": "message",
                 "label": f"💎 둘다포함 (+{c1_man+c2_man}만)"
             })
@@ -3711,6 +3926,7 @@ def build_help_response() -> Dict[str, Any]:
         "⚖️ [비교 계산]\n"
         "• 계산 후 [⚖️ 비교하기]를 누르면 원하는 상품과 좌우 카드로 직접 비교하실 수 있습니다!\n"
         "• [🔄 계산초기화]를 누르면 언제든 처음 화면으로 돌아옵니다.\n\n"
+        "🔁 계산 결과에서 금액만 입력하면(예: 30만) 같은 조건으로 바로 재계산\n\n"
         "💡 회사명과 금액만 입력하시면 상품 > 납기 > 형 순서로 연계 질문을 통해 손쉽게 선택하실 수 있습니다!"
     )
     return {
@@ -4047,10 +4263,19 @@ async def kakao_skill_calculate(request: Request):
                         base_parts.append(recalc_calc.get("term"))
                     AUTH_CACHE["participants"][user_id]["pending_compare"] = " ".join(p for p in base_parts if p).strip()
                 return recalc_resp
-        # 직전 계산이 없거나 재계산에 실패하면 기존 처리로 넘긴다
+        if not prev_ctx:
+            # 상품·금액을 되묻던 중 금액만 입력한 경우 → 되묻던 회사·상품·납기로 계산을 이어간다 (v3.8.9)
+            pend = get_pending_ask(user_id)
+            if pend:
+                clear_pending_ask(user_id)
+                prem_man = amount_only // 10000
+                prem_part = f"{prem_man}만원" if prem_man > 0 else f"{amount_only:,}원"
+                utterance = " ".join(x for x in [pend.get("company", ""), pend.get("product_name", ""), prem_part, pend.get("term", "")] if x)
+        # 직전 계산도 없고 되묻던 조건도 없으면 기존 처리로 넘긴다
     else:
-        # 금액만 입력이 아닌 새 질의는 직전 계산 기준을 폐기
+        # 금액만 입력이 아닌 새 질의는 직전 계산 기준과 되묻던 조건을 모두 폐기
         clear_last_calc(user_id)
+        clear_pending_ask(user_id)
 
     # 초대코드 입력 시 친절 안내 (2026-11-13 본부장님 지침: 초대코드 폐지)
     if check_invite_code_match(utterance) and not is_admin(user_id):
@@ -4100,6 +4325,7 @@ async def kakao_skill_calculate(request: Request):
             
         # 흥국생명 연속시상 질의 판정
         if any(k in utterance for k in ['흥국']) and any(kw in utterance for kw in ['연속시상', '연속얼마', '10월실적', '10월']) and premium is None:
+            remember_pending_ask(user_id, {"company": "흥국생명"})
             return build_heungkuk_continuous_inquiry_response()
 
         is_compare_query = (
@@ -4128,14 +4354,22 @@ async def kakao_skill_calculate(request: Request):
             
             # Case 4-A: 상품과 금액 없이 회사명만 입력한 경우 -> 둘 다 되묻기
             if premium is None and len(cleaned_tokens) == 0:
+                remember_pending_ask(user_id, {"company": comp})
                 return build_ask_product_and_amount_response(comp)
                 
             # Case 4-B: 상품명은 있으나 금액이 없는 경우 -> 금액만 되묻기
             if premium is None:
                 info = ALL_COMPANIES[comp]
                 m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
-                term = m_term.group(0) if m_term else info.get("default_term", "")
-                prod_name = cleaned_tokens if cleaned_tokens else info.get("default_prod", "주력")
+                term = m_term.group(0) if m_term else ""
+                # 상품명 토큰에서 납기·금액 잔여물을 걷어내고 상품명만 남긴다
+                prod_name = cleaned_tokens
+                if term:
+                    prod_name = prod_name.replace(term.replace(" ", ""), "")
+                prod_name = re.sub(r'\d+\s*만?\s*원?', '', prod_name).strip()
+                if not prod_name:
+                    prod_name = info.get("default_prod", "주력")
+                remember_pending_ask(user_id, {"company": comp, "product_name": prod_name, "term": term})
                 return build_ask_amount_response(comp, prod_name, term)
                 
             # Case 4-C: 금액이 명시된 정상 단건 계산
@@ -4164,14 +4398,14 @@ async def kakao_skill_calculate(request: Request):
                 if len(candidates) > 1:
                     m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
                     t_str = m_term.group(0) if m_term else ""
-                    return build_ask_similar_product_response(comp, candidates, calc_prem, term=t_str)
+                    return build_ask_similar_product_response(comp, candidates, calc_prem, term=t_str, continuous_mode=continuous_mode)
 
                 # 단일 상품 매칭 또는 기본 상품
                 prod_group = candidates[0] if candidates else None
                 if not prod_group:
                     prod_name = info.get("default_prod", "보장성")
                     suggested_terms = get_suggested_terms_for_life(comp, prod_name)
-                    return build_ask_term_response(comp, prod_name, calc_prem, suggested_terms)
+                    return build_ask_term_response(comp, prod_name, calc_prem, suggested_terms, continuous_mode=continuous_mode)
 
                 prod_name = clean_prod_short_name(prod_group['full_product'])
 
@@ -4182,15 +4416,15 @@ async def kakao_skill_calculate(request: Request):
                 term, invalid_term = match_term_in_text(prod_group, utterance)
                 if not term:
                     valid_terms = prod_group['terms'] if prod_group['terms'] else ["10년납", "15년납", "20년납"]
-                    return build_ask_term_response(comp, prod_name, calc_prem, valid_terms, gubun=gubun or "", invalid_term=invalid_term)
+                    return build_ask_term_response(comp, prod_name, calc_prem, valid_terms, gubun=gubun or "", invalid_term=invalid_term, continuous_mode=continuous_mode)
 
                 # 2단계: 구분('형'/'종') 확인 (납기가 결정된 후 구분이 여러 개 있는 경우 질문 유도!)
                 if gubun is None and len(prod_group['gubuns']) > 1:
-                    return build_ask_gubun_response(comp, prod_group, calc_prem, term=term)
+                    return build_ask_gubun_response(comp, prod_group, calc_prem, term=term, continuous_mode=continuous_mode)
 
                 # 3단계: 법인계약 여부 확인 (한화 하나로 15년, 푸본 원픽 7년, IM 당당한 7년)
                 if is_corp_incentive_target(comp, prod_name, term) and not contract_type:
-                    return build_ask_contract_type_response(comp, prod_name, calc_prem, term, gubun=gubun or "")
+                    return build_ask_contract_type_response(comp, prod_name, calc_prem, term, gubun=gubun or "", continuous_mode=continuous_mode)
 
                 # 4단계: 모든 조건(상품, 구분/종, 납기, 법인여부) 확정 -> 0.1초 즉시 계산!
                 item = match_master_item(prod_group, term, gubun or "")
@@ -4226,9 +4460,9 @@ async def kakao_skill_calculate(request: Request):
                         term, invalid_term = match_term_in_text(p, utterance)
                         if not term:
                             valid_terms = p['terms'] if p['terms'] else ["10년납", "15년납", "20년납"]
-                            return build_ask_term_response(comp, prod_name, premium, valid_terms, gubun=gubun or "", invalid_term=invalid_term)
+                            return build_ask_term_response(comp, prod_name, premium, valid_terms, gubun=gubun or "", invalid_term=invalid_term, continuous_mode=continuous_mode)
                         if gubun is None and len(p['gubuns']) > 1:
-                            return build_ask_gubun_response(comp, p, premium, term=term)
+                            return build_ask_gubun_response(comp, p, premium, term=term, continuous_mode=continuous_mode)
                         item = match_master_item(p, term, gubun or "")
                         calc_res = calculate_life(comp, prod_name, premium, item['s_factor'], term, "전략", continuous_mode, contract_type=contract_type or "개인", gubun=gubun or "")
                         remember_last_calc(user_id, make_life_calc_ctx(comp, prod_name, item['s_factor'], term, gubun or "", contract_type or "개인", continuous_mode))
@@ -4247,6 +4481,11 @@ async def kakao_skill_calculate(request: Request):
                 q_norm = normalize_text(cleaned)
                 if q_norm and (q_norm in p_norm or p_norm in q_norm or any(k == q_norm or (len(k)>=3 and k in q_norm) for k in p.get('search_keys', set()))):
                     all_candidates.append(p)
+
+            if len(all_candidates) > 1:
+                # 발화 선두가 특정 회사명이면 그 회사 후보만 남긴다
+                # (예: 유사상품 버튼이 'KB 경영인 정기보험Ⅲ'·'농협 행복한NH경영인정기'처럼 회사명으로 시작할 때 목록 반복 방지)
+                all_candidates = filter_candidates_by_leading_company(all_candidates, utterance)
 
             if len(all_candidates) > 1:
                 scored = []
@@ -4272,13 +4511,13 @@ async def kakao_skill_calculate(request: Request):
                 term, invalid_term = match_term_in_text(p, utterance)
                 if not term:
                     valid_terms = p['terms'] if p['terms'] else ["10년납", "15년납", "20년납"]
-                    return build_ask_term_response(comp, prod_name, premium, valid_terms, gubun=gubun or "", invalid_term=invalid_term)
+                    return build_ask_term_response(comp, prod_name, premium, valid_terms, gubun=gubun or "", invalid_term=invalid_term, continuous_mode=continuous_mode)
 
                 # 2단계: 구분('형'/'종') 확인
                 if gubun is None and len(p['gubuns']) > 1:
-                    return build_ask_gubun_response(comp, p, premium, term=term)
+                    return build_ask_gubun_response(comp, p, premium, term=term, continuous_mode=continuous_mode)
                 if is_corp_incentive_target(comp, prod_name, term) and not contract_type:
-                    return build_ask_contract_type_response(comp, prod_name, premium, term, gubun=gubun or "")
+                    return build_ask_contract_type_response(comp, prod_name, premium, term, gubun=gubun or "", continuous_mode=continuous_mode)
                 item = match_master_item(p, term, gubun or "")
                 calc_res = calculate_life(comp, prod_name, premium, item['s_factor'], term, "전략", continuous_mode, contract_type=contract_type or "개인", gubun=gubun or "")
                 remember_last_calc(user_id, make_life_calc_ctx(comp, prod_name, item['s_factor'], term, gubun or "", contract_type or "개인", continuous_mode))
@@ -4287,7 +4526,7 @@ async def kakao_skill_calculate(request: Request):
                 m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
                 t_str = m_term.group(0) if m_term else ""
                 first_comp = all_candidates[0]['company']
-                return build_ask_similar_product_response(first_comp, all_candidates, premium, term=t_str)
+                return build_ask_similar_product_response(first_comp, all_candidates, premium, term=t_str, continuous_mode=continuous_mode)
             elif any(k in utterance for k in ['퍼펙트', '간편', '굿앤굿', '주력']):
                 m_week = re.search(r'([1-5])\s*주차?', utterance)
                 requested_week = f"{m_week.group(1)}주차" if m_week else None
