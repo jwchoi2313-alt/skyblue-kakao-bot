@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.7")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.8")
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,6 +53,49 @@ AUTH_CACHE: Dict[str, Any] = {
     "authorized_users": {}
 }
 AUTH_SHA: Optional[str] = None
+
+# ==========================================
+# 0-1. 금액만 재계산용 직전계산 세션 캐시 (v3.8.8)
+# ==========================================
+# 특정 상품을 조회해 계산 카드를 받은 직후, 금액만 입력하면
+# 같은 회사·상품·납기·형(종)·주차 조건 그대로 금액만 바꿔 재계산한다.
+# 계산 카드 다음 1턴 동안만 유효하고(다른 입력이 오면 폐기), 순수 메모리에만 두어
+# auth_db.json(GitHub)에는 어떤 계산 정보도 남기지 않는다.
+LAST_CALC_CACHE: Dict[str, Dict[str, Any]] = {}
+LAST_CALC_TTL_SEC = 1800      # 30분
+LAST_CALC_MAX_USERS = 1000
+
+def _now_ts() -> float:
+    return datetime.datetime.now(datetime.timezone.utc).timestamp()
+
+def remember_last_calc(user_id: str, ctx: Optional[Dict[str, Any]]) -> None:
+    """직전 계산 조건을 세션에 기억 (금액만 재계산의 기준)"""
+    if not user_id or not ctx:
+        return
+    if len(LAST_CALC_CACHE) >= LAST_CALC_MAX_USERS and user_id not in LAST_CALC_CACHE:
+        try:
+            oldest = min(LAST_CALC_CACHE.items(), key=lambda kv: kv[1].get("ts", 0))[0]
+            LAST_CALC_CACHE.pop(oldest, None)
+        except Exception:
+            LAST_CALC_CACHE.clear()
+    saved = dict(ctx)
+    saved["ts"] = _now_ts()
+    LAST_CALC_CACHE[user_id] = saved
+
+def get_last_calc(user_id: str) -> Optional[Dict[str, Any]]:
+    if not user_id:
+        return None
+    ctx = LAST_CALC_CACHE.get(user_id)
+    if not ctx:
+        return None
+    if _now_ts() - ctx.get("ts", 0) > LAST_CALC_TTL_SEC:
+        LAST_CALC_CACHE.pop(user_id, None)
+        return None
+    return ctx
+
+def clear_last_calc(user_id: str) -> None:
+    if user_id:
+        LAST_CALC_CACHE.pop(user_id, None)
 
 def get_now_kst() -> str:
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
@@ -826,6 +869,75 @@ def parse_premium(text: str) -> Optional[int]:
         if val in [5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 100, 150, 200, 300, 500]:
             return val * 10000
     return None
+
+
+# 입력 "전체"가 금액 하나뿐인지 판별 (v3.8.8 금액만 재계산)
+#   인정: 30만 / 30만원 / 50만 원 / 150000 / 150,000원 / 월 보험료 30만 / 30만으로
+#   배제: 1, 2 (상품·납기·형 선택 번호), 10년납, 150000원 20년납, 30만 비교 (상품명 동반)
+AMOUNT_ONLY_RE = re.compile(
+    r'^(?:월\s*)?(?:보험료)?\s*'
+    r'(?P<num>\d[\d,]*(?:\.\d+)?)\s*'
+    r'(?P<unit>만원|만\s*원|만|원)?'
+    r'\s*(?:으로|로)?$'
+)
+
+def parse_amount_only(text: str) -> Optional[int]:
+    """문장 전체가 보험료 금액 하나일 때만 원 단위 금액으로 해석한다."""
+    if not text:
+        return None
+    t = text.strip()
+    if not t or len(t) > 16:
+        return None
+    m = AMOUNT_ONLY_RE.match(t)
+    if not m:
+        return None
+    num_raw = m.group("num")
+    unit = (m.group("unit") or "").replace(" ", "")
+    try:
+        num = float(num_raw.replace(",", ""))
+    except ValueError:
+        return None
+    if unit.startswith("만"):
+        value = int(round(num * 10000))
+    elif unit == "원":
+        value = int(round(num))
+    else:
+        # 단위 없는 숫자는 선택번호·연도 오인 방지를 위해 5만원 이상만 인정
+        value = int(round(num))
+        if value < 50000:
+            return None
+    if value < 10000 or value > 10000000:
+        return None
+    return value
+
+
+def make_life_calc_ctx(company: str, product_name: str, s_factor: float, term: str,
+                       gubun: str = "", contract_type: str = "개인",
+                       continuous_mode: str = "none") -> Dict[str, Any]:
+    return {
+        "category": "생명보험",
+        "company": company,
+        "product_name": product_name,
+        "s_factor": s_factor,
+        "term": term,
+        "gubun": gubun or "",
+        "contract_type": contract_type or "개인",
+        "continuous_mode": continuous_mode or "none",
+        "incentive_type": "전략",
+    }
+
+
+def make_nonlife_calc_ctx(company: str, product_name: str, continuous_mode: str = "none",
+                          requested_week: Optional[str] = None,
+                          incentive_type: str = "주력") -> Dict[str, Any]:
+    return {
+        "category": "손해보험",
+        "company": company,
+        "product_name": product_name,
+        "continuous_mode": continuous_mode or "none",
+        "requested_week": requested_week,
+        "incentive_type": incentive_type,
+    }
 
 
 def find_companies_in_text(text: str) -> List[str]:
@@ -3527,6 +3639,64 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def build_recalc_response(prev_ctx: Dict[str, Any], new_premium: int) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """직전 계산 조건(회사·상품·납기·형/종·주차·연속여부)을 그대로 두고 금액만 바꿔 재계산 (v3.8.8)."""
+    if prev_ctx.get("category") == "손해보험":
+        calc_res = calculate_nonlife(
+            prev_ctx.get("company", "현대해상"),
+            prev_ctx.get("product_name", "주력보종"),
+            new_premium,
+            prev_ctx.get("incentive_type", "주력"),
+            prev_ctx.get("continuous_mode", "none"),
+            requested_week=prev_ctx.get("requested_week")
+        )
+    else:
+        calc_res = calculate_life(
+            company=prev_ctx.get("company", ""),
+            product_name=prev_ctx.get("product_name", ""),
+            premium=new_premium,
+            s_factor=prev_ctx.get("s_factor", 1000.0),
+            term=prev_ctx.get("term", "10년납"),
+            incentive_type=prev_ctx.get("incentive_type", "전략"),
+            continuous_mode=prev_ctx.get("continuous_mode", "none"),
+            contract_type=prev_ctx.get("contract_type", "개인"),
+            gubun=prev_ctx.get("gubun", "")
+        )
+
+    resp = build_kakao_response(calc_res)
+
+    prod_label = clean_product_display_name(calc_res.get("product_name", ""))
+    term_label = calc_res.get("term", "")
+    cond = f"{calc_res.get('company', '')} · {prod_label}"
+    if calc_res.get("category") != "손해보험" and term_label:
+        cond += f" · {term_label}"
+    note = {
+        "simpleText": {
+            "text": (
+                f"🔁 금액만 재계산했습니다 (같은 상품·동일 조건)\n"
+                f"👉 {cond} · 월 {new_premium:,}원"
+            )
+        }
+    }
+    resp["template"]["outputs"] = [note] + resp["template"]["outputs"]
+
+    # 재계산 결과에도 [⚖️ 비교하기]·[🔄 계산초기화]를 반드시 남긴다
+    qr = list(resp["template"].get("quickReplies", []))
+    labels = " ".join(q.get("label", "") for q in qr)
+    if "비교하기" not in labels:
+        prem_man = new_premium // 10000
+        prem_str = f"{prem_man}만원" if prem_man > 0 else f"{new_premium:,}원"
+        qr.append({
+            "messageText": f"비교선택:{calc_res.get('company', '')}|{calc_res.get('product_name', '')}|{prem_str}|{calc_res.get('term', '')}",
+            "action": "message",
+            "label": "⚖️ 비교하기"
+        })
+    if "계산초기화" not in labels:
+        qr.append({"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"})
+    resp["template"]["quickReplies"] = qr[-5:]
+    return resp, calc_res
+
+
 def build_help_response() -> Dict[str, Any]:
     help_text = (
         "🤖 스카이블루에셋 정산 계산기\n\n"
@@ -3784,6 +3954,7 @@ async def kakao_skill_calculate(request: Request):
     if utterance in ["계산초기화", "초기화", "리셋", "reset", "처음으로", "처음"]:
         if user_id and user_id in AUTH_CACHE.get("participants", {}):
             AUTH_CACHE["participants"][user_id].pop("pending_compare", None)
+        clear_last_calc(user_id)
         return build_help_response()
 
     # [비교하기 버튼 탭 핸들러]
@@ -3850,6 +4021,36 @@ async def kakao_skill_calculate(request: Request):
             if res1 and res2:
                 AUTH_CACHE["participants"][user_id].pop("pending_compare", None)
                 return build_carousel_compare_response(res1, res2)
+
+    # [금액만 재계산 핸들러] (v3.8.8)
+    # 계산 카드를 받은 직후 금액만 입력하면 같은 회사·상품·납기·형(종)·주차 조건 그대로
+    # 금액만 바꿔 즉시 재계산한다. 유사상품·납기·형 선택 및 비교/초기화 플로우는 건드리지 않는다.
+    amount_only = parse_amount_only(utterance)
+    if amount_only is not None:
+        prev_ctx = get_last_calc(user_id)
+        if prev_ctx:
+            try:
+                recalc_resp, recalc_calc = build_recalc_response(prev_ctx, amount_only)
+            except Exception:
+                clear_last_calc(user_id)
+            else:
+                # 새 금액으로 세션 기준 갱신 → 30만 → 50만처럼 연속 재계산 유지
+                updated_ctx = dict(prev_ctx)
+                updated_ctx["premium"] = amount_only
+                remember_last_calc(user_id, updated_ctx)
+                # 비교 대기 중이었다면 기준 상품을 바뀐 금액으로 교체 (비교 플로우 유지)
+                if user_id and AUTH_CACHE.get("participants", {}).get(user_id, {}).get("pending_compare"):
+                    prem_man = amount_only // 10000
+                    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{amount_only:,}원"
+                    base_parts = [recalc_calc.get("company", ""), recalc_calc.get("product_name", ""), prem_str]
+                    if recalc_calc.get("term"):
+                        base_parts.append(recalc_calc.get("term"))
+                    AUTH_CACHE["participants"][user_id]["pending_compare"] = " ".join(p for p in base_parts if p).strip()
+                return recalc_resp
+        # 직전 계산이 없거나 재계산에 실패하면 기존 처리로 넘긴다
+    else:
+        # 금액만 입력이 아닌 새 질의는 직전 계산 기준을 폐기
+        clear_last_calc(user_id)
 
     # 초대코드 입력 시 친절 안내 (2026-11-13 본부장님 지침: 초대코드 폐지)
     if check_invite_code_match(utterance) and not is_admin(user_id):
@@ -3952,6 +4153,7 @@ async def kakao_skill_calculate(request: Request):
                         prod_name = p
                         break
                 calc_res = calculate_nonlife(comp, prod_name, calc_prem, incentive_type="주력", continuous_mode=continuous_mode, requested_week=requested_week)
+                remember_last_calc(user_id, make_nonlife_calc_ctx(comp, prod_name, continuous_mode, requested_week, "주력"))
                 return build_kakao_response(calc_res)
                 
             # 생명보험: 계층형 질의 유도 및 정밀 S환산 계산
@@ -3994,9 +4196,10 @@ async def kakao_skill_calculate(request: Request):
                 item = match_master_item(prod_group, term, gubun or "")
                 s_factor = item['s_factor']
                 
+                calc_product_name = f"{prod_name} ({gubun})" if gubun and gubun not in prod_name else prod_name
                 calc_res = calculate_life(
                     company=comp,
-                    product_name=f"{prod_name} ({gubun})" if gubun and gubun not in prod_name else prod_name,
+                    product_name=calc_product_name,
                     premium=calc_prem,
                     s_factor=s_factor,
                     term=term,
@@ -4005,6 +4208,7 @@ async def kakao_skill_calculate(request: Request):
                     contract_type=contract_type or "개인",
                     gubun=gubun or ""
                 )
+                remember_last_calc(user_id, make_life_calc_ctx(comp, calc_product_name, s_factor, term, gubun or "", contract_type or "개인", continuous_mode))
                 return build_kakao_response(calc_res)
 
         # 5. 회사명은 없지만 대표 상품명이 직접 들어온 경우 (전체 생보사 카탈로그 자동 검색)
@@ -4027,6 +4231,7 @@ async def kakao_skill_calculate(request: Request):
                             return build_ask_gubun_response(comp, p, premium, term=term)
                         item = match_master_item(p, term, gubun or "")
                         calc_res = calculate_life(comp, prod_name, premium, item['s_factor'], term, "전략", continuous_mode, contract_type=contract_type or "개인", gubun=gubun or "")
+                        remember_last_calc(user_id, make_life_calc_ctx(comp, prod_name, item['s_factor'], term, gubun or "", contract_type or "개인", continuous_mode))
                         return build_kakao_response(calc_res)
             all_candidates = []
             detected_g = extract_gubun_from_query(utterance)
@@ -4076,6 +4281,7 @@ async def kakao_skill_calculate(request: Request):
                     return build_ask_contract_type_response(comp, prod_name, premium, term, gubun=gubun or "")
                 item = match_master_item(p, term, gubun or "")
                 calc_res = calculate_life(comp, prod_name, premium, item['s_factor'], term, "전략", continuous_mode, contract_type=contract_type or "개인", gubun=gubun or "")
+                remember_last_calc(user_id, make_life_calc_ctx(comp, prod_name, item['s_factor'], term, gubun or "", contract_type or "개인", continuous_mode))
                 return build_kakao_response(calc_res)
             elif len(all_candidates) > 1:
                 m_term = re.search(r'(\d+)\s*년\s*납?|전기납', utterance)
@@ -4086,6 +4292,7 @@ async def kakao_skill_calculate(request: Request):
                 m_week = re.search(r'([1-5])\s*주차?', utterance)
                 requested_week = f"{m_week.group(1)}주차" if m_week else None
                 calc_res = calculate_nonlife("현대해상", "주력보종", premium, "주력", continuous_mode, requested_week=requested_week)
+                remember_last_calc(user_id, make_nonlife_calc_ctx("현대해상", "주력보종", continuous_mode, requested_week, "주력"))
                 return build_kakao_response(calc_res)
 
         # 6. 해석 불가 질문 -> 사용자 지정 표준 폴백 메시지 반환
