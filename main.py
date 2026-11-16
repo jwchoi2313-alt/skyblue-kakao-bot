@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.9")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.10")
 
 app.add_middleware(
     CORSMiddleware,
@@ -580,42 +580,93 @@ if os.path.exists(NONLIFE_WEEKLY_PATH):
 else:
     NONLIFE_WEEKLY_DATA = {}
 
-def resolve_nonlife_week(requested_week: Optional[str] = None) -> Tuple[str, str, bool, Dict[str, Any]]:
+WEEK_LABELS = ["1주차", "2주차", "3주차", "4주차", "5주차"]
+
+
+def week_index(week_label: str) -> int:
+    """'2주차' → 1. 목록에 없는 표기는 -1."""
+    try:
+        return WEEK_LABELS.index(week_label)
+    except (ValueError, AttributeError):
+        return -1
+
+
+def current_calendar_week(now: Optional[datetime.datetime] = None) -> str:
+    """오늘 날짜가 속한 손보 시책 주차 (1~8일=1주차, 9~15일=2주차, 16~22일=3주차, 23일 이후=4주차)."""
+    now = now or datetime.datetime.now()
+    day = now.day
+    if day <= 8:
+        return "1주차"
+    if day <= 15:
+        return "2주차"
+    if day <= 22:
+        return "3주차"
+    return "4주차"
+
+
+def latest_week_with_data(up_to: Optional[str] = None, company: Optional[str] = None) -> Optional[str]:
+    """시책 데이터가 실제로 존재하는 가장 최근(늦은) 주차.
+    up_to(대기 기준 주차) 이하 주차를 우선하고, 그 범위에 없으면 전체에서 가장 늦은 주차를 돌려준다.
+    company를 주면 그 회사의 전단지가 있는 주차만 본다. (v3.8.10)
+    """
+    weeks_data = NONLIFE_WEEKLY_DATA.get("weeks", {}) or {}
+    available = []
+    for wk in weeks_data:
+        comps = (weeks_data.get(wk) or {}).get("companies", {}) or {}
+        if company:
+            if comps.get(company):
+                available.append(wk)
+        elif comps:
+            available.append(wk)
+    available = [w for w in available if week_index(w) >= 0]
+    if not available:
+        return None
+    available.sort(key=week_index)
+    if up_to and week_index(up_to) >= 0:
+        bounded = [w for w in available if week_index(w) <= week_index(up_to)]
+        if bounded:
+            return bounded[-1]
+    return available[-1]
+
+
+def resolve_nonlife_week(requested_week: Optional[str] = None) -> Tuple[str, str, bool, Dict[str, Any], str]:
     """
     주차별 손보 시책 데이터 매칭:
-    (반환: resolved_week, period_str, is_fallback, week_companies_dict)
+    (반환: resolved_week, period_str, is_fallback, week_companies_dict, target_week)
+      - target_week: 사용자가 지정했거나 오늘 날짜가 속한 '대기 기준' 주차 (예: 3주차)
+      - resolved_week: 그 주차 데이터가 없을 때 데이터가 존재하는 가장 최근 주차로 폴백
+      - is_fallback: target_week 시책지가 아직 없어 이전(직전 최신 완료) 주차 요율로 계산 중
     """
-    weeks_data = NONLIFE_WEEKLY_DATA.get("weeks", {})
-    
+    weeks_data = NONLIFE_WEEKLY_DATA.get("weeks", {}) or {}
+
+    def _pick(week_label: str):
+        w_obj = weeks_data.get(week_label, {}) or {}
+        return w_obj, (w_obj.get("companies", {}) or {})
+
     # 1. 사용자가 '1주차', '2주차' 등 명시한 경우
     if requested_week and requested_week in weeks_data:
-        w_obj = weeks_data[requested_week]
-        comps = w_obj.get("companies", {})
+        w_obj, comps = _pick(requested_week)
         if comps:
-            return requested_week, w_obj.get("period", ""), False, comps
-        else:
-            fb_obj = weeks_data.get("1주차", {})
-            return "1주차", fb_obj.get("period", "11.01 ~ 11.08"), True, fb_obj.get("companies", {})
+            return requested_week, w_obj.get("period", ""), False, comps, requested_week
+        # 지정 주차 시책지 업로드 전: 1주차 고정이 아니라 데이터가 있는 가장 최근 주차로 폴백 (v3.8.10)
+        fb_week = latest_week_with_data(up_to=requested_week)
+        if fb_week:
+            fb_obj, fb_comps = _pick(fb_week)
+            return fb_week, fb_obj.get("period", ""), True, fb_comps, requested_week
+        return requested_week, w_obj.get("period", ""), True, {}, requested_week
 
     # 2. 날짜 기준 현재 주차 자동 판별 (11월 기준)
-    now_day = datetime.datetime.now().day
-    if now_day <= 8:
-        target_week = "1주차"
-    elif now_day <= 15:
-        target_week = "2주차"
-    elif now_day <= 22:
-        target_week = "3주차"
-    else:
-        target_week = "4주차"
-        
-    w_obj = weeks_data.get(target_week, {})
-    comps = w_obj.get("companies", {})
+    target_week = current_calendar_week()
+    w_obj, comps = _pick(target_week)
     if comps:
-        return target_week, w_obj.get("period", ""), False, comps
-    else:
-        # 해당 주차 시책지 업로드 전: 직전 1주차로 계산하되 폴백 알림 플래그
-        fb_obj = weeks_data.get("1주차", {})
-        return "1주차", fb_obj.get("period", "11.01 ~ 11.08"), True, fb_obj.get("companies", {})
+        return target_week, w_obj.get("period", ""), False, comps, target_week
+
+    # 해당 주차 시책지 업로드 전: 데이터가 있는 가장 최근(직전 완료) 주차로 계산하되 폴백 알림 플래그 (v3.8.10)
+    fb_week = latest_week_with_data(up_to=target_week)
+    if fb_week:
+        fb_obj, fb_comps = _pick(fb_week)
+        return fb_week, fb_obj.get("period", ""), True, fb_comps, target_week
+    return target_week, w_obj.get("period", ""), True, {}, target_week
 
 EMBEDDED_RATES_DATA = json.loads('{"life_rules": {"next_month_rate": 3.32, "company_installments": {"흥국": {"default": 0.96, "건강": 0.96, "종신": 0.96, "오튼튼": 0.96, "다사랑": 0.96}, "한화": {"default": 1.56, "H종신": 1.56, "제로백": 1.56, "일반보장": 2.76}, "DB": {"default": 1.32, "건강": 1.32, "알행종": 1.56}, "신한": {"default": 0.84, "건강": 0.84, "종신": 1.56}, "KB": {"default": 3.48}, "메트": {"default": 3.84, "연금": 4.8, "종신": 3.84, "백만인": 2.52}, "농협": {"default": 1.56, "투스텝": 1.56, "기타": 0.6}, "동양": {"default": 1.08, "어린이": 1.08, "쑥쑥": 1.08, "단기납": 1.56, "종신": 1.8, "경영인": 2.28}, "라이나": {"default": 1.56, "건강": 1.56}, "교보": {"default": 2.76}, "KDB": {"default": 1.56}, "ABL": {"default": 1.56}, "미래": {"default": 2.76}, "하나": {"default": 0.96, "건강": 0.96, "일반": 1.56}, "푸본현대": {"default": 1.56, "표준": 6.12, "MAX원픽": 1.56, "마이픽": 1.56}, "IM": {"default": 2.04}, "IBK": {"default": 2.76}}, "incentives": {"흥국": {"전략": {"name": "흥국생명 전략 6종 (오튼튼/다사랑 등)", "next_month_base": 4.0, "next_month_sky": 2.0, "install_period_bonus": 6.0, "install_strategy_bonus": 2.0, "total_rate": 14.0, "note": "20만원 구간 기준, 본사 전략시책(+200%) 포함"}, "일반": {"name": "흥국생명 일반 건강", "next_month_base": 4.0, "next_month_sky": 0.0, "install_period_bonus": 6.0, "install_strategy_bonus": 0.0, "total_rate": 10.0, "note": "20만원 구간 기준"}}}}, "nonlife_rules": {"conversion_rate": 0.92, "next_month_rate": 6.1, "installment_rate": 1.32, "total_commission_rate": 7.42, "companies": ["현대해상", "메리츠", "KB손보", "한화손보", "DB손보", "롯데손보", "흥국화재", "농협손보", "하나손보"], "incentives": {"현대해상": {"주력": {"name": "현대해상 주력보종 (퍼펙트/간편/굿앤굿)", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 3.0, "install_sky_2nd": 1.7, "total_rate": 10.3, "note": "1주차 가동(200%) + 주력가동(300%) + SKY 2차년도(170%) 포함"}, "일반": {"name": "현대해상 일반 인보험", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 0.0, "install_sky_2nd": 1.7, "total_rate": 7.3, "note": "주력보종 가동시상(300%) 제외"}}, "KB손보": {"주력": {"name": "KB손해보험 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 2.6, "install_week_bonus": 2.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.6, "note": "익월 360% + 1주차 가동 200% + 주력 200%"}}, "한화손보": {"주력": {"name": "한화손해보험 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 0.5, "install_week_bonus": 4.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.5, "note": "익월 150% + 1주차 인보험 400% + 주력 200%"}}, "메리츠": {"주력": {"name": "메리츠화재 1주차 주력보종", "next_month_base": 1.0, "next_month_sky": 2.5, "install_week_bonus": 2.0, "install_main_bonus": 2.0, "install_sky_2nd": 0.0, "total_rate": 7.5, "note": "익월 350% + 1주차 가동 200% + 주력 200%"}}}}}')
 
@@ -2705,7 +2756,7 @@ def calculate_nonlife(
     continuous_mode: str = "none",
     requested_week: Optional[str] = None
 ) -> Dict[str, Any]:
-    resolved_week, period_str, is_fallback, week_comps = resolve_nonlife_week(requested_week)
+    resolved_week, period_str, is_fallback, week_comps, target_week = resolve_nonlife_week(requested_week)
 
     comp_matched = "현대해상"
     for c in NONLIFE_RULES['companies']:
@@ -2744,12 +2795,20 @@ def calculate_nonlife(
     comp_week = resolved_week
 
     if not comp_week_info:
-        # 해당 주차에 이 회사의 전단지가 아직 업로드되지 않은 경우 1주차로 폴백
-        w1_data = NONLIFE_WEEKLY_DATA.get("weeks", {}).get("1주차", {})
-        comp_week_info = w1_data.get("companies", {}).get(comp_matched, {})
-        comp_is_fallback = True
-        comp_period = w1_data.get("period", "11.01 ~ 11.08")
-        comp_week = "1주차"
+        # 해당 주차에 이 회사의 전단지가 아직 없으면 그 회사 데이터가 있는 가장 최근 주차로 폴백 (v3.8.10)
+        fb_week = latest_week_with_data(up_to=target_week, company=comp_matched)
+        if fb_week:
+            fb_obj = NONLIFE_WEEKLY_DATA.get("weeks", {}).get(fb_week, {}) or {}
+            comp_week_info = (fb_obj.get("companies", {}) or {}).get(comp_matched, {})
+            comp_is_fallback = True
+            comp_period = fb_obj.get("period", "")
+            comp_week = fb_week
+        else:
+            w1_data = NONLIFE_WEEKLY_DATA.get("weeks", {}).get("1주차", {})
+            comp_week_info = w1_data.get("companies", {}).get(comp_matched, {})
+            comp_is_fallback = True
+            comp_period = w1_data.get("period", "11.01 ~ 11.08")
+            comp_week = "1주차"
 
     flyer_file = comp_week_info.get("flyer", ALL_COMPANIES.get(comp_matched, {}).get("flyer", f"{comp_matched}_1주.jpg"))
     inc_dict = comp_week_info.get(incentive_type, {})
@@ -2820,6 +2879,7 @@ def calculate_nonlife(
         "week": comp_week,
         "period": comp_period,
         "is_fallback": comp_is_fallback,
+        "target_week": target_week,
         "flyer": flyer_file
     }
 
@@ -2888,12 +2948,24 @@ def find_flyer(comp_name: str, week: Optional[str] = None) -> Tuple[str, str]:
     c_norm = comp_name.replace(" ", "").lower()
 
     # 1. 주차별 손보 전단지 우선 확인 (week 지정 또는 자동 활성 주차)
-    resolved_week, _, _, week_comps = resolve_nonlife_week(week)
+    resolved_week, _, _, week_comps, target_week = resolve_nonlife_week(week)
     for c in week_comps:
         if c in comp_name or comp_name in c or c.replace(" ", "").lower() in c_norm or c_norm in c.replace(" ", "").lower():
             fn = week_comps[c].get("flyer")
             if fn:
                 return c, fn
+
+    # 1-b. 계산에 쓰인 주차에 이 회사 전단지가 없으면, 그 회사 전단지가 있는 가장 최근 주차로 폴백 (v3.8.10)
+    _weeks_data = NONLIFE_WEEKLY_DATA.get("weeks", {}) or {}
+    _ceiling = week_index(target_week) if week_index(target_week) >= 0 else len(WEEK_LABELS)
+    _order = sorted([w for w in _weeks_data if week_index(w) >= 0], key=week_index, reverse=True)
+    for _wk in [w for w in _order if week_index(w) <= _ceiling]:
+        _comps = (_weeks_data.get(_wk) or {}).get("companies", {}) or {}
+        for c in _comps:
+            if c in comp_name or comp_name in c or c.replace(" ", "").lower() in c_norm or c_norm in c.replace(" ", "").lower():
+                fn = _comps[c].get("flyer")
+                if fn:
+                    return c, fn
 
     if "kb생명" in c_norm or "kb라이프" in c_norm or "케이비생명" in c_norm or "케이비라이프" in c_norm:
         return "KB라이프", "KB라이프_11월.png"
@@ -3423,9 +3495,11 @@ def build_item_card_dict(calc_result: Dict[str, Any], tag: str = "") -> Dict[str
     week = calc_result.get("week", "")
     period = calc_result.get("period", "")
     is_fallback = calc_result.get("is_fallback", False)
+    target_week = calc_result.get("target_week") or week
 
     if cat == "손해보험":
-        card_desc = f"{clean_product_display_name(prod)} · 11월 {week}" if week else clean_product_display_name(prod)
+        _week_desc = f"11월 {week}" + (f" [{target_week} 대기]" if is_fallback else "")
+        card_desc = f"{clean_product_display_name(prod)} · {_week_desc}" if week else clean_product_display_name(prod)
         flyer_btn_label = f"📑 {comp} {week} 시책지" if week else f"📑 {comp} 시책지"
         flyer_query = f"?week={urllib.parse.quote(week)}" if week else ""
         flyer_btn_url = f"https://skyblue-kakao-bot.onrender.com/flyer/{urllib.parse.quote(comp)}{flyer_query}"
@@ -3771,6 +3845,7 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
     week = calc_result.get("week", "")
     period = calc_result.get("period", "")
     is_fallback = calc_result.get("is_fallback", False)
+    target_week = calc_result.get("target_week") or week
     
     comp_clean = comp.replace('생명', '').replace('손보', '').replace('화재', '').replace('라이프', '')
     quick_replies.append({
@@ -3784,10 +3859,15 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
         "label": "🔄 계산초기화"
     })
     if cat == "손해보험":
-        quick_replies.extend([
-            {"messageText": f"1주차 {comp} 10만원", "action": "message", "label": "1주차 계산"},
-            {"messageText": f"2주차 {comp} 10만원", "action": "message", "label": "2주차 계산"}
-        ])
+        # 계산에 쓰인 주차와 대기 중인 주차를 그대로 버튼으로 제공 (v3.8.10: 1·2주차 고정 제거)
+        wk_buttons = [w for w in [week, target_week] if w]
+        wk_buttons = list(dict.fromkeys(wk_buttons)) or ["1주차", "2주차"]
+        for wk_label in wk_buttons[:2]:
+            quick_replies.append({
+                "messageText": f"{wk_label} {comp} 10만원",
+                "action": "message",
+                "label": f"{wk_label} 계산"
+            })
     else:
         quick_replies.extend([
             {"messageText": f"{comp} {prod} 10만원 {term}".strip(), "action": "message", "label": "10만 계산"},
@@ -3797,7 +3877,7 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
     basis_text = f"💡 시상 산출근거: {basis_desc}"
     if cat == "손해보험":
         if is_fallback:
-            basis_text += f"\n(※ 현재 11월 1주차({period}) 기준이며, 월요일 오후~화요일 오전 2주차 시책지 업로드 시 즉시 자동 갱신됩니다)"
+            basis_text += f"\n(※ 현재 11월 {week}({period}) 기준이며, {target_week} 시책지 업로드 시 즉시 자동 갱신됩니다)"
         elif period:
             basis_text += f"\n(※ 11월 {week} 시책 기준 [적용기간: {period}])"
     elif is_heungkuk and c_mode == "none":
@@ -3807,7 +3887,7 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
 
     if cat == "손해보험":
         if is_fallback:
-            card_desc = f"{clean_product_display_name(prod)} · 11월 {week}({period}) [2주차 대기]"
+            card_desc = f"{clean_product_display_name(prod)} · 11월 {week}({period}) [{target_week} 대기]"
         else:
             card_desc = f"{clean_product_display_name(prod)} · 11월 {week}({period})"
         flyer_btn_label = f"📑 {comp} {week} 시책지 보기" if week else f"📑 {comp} 시책지 보기"
