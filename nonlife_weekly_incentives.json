@@ -413,9 +413,39 @@
     },
     "3주차": {
       "period": "11.16 ~ 11.22",
-      "status": "waiting_upload",
-      "note": "3주차 시책지 업로드 시 자동 반영",
-      "companies": {}
+      "status": "active_completed",
+      "note": "KB손보 3주차 전단지(11.16~11.22) 반영 완료. 나머지 손보사는 2주차 요율로 폴백",
+      "companies": {
+        "KB손보": {
+          "flyer": "KB손보 3주.jpg",
+          "period": "11.16 ~ 11.22",
+          "note": "익월 인보험 기본 100%(펫보험 300%), 스카이블루 월간평가 월납P 10만원 이상 기준",
+          "주력": {
+            "name": "KB손해보험 3주차 주력보종 (간편+종합+자녀+LTC)",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 1.0,
+            "install_main_bonus": 1.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 7.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 370%(2차년도170+3주가동100+주력100)",
+            "cont_bonus_rate": 0.0,
+            "cont_desc": "11~12월 연속가동 최대 300%(11.16~30일 실적 + 12.1~13일 10만↑), 11~12월 주력보종 연속가동 200%, KB멤버스 시상(10~12월) 100% — 12월 실적 조건이라 단건 계산에서 제외"
+          },
+          "일반": {
+            "name": "KB손해보험 3주차 일반 인보험",
+            "next_month_base": 1.0,
+            "next_month_sky": 2.6,
+            "install_week_bonus": 1.0,
+            "install_main_bonus": 0.0,
+            "install_sky_2nd": 1.7,
+            "total_rate": 6.3,
+            "basis": "익월 360%(기본100+SKY260) + 13회차 270%(2차년도170+3주가동100)",
+            "cont_bonus_rate": 0.0,
+            "cont_desc": "11~12월 연속가동 최대 300%(11.16~30일 실적 + 12.1~13일 10만↑), KB멤버스 시상(10~12월) 100% — 12월 실적 조건이라 단건 계산에서 제외"
+          }
+        }
+      }
     },
     "4주차": {
       "period": "11.23 ~ 11.30",
