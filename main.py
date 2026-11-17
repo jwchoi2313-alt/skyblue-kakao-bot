@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.11")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.12")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2944,13 +2944,19 @@ FLYER_MAP = {
     "흥국화재": "흥국화재_1주.jpg"
 }
 
+def _comp_alias_key(name: str) -> str:
+    """회사명 표기 차이 흡수용 키 — '한화손해보험'과 '한화손보'를 같은 회사로 본다 (v3.8.12)."""
+    return name.replace(" ", "").lower().replace("손해보험", "손보")
+
+
 def find_flyer(comp_name: str, week: Optional[str] = None) -> Tuple[str, str]:
     c_norm = comp_name.replace(" ", "").lower()
+    c_alias = _comp_alias_key(comp_name)
 
     # 1. 주차별 손보 전단지 우선 확인 (week 지정 또는 자동 활성 주차)
     resolved_week, _, _, week_comps, target_week = resolve_nonlife_week(week)
     for c in week_comps:
-        if c in comp_name or comp_name in c or c.replace(" ", "").lower() in c_norm or c_norm in c.replace(" ", "").lower():
+        if c in comp_name or comp_name in c or c.replace(" ", "").lower() in c_norm or c_norm in c.replace(" ", "").lower() or _comp_alias_key(c) == c_alias:
             fn = week_comps[c].get("flyer")
             if fn:
                 return c, fn
@@ -2962,7 +2968,7 @@ def find_flyer(comp_name: str, week: Optional[str] = None) -> Tuple[str, str]:
     for _wk in [w for w in _order if week_index(w) <= _ceiling]:
         _comps = (_weeks_data.get(_wk) or {}).get("companies", {}) or {}
         for c in _comps:
-            if c in comp_name or comp_name in c or c.replace(" ", "").lower() in c_norm or c_norm in c.replace(" ", "").lower():
+            if c in comp_name or comp_name in c or c.replace(" ", "").lower() in c_norm or c_norm in c.replace(" ", "").lower() or _comp_alias_key(c) == c_alias:
                 fn = _comps[c].get("flyer")
                 if fn:
                     return c, fn
