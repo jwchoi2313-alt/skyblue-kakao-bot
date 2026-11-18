@@ -2600,7 +2600,9 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             }
 
         # (2) 우리WON하는치매간병보험 & 우리WON하는보장보험 (보장, 간편보장, 건강보장, 암)
-        elif any(k in prod for k in ['치매', '간병', '보장', '건강한보장', '암']):
+        #  구분(형) '(보장형_평준납입형)'의 '보장' 글자 때문에 종신 알뜰플러스가 2,400% 구간시상 분기로
+        #  새던 오류를 막는다. 알뜰플러스종신은 아래 (4) 분기에서 5년납 550%·7년납 600%·10년납 180%다. (v3.8.15)
+        elif any(k in prod for k in ['치매', '간병', '보장', '건강한보장', '암']) and '알뜰' not in prod:
             is_standard = ('표준형' in prod) or ('표준형' in gubun)
             if is_standard:
                 return {
@@ -4327,13 +4329,18 @@ def collect_wholelife_top10(term_label: str, premium: int = TOP10_DEFAULT_PREMIU
         company = TOP10_COMPANY_NAMES.get(sheet, (row.get('company') or '').replace('\n', '').strip())
         gubun_label = '' if gubun in ('', '-') else gubun
         label = _top10_prod_label(prod_full, gubun_label)
+        # 정산 엔진에는 단건 계산과 똑같은 상품명(조견표 전체명 + 구분)을 넘긴다.
+        # (표시용 짧은 라벨을 넘기면 시책 분기가 달라질 수 있다 — v3.8.15)
+        engine_name = clean_prod_short_name(prod_full)
+        if gubun_label and gubun_label not in engine_name:
+            engine_name = f"{engine_name} ({gubun_label})"
         try:
             s_factor = float(row.get('s_factor') or 1000.0)
         except (TypeError, ValueError):
             s_factor = 1000.0
         calc = calculate_life(
             company=company,
-            product_name=label,
+            product_name=engine_name,
             premium=premium,
             s_factor=s_factor,
             term=matched_term,
