@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.16")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.17")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1977,6 +1977,19 @@ def resolve_kdb_pension_week_bonus(now: Optional[datetime.datetime] = None) -> T
     return "11월 4주차 이후(11/21~)", 0.0
 
 
+def no_life_incentive(comp_name: str = "", product_name: str = "") -> Dict[str, Any]:
+    """11월 시책지에 이름이 없는 상품 → 시책 0원 (정우 님 원칙, v3.8.17).
+
+    정우 님 지시(2026-11-18): "각 회사 시책지에 이름이 없는상품은 시책이 0원인거야."
+    → 어느 회사 분기에도 걸리지 않거나, 그 회사 시책지에 이름이 없는 상품은
+      익월·13회차·연속 시상 모두 0으로 돌려준다.
+      (S환산 수수료·분급 수수료는 calculate_life에서 그대로 계산된다 — 시상만 0)
+    """
+    return {"next_month": 0.0, "split": 0.0, "total": 0.0,
+            "basis": "11월 시책지 미수록 상품 — 시상 0원 (원수사 확인)",
+            "cont_bonus": 0.0, "cont_desc": "", "not_listed": True}
+
+
 def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none", contract_type: str = "개인", gubun: str = "") -> Dict[str, Any]:
     """17개 생보사 11월 공식 시책표 정밀 판정 (메트라이프 납기별 차이, 흥국 2종 연속, 신한 3~7번 연계, 라이나, 미래에셋 완벽 반영)"""
     comp = comp_name.replace('생명', '').replace('라이프', '').strip().lower()
@@ -1995,7 +2008,8 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 return {"next_month": 0.7, "split": 0.0, "total": 0.7, "basis": "익월 70% (변액연금 동행Plus 고도해지해형 · 전기납)", "cont_bonus": 0.0, "cont_desc": ""}
             if '달러' in prod:
                 return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (오로지 연금을 위한 달러연금보험 · 전기납)", "cont_bonus": 0.0, "cont_desc": ""}
-            return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (메트 연금보험 · 11월 시책표 미수록 상품은 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 메트 11월 시책지 연금 = 변액연금 동행Plus 2종 · 오로지 연금을 위한 달러연금보험 뿐
+            return no_life_incentive(comp_name, product_name)
 
         # ── 정기/변액리치 ──
         if '변액리치' in prod:
@@ -2005,7 +2019,8 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 return {"next_month": 1.0, "split": 1.0, "total": 2.0, "basis": "익월 100% + 15차월 100% (The Classic 달러경영인정기보험)", "cont_bonus": 0.0, "cont_desc": ""}
             return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (The Classic 원화경영인정기보험)", "cont_bonus": 0.0, "cont_desc": ""}
         if '더해주고채워주는' in prod or '미리받는' in prod:
-            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (11월 시책표 미수록 상품 — 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 11월 메트 시책지에 없는 상품(더해주고채워주는정기·미리받는GI종신) → 0원
+            return no_life_incentive(comp_name, product_name)
 
         # ── 종신 ──
         if '3년내고' in prod:
@@ -2017,7 +2032,8 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 if years is not None and years <= 5:
                     return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (백만인을 위한 달러종신 Plus 5년납)", "cont_bonus": 0.0, "cont_desc": ""}
                 return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": f"익월 400% (백만인을 위한 달러종신 Plus {term} 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (원화 백만인 종신 Plus — 11월 시책표 미수록, 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 원화 백만인 종신 Plus: 11월 시책지 미수록 (달러종신 Plus만 기재) → 0원
+            return no_life_incentive(comp_name, product_name)
         if '오늘의종신' in prod or 'vip' in prod or '모두의상속' in prod or '모두의종신' in prod:
             return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (종신보험 100%)", "cont_bonus": 0.0, "cont_desc": ""}
 
@@ -2028,10 +2044,17 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (360 암보험 100%)", "cont_bonus": 0.0, "cont_desc": ""}
         if '360' in prod or '종합' in prod or '간편' in prod:
             return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (간편가입 360 종합보장보험 갱신형 200%)", "cont_bonus": 0.0, "cont_desc": ""}
-        return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (메트라이프 전략 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 11월 시책지에 이름이 없는 메트 상품 → 0원
+        return no_life_incentive(comp_name, product_name)
 
     # 2. 흥국생명 (10~11월 연속가동 & 핑크멤버스 2종 연속시상)
     elif '흥국' in comp:
+        # 11월 흥국 시책지 하단: "시책비 지급제외 — 종신보험, 저축성보험, 단체보험…"
+        # → 종신 계열(리턴100종신·플렉스리턴100종신·미리받는트리플더블업건강종신)은 시책 0원.
+        if '종신' in prod:
+            return {"next_month": 0.0, "split": 0.0, "total": 0.0,
+                    "basis": "11월 흥국 시책지 시책비 지급제외(종신보험) — 시상 0원",
+                    "cont_bonus": 0.0, "cont_desc": "", "not_listed": True}
         is_strat = (incentive_type == "전략" or any(k in prod for k in ['오튼튼', '다사랑', '치매', '암', '건강', '3.10.5']))
         base_next = 4.0
         sky_next = 0.0
@@ -2129,15 +2152,31 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             else:
                 return {"next_month": 4.5, "split": 2.0, "total": 6.5, "basis": "익월 450% + 13회차 200% (필요할때쓰는종신 10년납 650%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '밸류플러스' in prod:
-            return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (밸류플러스2.0 500%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '치매' in prod or '간병' in prod:
-            return {"next_month": 5.0, "split": 3.0, "total": 8.0, "basis": "익월 500% + 13회차 300% (치매담은 간병플러스 800%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '암' in prod or '시그니처' in prod:
-            return {"next_month": 5.0, "split": 8.0, "total": 13.0, "basis": "익월 500% + 13회차 800% (시그니처암 1,300%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif 'h종신' in prod or 'h' in prod:
-            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (H종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 0.5, "total": 4.5, "basis": "익월 400% + 13회차 50% (밸류플러스2.0 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '실속가득' in prod and ('치매' in prod or '간병' in prod):
+            return {"next_month": 5.0, "split": 8.0, "total": 13.0, "basis": "익월 500% + 13회차 800% (실속가득H치매간병 1,300%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '치매담은' in prod:
+            if '20년' in term:
+                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (치매담은 간병플러스 20년납 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+            elif '15년' in term:
+                return {"next_month": 3.0, "split": 2.5, "total": 5.5, "basis": "익월 300% + 13회차 250% (치매담은 간병플러스 15년납 550%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.5, "split": 3.5, "total": 8.0, "basis": "익월 450% + 13회차 350% (치매담은 간병플러스 10년납 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif 'h치매' in prod:
+            return {"next_month": 4.5, "split": 0.0, "total": 4.5, "basis": "익월 450% (H치매간병 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '시그니처' in prod and '암' in prod:
+            return {"next_month": 5.0, "split": 8.0, "total": 13.0, "basis": "익월 500% + 13회차 800% (시그니처H암 1,300%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '제로백' in prod:
+            # 제로백H종신은 11월 한화 시책지에 이름이 없다 → 0원
+            return no_life_incentive(comp_name, product_name)
+        elif 'h종신' in prod and '상속' not in prod:
+            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (H종신 5·7년납 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '통합' in prod:
+            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (시그니처H·실속가득H 통합보험 기본 프로모션)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '경영인' in prod:
+            return {"next_month": 1.0, "split": 4.0, "total": 5.0, "basis": "익월 100% + 13회차 400% (경영인H정기 500%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (한화생명 주력 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 시책지 하단 '상기의 보장성 100%' — 개별 표기가 없는 보장성 상품군 포괄 요율
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (시책지 하단 '상기의 보장성' 100%)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 4. DB생명 (수정 전단지 100% 반영)
     elif ('kdb' not in comp) and ('db' in comp or '디비' in comp or '동부' in comp):
@@ -2288,8 +2327,8 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 basis_parts.append(sky_desc)
             return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": " + ".join(basis_parts), "cont_bonus": 0.0, "cont_desc": ""}
 
-        # 6) 건강보험 4종 (생활비암, 내가고른, 건강100, 치매간병 등)
-        else:
+        # 6) 건강보험 4종 (생활비암 · 내가고른 · 건강100 · 초경증 간편 내가고른)
+        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '초경증', '7대질병', '6대질병', '실속n']):
             base_next = 4.0
             base_split = 6.0
             basis_desc = "원수사 1,000%(익월400+13회600)"
@@ -2315,6 +2354,11 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             tot_split = base_split + high_split_rate
             return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": " + ".join(basis_parts), "cont_bonus": 0.0, "cont_desc": ""}
 
+        # 7) 그 밖의 DB생명 상품 — 11월 시책지에 이름이 없으면 시책 0원
+        #    (10년더드림플러스유니버셜종신·백년친구 당신곁에 치매간병 등)
+        else:
+            return no_life_incentive(comp_name, product_name)
+
     # 5. 신한라이프 (2번째장 3~7번 연계는 연속포함 시에만 합산)
     elif '신한' in comp:
         if '모아더드림plus' in prod or '모아더드림플러스' in prod:
@@ -2327,7 +2371,9 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (ONE더드림 변액연금 강화형 100%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '연금' in prod:
             return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (ONE더라이프 연금 200%)", "cont_bonus": 0.0, "cont_desc": ""}
-        else:
+        elif '위너스' in prod:
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (위너스 정기보험)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['통합건강', '원(one)', '슈퍼원', '라이트원', '고당', '케어받는암', '주니어']):
             next_m = 2.5
             base_split_amount = 0
             if premium >= 600000: base_split_amount = 7200000
@@ -2369,10 +2415,13 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 "cont_bonus": cont_rate,
                 "cont_desc": cont_desc
             }
+        else:
+            # 11월 신한 시책지에 이름이 없는 상품(종신보험 세븐Plus·세븐PlusⅡ 등) → 0원
+            return no_life_incentive(comp_name, product_name)
 
     # 6. 라이나생명 (새로담는건강, 브레인케어, 치아/치매, 종신 완벽 판정)
     elif '라이나' in comp:
-        if '새로담는' in prod or '브레인' in prod or ('건강' in prod and '종신' not in prod):
+        if '새로담는' in prod or '브레인' in prod or ('건강' in prod and '종신' not in prod and '치아' not in prod):
             next_m = 3.0
             base_split = 1.0
             split_amount = 0
@@ -2418,7 +2467,7 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             tot_rate = next_m + split_rate
             basis = f"익월 300% + 13회차 구간 {split_amount//10000}만 원({int(split_rate*100)}%)"
             return {"next_month": next_m, "split": split_rate, "total": tot_rate, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
-        else:
+        elif any(k in prod for k in ['채우는', '착한', '간편고지종신']):
             if '7년' in term:
                 return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (THE채우는종신 7년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
             elif '간편' in term or '간편' in prod:
@@ -2429,13 +2478,22 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             elif '10년' in term:
                 return {"next_month": 3.0, "split": 6.5, "total": 9.5, "basis": "익월 300% + 13회차 650% (THE채우는종신 10년납 일반심사 950%)", "cont_bonus": 0.0, "cont_desc": ""}
             else:
-                return {"next_month": 2.5, "split": 1.0, "total": 3.5, "basis": "익월 250% + 13회차 100% (THE건강/착한간편종신 350%)", "cont_bonus": 0.0, "cont_desc": ""}
+                return {"next_month": 2.5, "split": 1.0, "total": 3.5, "basis": "익월 250% + 13회차 100% (THE착한간편종신 350%)", "cont_bonus": 0.0, "cont_desc": ""}
+        else:
+            # 11월 라이나 시책지에 이름이 없는 상품(THE건강해지는종신·전에없던초간편종신·GOLD 등) → 0원
+            return no_life_incentive(comp_name, product_name)
 
     # 7. 미래에셋생명 (건강파트 익월 250% + 구간시상)
     elif '미래' in comp:
         if '연금' in prod:
             rate = 2.0 if premium >= 200000 else (1.0 if premium >= 100000 else 0.0)
             return {"next_month": rate, "split": 0.0, "total": rate, "basis": f"익월 {int(rate*100)}% (변액연금 강화형)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '변액' in prod and '정기' in prod:
+            # 헤리티지 변액정기보험: 11월 미래에셋 시책지 미수록(변액종신·연금만) → 0원
+            return no_life_incentive(comp_name, product_name)
+        elif '치매' in prod or '간병' in prod:
+            # M-케어 치매간병: 11월 시책지 미수록(건강보험·암치료보험만) → 0원
+            return no_life_incentive(comp_name, product_name)
         elif '변액' in prod or '약속' in prod:
             return {"next_month": 1.0, "split": 2.8, "total": 3.8, "basis": "익월 100% + 13회차 280% (변액종신 미래의약속 380%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '상속' in prod or '헤리티지' in prod:
@@ -2477,6 +2535,10 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             return {"next_month": 2.0, "split": 2.0, "total": 4.0, "basis": "익월 200% + 13회차 200% (트리플레벨업 연금 400%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '경영인' in prod_low:
             return {"next_month": 1.0, "split": 1.5, "total": 2.5, "basis": "익월 100% + 13회차 150% (경영인정기Ⅲ 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '7년의약속' in prod_low:
+            # 7년의약속 플러스 평생종신: 11월 KB 시책지 미수록(약속플러스종신만 기재) → 0원
+            # ('약속플러스' 키워드보다 먼저 봐야 300% 분기로 새지 않는다)
+            return no_life_incentive(comp_name, product_name)
         elif '리턴' in prod_low:
             m_y = re.search(r'(\d+)\s*년', term)
             years = int(m_y.group(1)) if m_y else 10
@@ -2487,12 +2549,10 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         elif '약속플러스' in prod_low:
             return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (약속플러스종신 300%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '넥스트' in prod_low:
-            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (넥스트레벨업 연금 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '7년의약속' in prod_low:
-            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (7년의약속 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 2.0, "split": 2.0, "total": 4.0, "basis": "익월 200% + 13회차 200% (넥스트레벨업 연금 400%)", "cont_bonus": 0.0, "cont_desc": ""}
 
         # 딱좋은 건강보험 상품군 (5.10.5, 3.10.5, 3.N.5, 딱좋은 0540, 골든라이프 간병 등)
-        else:
+        elif any(k in prod_low for k in ['딱좋은', '3.n.5', '5.10.5', '3.10.5', '0540', '골든라이프', '치매', '간병', '건강']):
             next_m = 3.0
             
             # 13회차 구간 시상금 (보험료 합산)
@@ -2549,6 +2609,9 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 "cont_bonus": 0.0,
                 "cont_desc": ""
             }
+        else:
+            # 11월 KB 시책지에 이름이 없는 상품 → 0원
+            return no_life_incentive(comp_name, product_name)
 
     # 9. 동양생명 (11월 전단지 및 하단 구간시상 완벽 반영)
     elif '동양' in comp:
@@ -2733,6 +2796,17 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             return {"next_month": 0.0, "split": 0.0, "total": 0.0,
                     "basis": "11월 푸본현대 시책지 미수록 연금 상품 (시상 미적용 — 원수사 확인)",
                     "cont_bonus": 0.0, "cont_desc": ""}
+        if '탑픽' in prod:
+            # MAX 경영인 정기보험 탑픽Ⅱ (55세미만): 간편형 550%(250+300) · 일반형 460%(160+300)
+            if '간편' in gubun or '간편' in prod:
+                return {"next_month": 2.5, "split": 3.0, "total": 5.5, "basis": "익월 250% + 13회차 300% (MAX 경영인정기 탑픽Ⅱ 간편형 550%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 1.6, "split": 3.0, "total": 4.6, "basis": "익월 160% + 13회차 300% (MAX 경영인정기 탑픽Ⅱ 일반형 460%)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '스마트픽' in prod:
+            return {"next_month": 3.0, "split": 6.0, "total": 9.0, "basis": "익월 300% + 13회차 600% (정기보험 스마트픽 900% · 전납기)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '마이픽' in prod:
+            if '10년' in term or '15년' in term:
+                return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (건강보험 마이픽 10·15년납 — 지급율 상이, 공문 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.1, "split": 6.0, "total": 9.1, "basis": "익월 310% + 13회차 600% (건강보험 마이픽 20·30년납 910%)", "cont_bonus": 0.0, "cont_desc": ""}
         if '원픽' in prod:
             base_next = 3.5
             base_split = 1.5
@@ -2753,7 +2827,8 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 basis += " (개인계약: SKY본사법인지원 제외)"
             return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (마이픽 건강 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 11월 푸본현대 시책지에 이름이 없는 상품 → 0원
+            return no_life_incentive(comp_name, product_name)
 
     # 11. KDB생명 (11월 시책지: 연금보험 2종 / 종신보험 4종 / 건강보험 2종 — 연금과 종신을 먼지 분리, v3.8.13)
     elif 'kdb' in comp:
@@ -2761,6 +2836,12 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         # 반드시 종신 판정보다 먼저 본다. '더!행복플러스UP연금'에 '행복플러스'가 들어 있어
         # 종신 800% 분기로 새떤 버그가 있었다(2026-11-18 정우 님 지적).
         if '연금' in prod or '행복드림' in prod or '행복플러스up' in prod:
+            # 영리한 변액연금: 11월 KDB 시책지 연금보험 2종(행복드림·행복플러스UP)에 없는 상품 → 0원
+            # (10년납 미만 150% 분기보다 먼저 봐야 한다)
+            if '영리한' in prod and '3종' not in prod:
+                # '연금3종(영리한·행복드림·행복플러스UP)' 병기 질의는 시책 대상 2종 요율로 계산하고
+                # 영리한 단독 질의만 0원 처리한다.
+                return no_life_incentive(comp_name, product_name)
             years = None
             m_y = re.search(r'(\d+)\s*년', term)
             if m_y:
@@ -2787,12 +2868,14 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             elif '행복드림' in prod:
                 basis += " (출시기념 주차 추가시상은 더!행복플러스UP연금 한정)"
             elif '영리한' in prod:
-                basis += " (영리한 변액연금: 11월 시책지 연금보험 2종 미표기 상품)"
+                # 영리한 변액연금: 11월 시책지 연금보험 2종(행복드림·행복플러스UP)에 없는 상품 → 0원
+                return no_life_incentive(comp_name, product_name)
             return {"next_month": next_rate, "split": split_rate, "total": next_rate + split_rate,
                     "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
         # ── 종신보험 ─────────────────────────────────────────────
         elif '행복세븐' in prod:
-            return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "원수사 600% (익월 400% + 13회차 200% · 20년납 전용)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 더!행복세븐종신: 11월 KDB 시책지 종신보험 4종에 없는 상품 → 0원
+            return no_life_incentive(comp_name, product_name)
         elif '행복플러스' in prod:
             return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "종신 총 800% (익월 400% + 13회차 400% · 10/20년납 일반·간편)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '서포트100' in prod:
@@ -2808,10 +2891,10 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "종신 익월 200% (5/7/10년납)", "cont_bonus": 0.0, "cont_desc": ""}
         elif any(k in prod for k in ['라이프핏', '암만생각해도', '암보험']):
             return {"next_month": 5.0, "split": 7.0, "total": 12.0, "basis": "건강보험 총 1,200% (익월 500% + 13회차 700%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif any(k in prod for k in ['버팀목']):
-            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (11월 시책지 미수록 상품 — 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (11월 시책지 미수록 상품 — 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 버팀목 NEW케어보험·버팀목 치매보장·트리플찬스종신 등
+            # 11월 KDB 시책지(종신 4종)에 이름이 없는 상품 → 0원
+            return no_life_incentive(comp_name, product_name)
 
     # 12. ABL생명
     elif 'abl' in comp:
@@ -2822,6 +2905,9 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 return {"next_month": 3.0, "split": 2.0, "total": 5.0, "basis": "익월 300% + 13차월 200% (우리WON스테이블종신 7년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
             else:
                 return {"next_month": 3.0, "split": 4.0, "total": 7.0, "basis": "익월 300% + 13차월 400% (우리WON스테이블종신 10년납 이상 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif '드림종신iii' in prod.replace(" ", "").lower() or '드림종신Ⅲ' in prod:
+            # 우리WON드림종신III: 11월 ABL 시책지 미수록(더드림종신만 기재) → 0원
+            return no_life_incentive(comp_name, product_name)
         elif any(k in prod for k in ['더드림', '드림종신']):
             if '7년' in term:
                 return {"next_month": 3.0, "split": 1.5, "total": 4.5, "basis": "익월 300% + 13차월 150% (우리WON더드림종신 7년납 450%)", "cont_bonus": 0.0, "cont_desc": ""}
@@ -2840,17 +2926,79 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             return {"next_month": 2.5, "split": 8.0, "total": 10.5, "basis": "익월 250% + 13차월 800% (우리WON 건강/암/간병 10년납 이상 1,050%)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '상속' in prod:
             return {"next_month": 2.0, "split": 2.0, "total": 4.0, "basis": "익월 200% + 13차월 200% (우리WON상속종신 전 납기 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '세븐' in prod:
-            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13차월 400% (우리WON세븐종신 800%)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13차월 300% (ABL생명 기본 보장성 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+            # 우리WON세븐종신 등 11월 ABL 시책지에 이름이 없는 상품 → 0원
+            return no_life_incentive(comp_name, product_name)
 
-    # 13. 농협생명
+    # 13. 농협생명 (11월 시책지 상품별 요율 · 미수록 상품은 0원, v3.8.17)
     elif '농협' in comp:
-        if '종신' in prod:
-            return {"next_month": 4.5, "split": 1.5, "total": 6.0, "basis": "익월 450% + 13회차 150% (투스텝NH종신 600%)", "cont_bonus": 0.0, "cont_desc": ""}
-        else:
-            return {"next_month": 5.0, "split": 12.0, "total": 17.0, "basis": "익월 500% + 13회차 1,200% (건강플러스통합 1,700%)", "cont_bonus": 0.0, "cont_desc": ""}
+        is_std = ('표준' in gubun) or ('표준' in prod)
+        is_renew = ('갱신' in gubun) or ('갱신' in prod)
+
+        # 투스텝NH종신 (10년 600% · 12년 500%)
+        if '투스텝' in prod:
+            if '12년' in term:
+                return {"next_month": 3.0, "split": 2.0, "total": 5.0, "basis": "익월 300% + 13회차 200% (투스텝NH종신 12년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.5, "split": 1.5, "total": 6.0, "basis": "익월 450% + 13회차 150% (투스텝NH종신 10년납 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 건강채움NH암종신 (일반형 700% · 스텝형 500%)
+        if '건강채움' in prod:
+            if '스텝' in gubun or '스텝' in prod:
+                return {"next_month": 4.5, "split": 0.5, "total": 5.0, "basis": "익월 450% + 13회차 50% (건강채움NH암종신 스텝형 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.5, "split": 2.5, "total": 7.0, "basis": "익월 450% + 13회차 250% (건강채움NH암종신 일반형 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 마이초이스NH종신 (10년 600% · 12년/20년 500%)
+        if '마이초이스' in prod:
+            if '10년' in term:
+                return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (마이초이스NH종신 10년납 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.5, "split": 1.5, "total": 5.0, "basis": "익월 350% + 13회차 150% (마이초이스NH종신 12·20년납 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 건강플러스NH통합보험 (해약미지급 10년 1,700% / 15년이상 1,590%, 표준형 200%)
+        if '건강플러스' in prod:
+            if is_std:
+                return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (건강플러스NH통합 표준형)", "cont_bonus": 0.0, "cont_desc": ""}
+            if '10년' in term:
+                return {"next_month": 5.0, "split": 12.0, "total": 17.0, "basis": "익월 500% + 13회차 1,200% (건강플러스NH통합 해약미지급 10년 1,700%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.9, "split": 11.0, "total": 15.9, "basis": "익월 490% + 13회차 1,100% (건강플러스NH통합 해약미지급 15년이상 1,590%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # NH올원더풀간병안심요양 (해약미지급 800% · 표준형 550%, 30년 표준형 200%)
+        if '간병' in prod:
+            if is_std:
+                if '30년' in term:
+                    return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (올원더풀간병안심 표준형 30년)", "cont_bonus": 0.0, "cont_desc": ""}
+                return {"next_month": 2.0, "split": 3.5, "total": 5.5, "basis": "익월 200% + 13회차 350% (올원더풀간병안심 표준형 550%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (올원더풀간병안심 해약미지급 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # NH올원더풀기억안심치매 (10/15년 900% · 20년 720%)
+        if '치매' in prod:
+            if '20년' in term:
+                return {"next_month": 2.7, "split": 4.5, "total": 7.2, "basis": "익월 270% + 13회차 450% (기억안심치매 20년 720%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.0, "split": 6.0, "total": 9.0, "basis": "익월 300% + 13회차 600% (기억안심치매 10·15년 900%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 핑크케어NH건강보험 350%
+        if '핑크케어' in prod:
+            return {"next_month": 2.0, "split": 1.5, "total": 3.5, "basis": "익월 200% + 13회차 150% (핑크케어NH건강 350%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 치료비안심해2NH건강 (갱신 450% · 비갱신 500%)
+        if '치료비안심' in prod:
+            if is_renew:
+                return {"next_month": 3.0, "split": 1.5, "total": 4.5, "basis": "익월 300% + 13회차 150% (치료비안심해2 갱신형 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.8, "split": 1.2, "total": 5.0, "basis": "익월 380% + 13회차 120% (치료비안심해2 비갱신형 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 백세팔팔NH건강 (갱신 450% · 비갱신 400%)
+        if '백세팔팔' in prod:
+            if is_renew:
+                return {"next_month": 4.0, "split": 0.5, "total": 4.5, "basis": "익월 400% + 13회차 50% (백세팔팔NH건강 갱신형 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (백세팔팔NH건강 비갱신형 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 9988NH건강 (갱신 450% · 비갱신 400%)
+        if '9988' in prod:
+            if is_renew:
+                return {"next_month": 4.0, "split": 0.5, "total": 4.5, "basis": "익월 400% + 13회차 50% (9988NH건강 갱신형 450%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (9988NH건강 비갱신형 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 행복한NH경영인정기 (표준형 150% · 해약일부지급 300%)
+        if '경영인' in prod:
+            if is_std:
+                return {"next_month": 1.5, "split": 0.0, "total": 1.5, "basis": "익월 150% (행복한NH경영인정기 표준형)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 1.5, "split": 1.5, "total": 3.0, "basis": "익월 150% + 13회차 150% (행복한NH경영인정기 해약일부지급 300%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 그 외 건강보험 (10년미만 200% · 20년이상 150%) — 시책지 '그 외 건강보험' 행
+        if '건강' in prod:
+            if '10년' in term or '미만' in term:
+                return {"next_month": 1.5, "split": 0.5, "total": 2.0, "basis": "익월 150% + 13회차 50% (시책지 '그 외 건강보험' 10년미만 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 1.5, "split": 0.0, "total": 1.5, "basis": "익월 150% (시책지 '그 외 건강보험' 20년이상 150%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 11월 농협 시책지에 이름이 없는 상품(스텝업700NH종신 등) → 0원
+        return no_life_incentive(comp_name, product_name)
 
     # 14. 교보생명
     elif '교보' in comp:
@@ -2889,9 +3037,10 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         elif '모두지킴' in prod:
             return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13차월 300% (모두지킴종신 7~12년납 600% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
 
-        # 7) 기타 교보 기본 보장성 (평생건강, K-실속종신, K-밸류업, 치매간병안심 등)
+        # 7) 그 밖의 교보 상품 (평생건강, K-실속종신, K-밸류업, 치매간병안심 등)
+        #    11월 시책지에 이름이 없는 상품 → 시책 0원
         else:
-            return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (교보 보장성 기본 600% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
+            return no_life_incentive(comp_name, product_name)
 
     # 15. 하나생명 (11월 시책지: THE연결된 종신 + 건강 전상품 — 연금 상품은 시책 없음, v3.8.13)
     elif '하나' in comp:
@@ -2900,9 +3049,13 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                     "basis": "11월 하나생명 시책지에 연금 상품 없음 (시상 미적용 — 원수사 확인)",
                     "cont_bonus": 0.0, "cont_desc": ""}
         if 'the연결된' in prod or '연결된종신' in prod:
-            if '15년' in term or '20년' in term:
+            if '20년' in term:
                 return {"next_month": 2.5, "split": 1.5, "total": 4.0,
-                        "basis": "THE연결된 종신 15/20년납 익월 250% + 13회차 150%",
+                        "basis": "THE연결된 종신 20년납 익월 250% + 13회차 150%",
+                        "cont_bonus": 0.0, "cont_desc": ""}
+            if '15년' in term:
+                return {"next_month": 3.0, "split": 1.5, "total": 4.5,
+                        "basis": "THE연결된 종신 15년납 익월 300% + 13회차 150%",
                         "cont_bonus": 0.0, "cont_desc": ""}
             return {"next_month": 4.5, "split": 0.5, "total": 5.0,
                     "basis": "THE연결된 종신 5/7/10년납 익월 450% + 13회차 50%",
@@ -2915,11 +3068,40 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 "basis": "11월 하나생명 시책지 미수록 상품 (시상 미적용 — 원수사 확인)",
                 "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 16. IM라이프
+    # 16. IM라이프 (11월 시책지: 종신 1종 / 연금 4종 / 치매간병 1종 — 그 외 0원, v3.8.17)
     elif 'im' in comp or '아이엠' in comp:
+        # ── 치매간병: iM Active Care 치매간병 (10·15년 800%, 20·30년 1,500%) ──
+        if '치매간병' in prod or 'activecare' in prod or '마이액티브' in prod:
+            if '20년' in term or '30년' in term:
+                return {"next_month": 5.0, "split": 10.0, "total": 15.0, "basis": "익월 500% + 13회차 1,000% (iM Active Care 치매간병 20·30년 1,500%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "익월 400% + 13회차 400% (iM Active Care 치매간병 10·15년 800%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # ── 연금: 마이솔루션AI S(변액) · 트래블(변액) ──
+        if '마이솔루션' in prod:
+            if '12년' in term:
+                return {"next_month": 1.5, "split": 0.0, "total": 1.5, "basis": "익월 150% (마이솔루션AI S 12년↑, 보험료 20만↑)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 0.5, "split": 0.0, "total": 0.5, "basis": "익월 50% (마이솔루션AI S 10년↑, 보험료 20만↑)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '트래블' in prod:
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (트래블 변액연금 5·7년납)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '세이프' in prod:
+            if '10년' in term:
+                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (세이프 비변액연금 10년↑)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (세이프 비변액연금 5·7년납)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '플러스프로' in prod or 'pluspro' in prod:
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (PlusPRO 연금 5년납)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '스타트' in prod or '마스터' in prod:
+            if '15년' in term:
+                return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (스타트·마스터 변액연금 15년↑)", "cont_bonus": 0.0, "cont_desc": ""}
+            if '10년' in term:
+                return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (스타트·마스터 변액연금 10년↑)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (스타트·마스터·트래블 변액연금 5·7년납)", "cont_bonus": 0.0, "cont_desc": ""}
+        # ── 종신: 당당한인생종신 (5년 일반 300%·간편 200%, 7년 일반 350%·간편 300%) ──
         if '당당한' in prod:
-            base_next = 3.0 if '7년' in term else 2.5
-            base_split = 1.0 if '7년' in term else 0.0
+            is_ganpyeon = ('간편' in gubun) or ('간편' in prod)
+            if '7년' in term:
+                base_next = 2.5 if is_ganpyeon else 3.5
+            else:
+                base_next = 2.0 if is_ganpyeon else 3.0
+            base_split = 0.0
             is_corp = (contract_type == "법인")
             sky_amount, sky_desc = get_sky_jongshin_bonus("IM라이프", prod, term, premium, is_corp=is_corp)
             sky_next = 0.0
@@ -2936,10 +3118,29 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
             elif not is_corp and '7년' in term:
                 basis += " (개인계약: SKY본사법인지원 제외)"
             return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
-        else:
-            return {"next_month": 2.5, "split": 2.5, "total": 5.0, "basis": "익월 250% + 13회차 250% (IM라이프 주력 500%)", "cont_bonus": 0.0, "cont_desc": ""}
+        # 그 밖의 IM 상품(Plus세븐UP종신·더행복한종신·든든한인생치매 등)
+        # 11월 시책지에 이름이 없는 상품 → 0원
+        return no_life_incentive(comp_name, product_name)
 
-    return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (기본 전략 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+    # 17. IBK연금보험 (11월 시책: 연금액평생보증 변액 50/220/260% · 평생든든 변액 50% · 하이브리드 연금저축 30/50%)
+    elif 'ibk' in comp:
+        if '평생보증' in prod:
+            if '12년' in term:
+                return {"next_month": 2.6, "split": 0.0, "total": 2.6, "basis": "익월 260% (연금액 평생보증받는 변액연금 12년납 이상)", "cont_bonus": 0.0, "cont_desc": ""}
+            if '10년' in term or '11년' in term:
+                return {"next_month": 2.2, "split": 0.0, "total": 2.2, "basis": "익월 220% (연금액 평생보증받는 변액연금 10·11년납)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 0.5, "split": 0.0, "total": 0.5, "basis": "익월 50% (연금액 평생보증받는 변액연금 5·7년납)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '하이브리드' in prod:
+            if '10년' in term:
+                return {"next_month": 0.5, "split": 0.0, "total": 0.5, "basis": "익월 50% (IBK하이브리드 연금저축 10년납 이상)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 0.3, "split": 0.0, "total": 0.3, "basis": "익월 30% (IBK하이브리드 연금저축 5·7년납)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '평생든든' in prod:
+            return {"next_month": 0.5, "split": 0.0, "total": 0.5, "basis": "익월 50% (평생든든 변액연금 · 전납기)", "cont_bonus": 0.0, "cont_desc": ""}
+        # (무)IBK NEW 프리미엄 연금보험·(무)IBK 프리미엄 연금보험: 11월 시책지 미수록 → 0원
+        return no_life_incentive(comp_name, product_name)
+
+    # 18. 그 밖의 회사 · 상품 — 시책지 근거가 없으므로 0원
+    return no_life_incentive(comp_name, product_name)
 
 
 def calculate_life(
@@ -4223,6 +4424,12 @@ def is_wholelife_product(product_name: str) -> bool:
 
 TOP10_EXACT_TERM_RE = re.compile(r'^\d{1,2}년$')
 
+# 20년납 조회에서 함께 볼 '20년납 이상' 표기들 — '20년납↑'·'20년납이상'·'20년이상'·'20년 이상'·
+# 슬래시 병기('20년/30년납'·'15년/20년납')까지 20년납을 포함하는 행으로 본다. (v3.8.17)
+TOP10_AT_OR_ABOVE_20_RE = re.compile(
+    r'^(?:20년(?:납)?\s*(?:이상|↑|~)?|(?:15|20)년/20년(?:납)?|20년/(?:25|30)년납?|20년[&,]\s*(?:25|30)년납?)$'
+)
+
 
 def normalize_top10_term(term_text: str) -> str:
     """조견표 납기 표기를 비교용으로 정규화한다 — '5년납' == '5년' (납 기재만 다른 동일 납기).
@@ -4253,6 +4460,15 @@ def resolve_top10_term(terms: List[str], requested: str) -> Optional[str]:
             continue
         if normalize_top10_term(raw) == req:
             return raw
+    # 20년납은 '20년납 이상' 표기 행까지 같은 납기로 본다 (정우 님 지시 2026-11-18:
+    # "20년납 이상이면 20년납으로 넣는게맞아") — 5/7/10/15년납은 정확 일치만 유지한다.
+    if req == "20년":
+        for t in (terms or []):
+            raw = str(t or "").strip()
+            if not raw or raw == "-":
+                continue
+            if TOP10_AT_OR_ABOVE_20_RE.match(normalize_top10_term(raw)):
+                return raw
     return None
 
 
