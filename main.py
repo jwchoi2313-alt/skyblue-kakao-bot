@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.15")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.16")
 
 app.add_middleware(
     CORSMiddleware,
@@ -4109,7 +4109,7 @@ def build_fallback_response() -> Dict[str, Any]:
 
 
 # ==========================================
-# 4-D. 종신보험 총수령 TOP10 순위 (v3.8.15)
+# 4-D. 종신보험 총수령 TOP10 순위 (v3.8.16)
 # ==========================================
 # 정우 님 지시(2026-11-18):
 #   "5년납 종신보험 총수령 top10 / 7년납 종신보험, 10년납 종신보험 / 이런질문엔 10개씩
@@ -4165,19 +4165,18 @@ def clear_top10_session(user_id: str) -> None:
 
 
 def with_top10_quick(quick_replies, limit: int = TOP10_QUICK_MAX) -> List[Dict[str, Any]]:
-    """모든 주요 응답 하단에 [🏆 종신TOP10] 버튼을 상시 유지한다 (v3.8.15).
+    """모든 주요 응답 하단에 [🏆 종신TOP10] 버튼을 상시 유지한다 (v3.8.16).
 
     - 이미 있으면 중복 추가하지 않는다(멱등).
-    - 카카오톡 quickReplies 최대 10개를 넘지 않도록 앞쪽 버튼만 줄이고
-      종신TOP10은 항상 마지막에 남긴다.
+    - 정우 님 지시(2026-11-18): "종신top10을 아래창 맨앞으로 빼줘" → 항상 quickReplies[0].
+    - 카카오톡 quickReplies 최대 10개를 넘지 않도록 뒤쪽 버튼부터 줄인다.
     """
     items = [dict(q) for q in (quick_replies or []) if isinstance(q, dict)]
     items = [q for q in items if (q.get("messageText") or "").strip() != "종신TOP10"]
     cap = max(int(limit) - 1, 0)
     if len(items) > cap:
         items = items[:cap]
-    items.append(dict(TOP10_QUICK))
-    return items
+    return [dict(TOP10_QUICK)] + items
 
 
 def is_top10_query(utterance: str) -> bool:
@@ -4222,56 +4221,38 @@ def is_wholelife_product(product_name: str) -> bool:
     return True
 
 
-def resolve_top10_term(terms: List[str], requested: str) -> Optional[str]:
-    """상품(구분)이 실제 가진 납기 중 요청 납기에 해당하는 조견표 납기를 고른다.
+TOP10_EXACT_TERM_RE = re.compile(r'^\d{1,2}년$')
 
-    기존 resolve_term_against_valid_terms의 부분 문자열 판정('15년납' ⊃ '5년납')은
-    상품 하나만 놓고 볼 때 다른 연수까지 끌어오므로, TOP10은 연수 기준으로만 판정한다.
+
+def normalize_top10_term(term_text: str) -> str:
+    """조견표 납기 표기를 비교용으로 정규화한다 — '5년납' == '5년' (납 기재만 다른 동일 납기).
+
+    공백·전각공백·'납' 자만 지운다. 범위/이상/미만 같은 조건어는 그대로 남겨
+    '5년납이상'·'5~6년'·'10년납 미만'이 '5년납'과 같아지지 않게 한다.
     """
-    req = (requested or "").replace(" ", "")
-    if not req:
+    t = (term_text or "").replace(" ", "").replace("\u00a0", "").replace("　", "")
+    return t.replace("납", "")
+
+
+def resolve_top10_term(terms: List[str], requested: str) -> Optional[str]:
+    """상품(구분)이 실제 가진 납기 중 요청 납기에 **정확히 명시된** 조견표 납기만 고른다 (v3.8.16).
+
+    정우 님 지시(2026-11-18):
+      "5년납을 선택했는데 10년납 종신보험들이 순위에 올라있어.
+       s환산 조견표에 5년납이라고 명시되어있는것만 모아서 계산하도록 해"
+    → '5년납이상'·'5년납 이상'·'5~6년'·'10년납 미만'·'20년↑' 같은 범위형·조건형·
+      다른 납기 폴백은 절대 쓰지 않는다. 정규화 결과가 정확히 '5년'/'7년'/'10년'/'15년'/'20년'
+      (즉 '5년납'/'7년납'/'10년납'/'15년납'/'20년납')인 행만 매칭한다.
+    """
+    req = normalize_top10_term(requested)
+    if not req or not TOP10_EXACT_TERM_RE.match(req):
         return None
-    valid = [t.strip() for t in (terms or [])
-             if t and t.strip() and t.strip() != '-' and '세' not in t]
-    for t in valid:
-        if t.replace(" ", "") == req:
-            return t
-    req_y = _top10_years(req)
-    if req_y is None:
-        return None
-    # '5년' = '5년납' 동일 연수 표기
-    for t in valid:
-        if t.replace(" ", "") in (f"{req_y}년", f"{req_y}년납"):
-            return t
-    # 구간 납기 (5~6년, 7~9년, 10-14년, 15-19년)
-    for t in valid:
-        m = re.search(r'(\d+)\s*[~\-–]\s*(\d+)\s*년', t)
-        if m and int(m.group(1)) <= req_y <= int(m.group(2)):
-            return t
-    # N년 이상 / ↑ — 요청 연수를 포함하는 가장 높은 기준
-    ge = []
-    for t in valid:
-        tt = t.replace(" ", "")
-        y = _top10_years(tt)
-        if y is None:
+    for t in (terms or []):
+        raw = str(t or "").strip()
+        if not raw or raw == "-":
             continue
-        if ('이상' in tt or '↑' in tt) and req_y >= y:
-            ge.append((y, t))
-    if ge:
-        return max(ge, key=lambda c: c[0])[1]
-    # N년 미만 / 이하 — 요청 연수를 포함하는 가장 낮은 기준
-    le = []
-    for t in valid:
-        tt = t.replace(" ", "")
-        y = _top10_years(tt)
-        if y is None:
-            continue
-        if '미만' in tt and req_y < y:
-            le.append((y, t))
-        elif '이하' in tt and req_y <= y:
-            le.append((y, t))
-    if le:
-        return min(le, key=lambda c: c[0])[1]
+        if normalize_top10_term(raw) == req:
+            return raw
     return None
 
 
@@ -4306,7 +4287,8 @@ def _top10_prod_label(prod_full: str, gubun: str = "") -> str:
 def collect_wholelife_top10(term_label: str, premium: int = TOP10_DEFAULT_PREMIUM) -> List[Dict[str, Any]]:
     """전 생보사 종신보험을 라이브 정산 엔진으로 계산해 총수령액 내림차순으로 돌려준다.
 
-    상품(구분/형) 하나당 한 줄로 집계하며, 해당 납기가 조견표에 있는 상품만 대상이다.
+    상품(구분/형) 하나당 한 줄로 집계하며, 조견표 term에 해당 납기가 **정확히 명시된**
+    상품만 대상이다 (v3.8.16 — resolve_top10_term 참조).
     """
     groups: Dict[Tuple[str, str, str], List[Dict[str, Any]]] = {}
     for row in LIFE_PRODUCTS:
@@ -4395,8 +4377,26 @@ def build_top10_term_select_response(premium: int = TOP10_DEFAULT_PREMIUM) -> Di
     }
 
 
+def _top10_card_item(rank: int, row: Dict[str, Any]) -> Dict[str, Any]:
+    """listCard 한 줄 — 순위·회사명·상품명(구분)·총수령액·수수료/시상 요약."""
+    c = row.get("calc") or {}
+    total = c.get("grand_total", 0)
+    comm = c.get("total_comm", 0)
+    inc_rate = c.get("total_inc_rate", 0.0)
+    return {
+        "title": f"{rank}위 {row['company']} {row['label']}",
+        "description": f"총 {total:,}원 · 수수료 {comm:,}원 · 시상 {inc_rate:,.0f}%",
+    }
+
+
 def build_top10_list_response(term_label: str, premium: int = TOP10_DEFAULT_PREMIUM) -> Dict[str, Any]:
-    """지정 납기의 종신보험 총수령액 상위 10개를 순위대로 보여 준다."""
+    """지정 납기의 종신보험 총수령액 상위 10개를 카드(캐러셀) 형식으로 보여 준다 (v3.8.16).
+
+    정우 님 지시(2026-11-18):
+      "카드형식으로 보기편하게 해주고 근거자료는 굳이 안넣어도 돼."
+    → simpleText 순위 목록 대신 listCard 2장(1~5위 / 6~10위) 캐러셀로 내보내고,
+      두 번째 말풍선의 '근거자료/산출근거' 문구는 넣지 않는다.
+    """
     term_label = (term_label or "").strip()
     premium = int(premium or TOP10_DEFAULT_PREMIUM)
     prem_man = premium // 10000
@@ -4417,6 +4417,7 @@ def build_top10_list_response(term_label: str, premium: int = TOP10_DEFAULT_PREM
     if not rows:
         text = (
             f"🔍 {term_label} 종신보험 순위를 낼 조견표 상품이 없습니다.\n\n"
+            "S환산 조견표에 해당 납기가 명시된 상품만 순위에 올립니다.\n"
             "5년납·7년납·10년납·15년납·20년납 중에서 선택해 주세요."
         )
         return {
@@ -4428,38 +4429,41 @@ def build_top10_list_response(term_label: str, premium: int = TOP10_DEFAULT_PREM
         }
 
     top = rows[:10]
-    lines = [
-        f"🏆 종신보험 총수령 TOP10 · {term_label}",
-        f"기준: 월 {prem_str} · 수수료+시상 합계 (개인·단건)",
-        f"※ 17개 생보사 종신 {len(rows)}개 상품(구분) 중 총수령 상위 {len(top)}개",
-        "",
-    ]
-    for i, r in enumerate(top, 1):
-        total = r["calc"].get("grand_total", 0)
-        rate = int(round(total * 100 / premium)) if premium else 0
-        lines.append(f"{i}위 {r['company']} {r['label']} {total:,}원 ({rate:,}%)")
-    lines.append("")
-    lines.append("👉 상품명을 그대로 입력하시면 그 상품만 단건 상세(익월/분할·시상)로 계산해 드립니다.")
-    main_text = "\n".join(lines)
+    cards: List[Dict[str, Any]] = []
+    # 카카오 carousel 안의 listCard는 items가 최대 4개까지만 허용된다
+    # (응답 타입 문서: listCard items '최대 5개 · 케로셀형: 최대 4개').
+    # 10개를 빠짐없이 보여주려면 4-4-2 세 장으로 나눠야 5위·10위가 잘리지 않는다.
+    for start in range(0, len(top), 4):
+        chunk = top[start:start + 4]
+        start_rank = start + 1
+        end_rank = start + len(chunk)
+        header: Dict[str, Any] = {
+            "title": f"🏆 {term_label} 종신 TOP10 ({prem_str}) · {start_rank}~{end_rank}위",
+        }
+        if start == 0:
+            header["description"] = f"17개 생보사 종신 {len(rows)}개 상품 중 상위 {len(top)}개"
+        cards.append({
+            "header": header,
+            "items": [_top10_card_item(start_rank + i, r) for i, r in enumerate(chunk)],
+        })
 
-    detail_lines = [f"🔎 상위 3개 상세 ({term_label} · 월 {prem_str})"]
+    # 두 번째 말풍선: 상위 3개의 익월/분할만 간단히 (근거·산출근거 문구는 넣지 않는다)
+    detail_lines = [f"💰 상위 3개 익월·분할 ({term_label} · 월 {prem_str})"]
     for i, r in enumerate(top[:3], 1):
         c = r["calc"]
-        basis = (c.get("basis_desc") or "").strip()
-        if len(basis) > 70:
-            basis = basis[:69] + "…"
         detail_lines.append(f"{i}위 {r['company']} {r['label']}")
-        detail_lines.append(f"  · 총 {c.get('grand_total', 0):,}원 (시상 {c.get('total_inc_rate', 0):,.0f}%)")
-        detail_lines.append(f"  · 익월 {c.get('total_next_month', 0):,}원 · 분할/13회 {c.get('total_split', 0):,}원")
-        if basis:
-            detail_lines.append(f"  · 근거 {basis}")
+        detail_lines.append(
+            f"  · 익월 {c.get('total_next_month', 0):,}원 · 분할/13회 {c.get('total_split', 0):,}원"
+        )
+    detail_lines.append("")
+    detail_lines.append("👉 상품명을 그대로 입력하시면 그 상품만 단건 상세로 계산해 드립니다.")
     detail_text = "\n".join(detail_lines)
 
     return {
         "version": "2.0",
         "template": {
             "outputs": [
-                {"simpleText": {"text": main_text}},
+                {"carousel": {"type": "listCard", "items": cards}},
                 {"simpleText": {"text": detail_text}},
             ],
             "quickReplies": with_top10_quick(quick_replies),
