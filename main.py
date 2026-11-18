@@ -922,6 +922,7 @@ def clean_product_display_name(prod_name: str) -> str:
     cleaned = re.sub(r'\(.*?\)', '', prod_name)
     cleaned = re.sub(r'가입금액\s*[:：]?\s*.*', '', cleaned)
     cleaned = re.sub(r'[,\/].*', '', cleaned)
+    cleaned = re.sub(r'[\(\)]', ' ', cleaned)   # 짝이 안 맞은 괄호 잔여물 제거 (v3.8.13)
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
     return cleaned if cleaned else prod_name
 
@@ -1092,7 +1093,7 @@ def normalize_text(text: str) -> str:
         t = re.sub(rf'\b{en}\b|{en}', ko, t)
     t = t.replace('ⅲ', '3').replace('ⅱ', '2').replace('ⅰ', '1')
     t = t.replace('iii', '3').replace('ii', '2').replace('i', '1')
-    return re.sub(r'[\s\(\)\[\]\{\}\-\_\,\.\:\/\+\#\*\~]', '', t)
+    return re.sub(r'[\s\(\)\[\]\{\}\-\_\,\.\:\/\+\#\*\~\!]', '', t)
 
 GUBUN_KEYWORDS = [
     '1/2종', '1,2종', '1·2종', '1종', '2종', '3종',
@@ -1507,7 +1508,7 @@ def _find_candidate_products_core(company: str, utterance: str) -> List[Dict[str
     # (같은 환산율 병기 상품은 wrapper에서 합쳐져 상품 선택 없이 계산된다 — v3.8.13)
     if category_pool:
         cat_words = {normalize_text(w) for w in CATEGORY_BARE_WORDS.get(query_category, [])}
-        if q_norm_raw in cat_words:
+        if q_norm_raw in cat_words or re.search(r'(연금|종신|건강|암|치매|간병)\s*\d+\s*종', utterance):
             return sort_major_products_first(comp_clean, sheet_prods)
 
     # [0단계 우선 검증] 원본 정제 텍스트 그대로 정확히 일치하는 단일 상품이 있으면 즉시 반환 (루프 방지)
