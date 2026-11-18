@@ -1360,10 +1360,14 @@ def merge_identical_candidates(cands: List[Dict[str, Any]]) -> List[Dict[str, An
         return cands
     base = dict(cands[0])
     base['items'] = list(cands[0]['items'])
-    short_names = [clean_prod_short_name(p['full_product']) for p in cands]
+    short_names = []
+    for p in cands:
+        nm = clean_prod_short_name(p['full_product'])
+        nm = nm.replace('변액연금', '').replace('더!', '').replace(' ', '')
+        short_names.append(nm or p['full_product'][:8])
     cat = product_category_of(cands[0]['full_product'])
     label = f"{cat}{len(cands)}종" if cat else "병기상품"
-    base['full_product'] = f"{label} (" + " · ".join(short_names) + ")"
+    base['full_product'] = f"{label} (" + "·".join(short_names) + ")"
     base['merged_group'] = [p['full_product'] for p in cands]
     base['search_keys'] = set().union(*[set(p.get('search_keys') or []) for p in cands])
     base['terms'] = list(cands[0].get('terms', []))
