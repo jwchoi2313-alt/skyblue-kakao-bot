@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.14")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.15")
 
 app.add_middleware(
     CORSMiddleware,
@@ -3359,12 +3359,12 @@ def build_flyer_response(comp_name: str, week: Optional[str] = None) -> Dict[str
                     }
                 }
             ],
-            "quickReplies": [
+            "quickReplies": with_top10_quick([
                 {"messageText": "사용법", "action": "message", "label": "💡 사용법 (회사 상품 금액)"},
                 {"messageText": f"{matched_k} 10만원", "action": "message", "label": f"{matched_k} 10만 계산"},
                 {"messageText": f"{matched_k} 20만원", "action": "message", "label": f"{matched_k} 20만 계산"},
                 {"messageText": "도움말", "action": "message", "label": "💡 도움말"}
-            ]
+            ])
         }
     }
 
@@ -3503,7 +3503,7 @@ def build_ask_similar_product_response(comp: str, candidates: list, premium: int
                     }
                 }
             ],
-            "quickReplies": quick_replies
+            "quickReplies": with_top10_quick(quick_replies)
         }
     }
 
@@ -3557,7 +3557,7 @@ def build_ask_gubun_response(comp: str, prod_group: dict, premium: int, term: st
                     }
                 }
             ],
-            "quickReplies": quick_replies
+            "quickReplies": with_top10_quick(quick_replies)
         }
     }
 
@@ -3606,7 +3606,7 @@ def build_ask_term_response(comp: str, prod_name: str, premium: int, terms: List
                     }
                 }
             ],
-            "quickReplies": quick_replies
+            "quickReplies": with_top10_quick(quick_replies)
         }
     }
 
@@ -3652,7 +3652,7 @@ def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, te
                     }
                 }
             ],
-            "quickReplies": [
+            "quickReplies": with_top10_quick([
                 {
                     "messageText": " ".join(msg_base + ["법인계약"]),
                     "action": "message",
@@ -3668,7 +3668,7 @@ def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, te
                     "action": "message",
                     "label": "💡 사용법 안내"
                 }
-            ]
+            ])
         }
     }
 
@@ -3702,10 +3702,10 @@ def build_no_category_response(comp: str, cat: str, all_products: List[Dict[str,
         "version": "2.0",
         "template": {
             "outputs": [{"simpleText": {"text": text}}],
-            "quickReplies": [
+            "quickReplies": with_top10_quick([
                 {"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"},
                 {"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"},
-            ],
+            ]),
         },
     }
 
@@ -3751,7 +3751,7 @@ def build_ask_product_and_amount_response(comp: str) -> Dict[str, Any]:
         "version": "2.0",
         "template": {
             "outputs": [{"simpleText": {"text": guide_text}}],
-            "quickReplies": quick_replies[:6]
+            "quickReplies": with_top10_quick(quick_replies[:6])
         }
     }
 
@@ -3785,7 +3785,7 @@ def build_ask_amount_response(comp: str, prod_name: str = "", term: str = "") ->
         "version": "2.0",
         "template": {
             "outputs": [{"simpleText": {"text": guide_text}}],
-            "quickReplies": quick_replies[:6]
+            "quickReplies": with_top10_quick(quick_replies[:6])
         }
     }
 
@@ -3818,7 +3818,7 @@ def build_heungkuk_continuous_inquiry_response() -> Dict[str, Any]:
         "version": "2.0",
         "template": {
             "outputs": [{"simpleText": {"text": guide_text}}],
-            "quickReplies": quick_replies[:6]
+            "quickReplies": with_top10_quick(quick_replies[:6])
         }
     }
 
@@ -3956,12 +3956,12 @@ def build_carousel_compare_response(res1: Dict[str, Any], res2: Dict[str, Any]) 
                     }
                 }
             ],
-            "quickReplies": [
+            "quickReplies": with_top10_quick([
                 {"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"},
                 {"messageText": "DB생명 100만", "action": "message", "label": "DB생명 100만"},
                 {"messageText": "KB손보 20만", "action": "message", "label": "KB손보 20만"},
                 {"messageText": "도움말", "action": "message", "label": "💡 사용법"}
-            ]
+            ])
         }
     }
 
@@ -4075,7 +4075,7 @@ def build_compare_response(results: List[Dict[str, Any]], premium: int, continuo
                     }
                 }
             ],
-            "quickReplies": quick_replies
+            "quickReplies": with_top10_quick(quick_replies)
         }
     }
 
@@ -4094,16 +4094,409 @@ def build_fallback_response() -> Dict[str, Any]:
                     }
                 }
             ],
-            "quickReplies": [
+            "quickReplies": with_top10_quick([
                 {"messageText": "DB생명 100만", "action": "message", "label": "DB생명 100만"},
                 {"messageText": "KB손보 20만", "action": "message", "label": "KB손보 20만"},
                 {"messageText": "흥국생명 오튼튼 20만 20년납", "action": "message", "label": "흥국 오튼튼 20만"},
                 {"messageText": "동양생명 쑥쑥어린이 30만 20년납", "action": "message", "label": "동양 쑥쑥 30만"},
                 {"messageText": "한화생명 건강더한종신 50만원", "action": "message", "label": "한화 건강더한 50만"},
                 {"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"}
-            ]
+            ])
         }
     }
+
+
+# ==========================================
+# 4-D. 종신보험 총수령 TOP10 순위 (v3.8.15)
+# ==========================================
+# 정우 님 지시(2026-11-18):
+#   "5년납 종신보험 총수령 top10 / 7년납 종신보험, 10년납 종신보험 / 이런질문엔 10개씩
+#    총 수령액 순위로 답변해주고, 챗봇하단에 이 내용은 항상 떠있어서 누르면 바로 답이 나오게 해줘."
+#   "하단에 약식으로는 종신top10 이고 누르면 5년 7년 10년 15년 20년 이런식으로 선택하게해줘."
+# - 순위는 라이브 정산 엔진(calculate_life + get_life_incentive)을 그대로 호출해 구한
+#   최종 총수령액(수수료+시상) 내림차순이다. 임의 요율을 쓰지 않는다.
+TOP10_TERMS = ["5년납", "7년납", "10년납", "15년납", "20년납"]
+TOP10_DEFAULT_PREMIUM = 1000000      # 금액 미지정 시 월 100만원 기준
+TOP10_QUICK_MAX = 10                 # 카카오톡 quickReplies 최대 10개
+TOP10_QUICK = {"messageText": "종신TOP10", "action": "message", "label": "🏆 종신TOP10"}
+TOP10_TOKEN_RE = re.compile(r'top\s*10|탑\s*10|탑텐|top\s*텐', re.IGNORECASE)
+
+# 조견표 시트명 → 화면 표기 회사명 (생보 17개사)
+TOP10_COMPANY_NAMES = {
+    '흥국': '흥국생명', '한화': '한화생명', 'DB': 'DB생명', '신한': '신한라이프',
+    'KB': 'KB라이프', '라이나': '라이나생명', '메트': '메트라이프', '동양': '동양생명',
+    '교보': '교보생명', '농협': '농협생명', 'KDB': 'KDB생명', 'ABL': 'ABL생명',
+    '미래': '미래에셋생명', '하나': '하나생명', '푸본현대': '푸본현대생명',
+    'IM': 'iM라이프', 'IBK': 'IBK연금보험',
+}
+
+# TOP10 순위를 본 직후 금액만 입력하면 같은 납기 그대로 금액만 바꿔 다시 순위를 낸다.
+# LAST_CALC_CACHE와 동일하게 순수 메모리에만 두고 auth_db.json에는 남기지 않는다.
+TOP10_SESSION: Dict[str, Dict[str, Any]] = {}
+TOP10_SESSION_TTL_SEC = 1800
+
+def remember_top10_session(user_id: str, term: str, premium: int) -> None:
+    if not user_id or not term:
+        return
+    if len(TOP10_SESSION) >= LAST_CALC_MAX_USERS and user_id not in TOP10_SESSION:
+        try:
+            oldest = min(TOP10_SESSION.items(), key=lambda kv: kv[1].get("ts", 0))[0]
+            TOP10_SESSION.pop(oldest, None)
+        except Exception:
+            TOP10_SESSION.clear()
+    TOP10_SESSION[user_id] = {"term": term, "premium": premium, "ts": _now_ts()}
+
+def get_top10_session(user_id: str) -> Optional[Dict[str, Any]]:
+    if not user_id:
+        return None
+    sess = TOP10_SESSION.get(user_id)
+    if not sess:
+        return None
+    if _now_ts() - sess.get("ts", 0) > TOP10_SESSION_TTL_SEC:
+        TOP10_SESSION.pop(user_id, None)
+        return None
+    return sess
+
+def clear_top10_session(user_id: str) -> None:
+    if user_id:
+        TOP10_SESSION.pop(user_id, None)
+
+
+def with_top10_quick(quick_replies, limit: int = TOP10_QUICK_MAX) -> List[Dict[str, Any]]:
+    """모든 주요 응답 하단에 [🏆 종신TOP10] 버튼을 상시 유지한다 (v3.8.15).
+
+    - 이미 있으면 중복 추가하지 않는다(멱등).
+    - 카카오톡 quickReplies 최대 10개를 넘지 않도록 앞쪽 버튼만 줄이고
+      종신TOP10은 항상 마지막에 남긴다.
+    """
+    items = [dict(q) for q in (quick_replies or []) if isinstance(q, dict)]
+    items = [q for q in items if (q.get("messageText") or "").strip() != "종신TOP10"]
+    cap = max(int(limit) - 1, 0)
+    if len(items) > cap:
+        items = items[:cap]
+    items.append(dict(TOP10_QUICK))
+    return items
+
+
+def is_top10_query(utterance: str) -> bool:
+    """'종신TOP10'·'종신 top10'·'5년납 종신보험 총수령 top10' 등을 감지한다."""
+    return bool(TOP10_TOKEN_RE.search(utterance or ""))
+
+
+def strip_top10_tokens(text: str) -> str:
+    """금액 파싱 전에 top10 표기를 지운다 ('종신 top 10'의 10을 10만원으로 읽지 않게)."""
+    return TOP10_TOKEN_RE.sub(" ", text or "")
+
+
+def top10_requested_term(utterance: str) -> Optional[str]:
+    m = re.search(r'(\d{1,2})\s*년', strip_top10_tokens(utterance))
+    if not m:
+        return None
+    years = int(m.group(1))
+    if years <= 0 or years > 60:
+        return None
+    return f"{years}년납"
+
+
+def top10_premium(utterance: str) -> int:
+    return parse_premium(strip_top10_tokens(utterance)) or TOP10_DEFAULT_PREMIUM
+
+
+def _top10_years(term_text: str) -> Optional[int]:
+    m = re.search(r'(\d+)', term_text or "")
+    return int(m.group(1)) if m else None
+
+
+def is_wholelife_product(product_name: str) -> bool:
+    """종신보험 상품군 판정 — 이름에 '종신'이 있으면 종신(암종신·건강종신 포함).
+
+    연금·건강·암·치매간병 등 다른 상품군은 이름에 종신이 없어 자동 제외된다.
+    """
+    p = (product_name or "").replace(" ", "")
+    if '종신' not in p:
+        return False
+    if '연금' in p:
+        return False
+    return True
+
+
+def resolve_top10_term(terms: List[str], requested: str) -> Optional[str]:
+    """상품(구분)이 실제 가진 납기 중 요청 납기에 해당하는 조견표 납기를 고른다.
+
+    기존 resolve_term_against_valid_terms의 부분 문자열 판정('15년납' ⊃ '5년납')은
+    상품 하나만 놓고 볼 때 다른 연수까지 끌어오므로, TOP10은 연수 기준으로만 판정한다.
+    """
+    req = (requested or "").replace(" ", "")
+    if not req:
+        return None
+    valid = [t.strip() for t in (terms or [])
+             if t and t.strip() and t.strip() != '-' and '세' not in t]
+    for t in valid:
+        if t.replace(" ", "") == req:
+            return t
+    req_y = _top10_years(req)
+    if req_y is None:
+        return None
+    # '5년' = '5년납' 동일 연수 표기
+    for t in valid:
+        if t.replace(" ", "") in (f"{req_y}년", f"{req_y}년납"):
+            return t
+    # 구간 납기 (5~6년, 7~9년, 10-14년, 15-19년)
+    for t in valid:
+        m = re.search(r'(\d+)\s*[~\-–]\s*(\d+)\s*년', t)
+        if m and int(m.group(1)) <= req_y <= int(m.group(2)):
+            return t
+    # N년 이상 / ↑ — 요청 연수를 포함하는 가장 높은 기준
+    ge = []
+    for t in valid:
+        tt = t.replace(" ", "")
+        y = _top10_years(tt)
+        if y is None:
+            continue
+        if ('이상' in tt or '↑' in tt) and req_y >= y:
+            ge.append((y, t))
+    if ge:
+        return max(ge, key=lambda c: c[0])[1]
+    # N년 미만 / 이하 — 요청 연수를 포함하는 가장 낮은 기준
+    le = []
+    for t in valid:
+        tt = t.replace(" ", "")
+        y = _top10_years(tt)
+        if y is None:
+            continue
+        if '미만' in tt and req_y < y:
+            le.append((y, t))
+        elif '이하' in tt and req_y <= y:
+            le.append((y, t))
+    if le:
+        return min(le, key=lambda c: c[0])[1]
+    return None
+
+
+TOP10_LABEL_MAX = 30
+
+def _top10_prod_label(prod_full: str, gubun: str = "") -> str:
+    """순위 목록용 짧은 상품명 — 브랜드 접두어·선두 (간편)을 떼고 구분(형)을 뒤에 붙인다.
+
+    구분(형)은 순위에서 서로 다른 상품을 가르는 핵심이므로 절대 잘리지 않게
+    상품명 본문만 줄이고 구분은 마지막에 그대로 남긴다.
+    """
+    p = clean_prod_short_name(prod_full)
+    for bp in BRAND_PREFIXES:
+        p = re.sub(bp, '', p)
+    p = re.sub(r'^\((?:간편한?|간편가입)\)\s*', '', p)
+    p = re.sub(r'\s+', ' ', p).strip()
+    g = (gubun or "").strip()
+    g = g.replace("납입형", "").replace("_", "·").replace("해약환급금", "해약")
+    g = re.sub(r'\s+', '', g).strip('·')
+    suffix = f"({g})" if (g and g != '-' and g not in p) else ""
+    room = TOP10_LABEL_MAX - len(suffix)
+    if len(p) > room:
+        # '종신'이 잘려 나가면 종신 상품으로 보이지 않으므로 종신까지 살리고 뒤 수식어만 줄인다
+        idx = p.rfind('종신')
+        if idx >= 0 and idx + 2 <= room:
+            p = p[:idx + 2]
+        else:
+            p = p[:max(room - 1, 1)] + "…"
+    return p + suffix
+
+
+def collect_wholelife_top10(term_label: str, premium: int = TOP10_DEFAULT_PREMIUM) -> List[Dict[str, Any]]:
+    """전 생보사 종신보험을 라이브 정산 엔진으로 계산해 총수령액 내림차순으로 돌려준다.
+
+    상품(구분/형) 하나당 한 줄로 집계하며, 해당 납기가 조견표에 있는 상품만 대상이다.
+    """
+    groups: Dict[Tuple[str, str, str], List[Dict[str, Any]]] = {}
+    for row in LIFE_PRODUCTS:
+        prod_full = (row.get('product') or '').strip()
+        if not is_wholelife_product(prod_full):
+            continue
+        sheet = (row.get('sheet') or '').strip()
+        gubun = (row.get('gubun') or '').strip()
+        groups.setdefault((sheet, prod_full, gubun), []).append(row)
+
+    results: List[Dict[str, Any]] = []
+    for (sheet, prod_full, gubun), rows in groups.items():
+        terms = [str(r.get('term') or '').strip() for r in rows]
+        matched_term = resolve_top10_term(terms, term_label)
+        if not matched_term:
+            continue
+        row = next((r for r in rows if str(r.get('term') or '').strip() == matched_term), None)
+        if not row:
+            continue
+        company = TOP10_COMPANY_NAMES.get(sheet, (row.get('company') or '').replace('\n', '').strip())
+        gubun_label = '' if gubun in ('', '-') else gubun
+        label = _top10_prod_label(prod_full, gubun_label)
+        try:
+            s_factor = float(row.get('s_factor') or 1000.0)
+        except (TypeError, ValueError):
+            s_factor = 1000.0
+        calc = calculate_life(
+            company=company,
+            product_name=label,
+            premium=premium,
+            s_factor=s_factor,
+            term=matched_term,
+            incentive_type="전략",
+            continuous_mode="none",
+            contract_type="개인",
+            gubun=gubun_label,
+        )
+        results.append({
+            "company": company,
+            "label": label,
+            "gubun": gubun_label,
+            "master_term": matched_term,
+            "s_factor": s_factor,
+            "calc": calc,
+        })
+    results.sort(key=lambda r: (r["calc"].get("grand_total", 0), r["calc"].get("total_next_month", 0)),
+                 reverse=True)
+    return results
+
+
+def build_top10_term_select_response(premium: int = TOP10_DEFAULT_PREMIUM) -> Dict[str, Any]:
+    """'종신TOP10' 버튼을 눌렀을 때 — 납기(5/7/10/15/20년)를 고르게 한다."""
+    premium = int(premium or TOP10_DEFAULT_PREMIUM)
+    prem_man = premium // 10000
+    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    premium_arg = "" if premium == TOP10_DEFAULT_PREMIUM else f" {prem_str}"
+
+    quick_replies = []
+    for t in TOP10_TERMS:
+        quick_replies.append({
+            "messageText": f"{t} 종신보험 총수령 top10{premium_arg}",
+            "action": "message",
+            "label": t,
+        })
+    quick_replies.append({"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"})
+
+    text = (
+        "🏆 종신보험 총수령 TOP10\n\n"
+        "종신은 납입기간별로 S환산·시책이 크게 달라집니다.\n"
+        f"어떤 납기로 순위를 볼까요? (기준: 월 {prem_str})\n\n"
+        "납기 버튼을 누르면 17개 생보사 종신 상품을\n"
+        "총수령액(수수료+시상) 순으로 10개까지 바로 보여 드립니다.\n\n"
+        "💡 금액을 바꾸시려면 `10년납 종신보험 총수령 top10 50만원`처럼 함께 입력해 주세요."
+    )
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [{"simpleText": {"text": text}}],
+            "quickReplies": with_top10_quick(quick_replies),
+        },
+    }
+
+
+def build_top10_list_response(term_label: str, premium: int = TOP10_DEFAULT_PREMIUM) -> Dict[str, Any]:
+    """지정 납기의 종신보험 총수령액 상위 10개를 순위대로 보여 준다."""
+    term_label = (term_label or "").strip()
+    premium = int(premium or TOP10_DEFAULT_PREMIUM)
+    prem_man = premium // 10000
+    prem_str = f"{prem_man}만원" if prem_man > 0 else f"{premium:,}원"
+    premium_arg = "" if premium == TOP10_DEFAULT_PREMIUM else f" {prem_str}"
+
+    quick_replies = []
+    for t in TOP10_TERMS:
+        label = f"✅{t}" if t == term_label else t
+        quick_replies.append({
+            "messageText": f"{t} 종신보험 총수령 top10{premium_arg}",
+            "action": "message",
+            "label": label,
+        })
+    quick_replies.append({"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"})
+
+    rows = collect_wholelife_top10(term_label, premium)
+    if not rows:
+        text = (
+            f"🔍 {term_label} 종신보험 순위를 낼 조견표 상품이 없습니다.\n\n"
+            "5년납·7년납·10년납·15년납·20년납 중에서 선택해 주세요."
+        )
+        return {
+            "version": "2.0",
+            "template": {
+                "outputs": [{"simpleText": {"text": text}}],
+                "quickReplies": with_top10_quick(quick_replies),
+            },
+        }
+
+    top = rows[:10]
+    lines = [
+        f"🏆 종신보험 총수령 TOP10 · {term_label}",
+        f"기준: 월 {prem_str} · 수수료+시상 합계 (개인·단건)",
+        f"※ 17개 생보사 종신 {len(rows)}개 상품(구분) 중 총수령 상위 {len(top)}개",
+        "",
+    ]
+    for i, r in enumerate(top, 1):
+        total = r["calc"].get("grand_total", 0)
+        rate = int(round(total * 100 / premium)) if premium else 0
+        lines.append(f"{i}위 {r['company']} {r['label']} {total:,}원 ({rate:,}%)")
+    lines.append("")
+    lines.append("👉 상품명을 그대로 입력하시면 그 상품만 단건 상세(익월/분할·시상)로 계산해 드립니다.")
+    main_text = "\n".join(lines)
+
+    detail_lines = [f"🔎 상위 3개 상세 ({term_label} · 월 {prem_str})"]
+    for i, r in enumerate(top[:3], 1):
+        c = r["calc"]
+        detail_lines.append(f"{i}위 {r['company']} {r['label']}")
+        detail_lines.append(f"  · 총 {c.get('grand_total', 0):,}원 (시상 {c.get('total_inc_rate', 0):.0f}%)")
+        detail_lines.append(f"  · 익월 {c.get('total_next_month', 0):,}원 · 분할/13회 {c.get('total_split', 0):,}원")
+    detail_text = "\n".join(detail_lines)
+
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {"simpleText": {"text": main_text}},
+                {"simpleText": {"text": detail_text}},
+            ],
+            "quickReplies": with_top10_quick(quick_replies),
+        },
+    }
+
+
+def is_wholelife_term_only_query(utterance: str) -> bool:
+    """회사·상품명 없이 '15년납 종신보험'처럼 납기+종신보험만 말한 질의인지 판정.
+
+    정우 님 지시의 "7년납 종신보험, 10년납 종신보험"처럼 회사를 지정하지 않은 종신
+    납기 질의는 총수령 순위로 답한다. 반면 '알행플종신 10년납 50만'처럼 특정 상품명이
+    들어간 질의는 기존 단건 조회로 보내야 하므로 여기서 잡지 않는다.
+    """
+    if '종신' not in (utterance or ""):
+        return False
+    if not top10_requested_term(utterance):
+        return False
+    if find_companies_in_text(utterance):
+        return False
+    u = strip_top10_tokens(utterance)
+    u = re.sub(r'(\d+)\s*년\s*납?\s*(?:이상|미만|이하|만기)?', ' ', u)
+    u = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)', ' ', u)
+    u = re.sub(r'총수령액|총수령|순위|랭킹|상위|톱|베스트|best|top|시책|수수료|조회|알려줘|보여줘|정리|비교',
+               ' ', u, flags=re.IGNORECASE)
+    u = re.sub(r'[\s?.,!~·\-]', '', u)
+    return u in ('', '종신', '종신보험')
+
+
+def handle_wholelife_top10_query(utterance: str, user_id: str = "") -> Dict[str, Any]:
+    """종신TOP10 진입 처리 — 납기가 있으면 순위, 없으면 납기 선택 버튼."""
+    premium = top10_premium(utterance)
+    term = top10_requested_term(utterance)
+    if not term:
+        clear_top10_session(user_id)
+        return build_top10_term_select_response(premium)
+    remember_top10_session(user_id, term, premium)
+    return build_top10_list_response(term, premium)
+
+
+def ensure_top10_in_response(resp: Dict[str, Any]) -> Dict[str, Any]:
+    """어떤 응답이든 하단에 [🏆 종신TOP10] 버튼을 상시 유지한다 (최종 안전망)."""
+    if not isinstance(resp, dict):
+        return resp
+    template = resp.get("template")
+    if not isinstance(template, dict):
+        return resp
+    template["quickReplies"] = with_top10_quick(template.get("quickReplies"))
+    return resp
 
 
 def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
@@ -4290,7 +4683,7 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
                     }
                 }
             ],
-            "quickReplies": quick_replies[:5]
+            "quickReplies": with_top10_quick(quick_replies[:5])
         }
     }
 
@@ -4349,7 +4742,7 @@ def build_recalc_response(prev_ctx: Dict[str, Any], new_premium: int) -> Tuple[D
         })
     if "계산초기화" not in labels:
         qr.append({"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"})
-    resp["template"]["quickReplies"] = qr[-5:]
+    resp["template"]["quickReplies"] = with_top10_quick(qr[-5:])
     return resp, calc_res
 
 
@@ -4374,14 +4767,14 @@ def build_help_response() -> Dict[str, Any]:
         "version": "2.0",
         "template": {
             "outputs": [{"simpleText": {"text": help_text}}],
-            "quickReplies": [
+            "quickReplies": with_top10_quick([
                 {"messageText": "DB생명 100만", "action": "message", "label": "DB생명 100만"},
                 {"messageText": "KB손보 20만", "action": "message", "label": "KB손보 20만"},
                 {"messageText": "흥국생명 오튼튼 20만 20년납", "action": "message", "label": "흥국 오튼튼 20만"},
                 {"messageText": "동양생명 쑥쑥어린이 30만 20년납", "action": "message", "label": "동양 쑥쑥 30만"},
                 {"messageText": "한화생명 건강더한종신 50만원", "action": "message", "label": "한화 건강더한 50만"},
                 {"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"}
-            ]
+            ])
         }
     }
 
@@ -4579,6 +4972,12 @@ async def admin_unblock_user(request: Request):
 
 @app.post("/skill/calculate")
 async def kakao_skill_calculate(request: Request):
+    """카카오 스킬 진입점 — 어떤 응답이든 하단에 [🏆 종신TOP10]을 상시 유지한다 (v3.8.15)."""
+    resp = await handle_kakao_skill_request(request)
+    return ensure_top10_in_response(resp)
+
+
+async def handle_kakao_skill_request(request: Request):
     try:
         body = await request.json()
     except Exception:
@@ -4612,7 +5011,29 @@ async def kakao_skill_calculate(request: Request):
         if user_id and user_id in AUTH_CACHE.get("participants", {}):
             AUTH_CACHE["participants"][user_id].pop("pending_compare", None)
         clear_last_calc(user_id)
+        clear_top10_session(user_id)
         return build_help_response()
+
+    # [종신보험 총수령 TOP10] (v3.8.15)
+    #  "5년납 종신보험 총수령 top10", "종신TOP10" 버튼, "종신 top 10" 모두 여기서 처리한다.
+    #  단건 계산·비교·금액 재계산 라우팅보다 먼저 잡아 종신 상품 매칭과 충돌하지 않게 한다.
+    if is_top10_query(utterance):
+        if user_id and user_id in AUTH_CACHE.get("participants", {}):
+            AUTH_CACHE["participants"][user_id].pop("pending_compare", None)
+        clear_last_calc(user_id)
+        clear_pending_ask(user_id)
+        return handle_wholelife_top10_query(utterance, user_id)
+
+    # [회사 없는 종신 납기 질의] "15년납 종신보험", "7년납 종신보험 총수령" → 총수령 순위 (v3.8.15)
+    if is_wholelife_term_only_query(utterance):
+        if user_id and user_id in AUTH_CACHE.get("participants", {}):
+            AUTH_CACHE["participants"][user_id].pop("pending_compare", None)
+        clear_last_calc(user_id)
+        clear_pending_ask(user_id)
+        term = top10_requested_term(utterance) or TOP10_TERMS[2]
+        premium = parse_premium(utterance) or TOP10_DEFAULT_PREMIUM
+        remember_top10_session(user_id, term, premium)
+        return build_top10_list_response(term, premium)
 
     # [비교하기 버튼 탭 핸들러]
     if utterance.startswith("비교선택:"):
@@ -4663,7 +5084,7 @@ async def kakao_skill_calculate(request: Request):
                         }
                     }
                 ],
-                "quickReplies": q_replies[:6]
+                "quickReplies": with_top10_quick(q_replies[:6])
             }
         }
 
@@ -4705,6 +5126,11 @@ async def kakao_skill_calculate(request: Request):
                     AUTH_CACHE["participants"][user_id]["pending_compare"] = " ".join(p for p in base_parts if p).strip()
                 return recalc_resp
         if not prev_ctx:
+            # 종신TOP10 순위를 본 직후 금액만 입력 → 같은 납기로 금액만 바꿔 순위를 다시 낸다 (v3.8.15)
+            top10_sess = get_top10_session(user_id)
+            if top10_sess and top10_sess.get("term"):
+                remember_top10_session(user_id, top10_sess["term"], amount_only)
+                return build_top10_list_response(top10_sess["term"], amount_only)
             # 상품·금액을 되묻던 중 금액만 입력한 경우 → 되묻던 회사·상품·납기로 계산을 이어간다 (v3.8.9)
             pend = get_pending_ask(user_id)
             if pend:
@@ -4714,9 +5140,10 @@ async def kakao_skill_calculate(request: Request):
                 utterance = " ".join(x for x in [pend.get("company", ""), pend.get("product_name", ""), prem_part, pend.get("term", "")] if x)
         # 직전 계산도 없고 되묻던 조건도 없으면 기존 처리로 넘긴다
     else:
-        # 금액만 입력이 아닌 새 질의는 직전 계산 기준과 되묻던 조건을 모두 폐기
+        # 금액만 입력이 아닌 새 질의는 직전 계산 기준·되묻던 조건·TOP10 세션을 모두 폐기
         clear_last_calc(user_id)
         clear_pending_ask(user_id)
+        clear_top10_session(user_id)
 
     # 초대코드 입력 시 친절 안내 (2026-11-13 본부장님 지침: 초대코드 폐지)
     if check_invite_code_match(utterance) and not is_admin(user_id):
