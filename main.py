@@ -4445,9 +4445,14 @@ def build_top10_list_response(term_label: str, premium: int = TOP10_DEFAULT_PREM
     detail_lines = [f"🔎 상위 3개 상세 ({term_label} · 월 {prem_str})"]
     for i, r in enumerate(top[:3], 1):
         c = r["calc"]
+        basis = (c.get("basis_desc") or "").strip()
+        if len(basis) > 70:
+            basis = basis[:69] + "…"
         detail_lines.append(f"{i}위 {r['company']} {r['label']}")
-        detail_lines.append(f"  · 총 {c.get('grand_total', 0):,}원 (시상 {c.get('total_inc_rate', 0):.0f}%)")
+        detail_lines.append(f"  · 총 {c.get('grand_total', 0):,}원 (시상 {c.get('total_inc_rate', 0):,.0f}%)")
         detail_lines.append(f"  · 익월 {c.get('total_next_month', 0):,}원 · 분할/13회 {c.get('total_split', 0):,}원")
+        if basis:
+            detail_lines.append(f"  · 근거 {basis}")
     detail_text = "\n".join(detail_lines)
 
     return {
