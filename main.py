@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.12")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.13")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1189,13 +1189,31 @@ for d in LIFE_PRODUCTS:
             search_keys.update(['밸런스건강', '밸런스건강보험'])
         if '드림종신' in prod:
             search_keys.update(['우리won드림종신', '우리won드림종신3', 'won드림종신', '드림종신', '드림종신3'])
+        if '연금' in prod:
+            # 연금 상품 전용 현장 약칭 (상품군 통짜 단어인 '연금/연금보험'은 넣지 않는다 —
+            # 다른 연금 상품까지 줄줄이 걸려 오매칭이 난다. 상품군 질의는 category pool이 처리한다)
+            search_keys.update(['변액연금보험', '연금보험상품'])
+        if '영리한' in prod:
+            search_keys.update(['영리한', '영리한연금', '영리한변액연금', '영리한변액연금보험'])
+        if '행복드림' in prod:
+            search_keys.update(['행복드림', '행복드림변액연금', '행복드림변액연금보험', '더행복드림변액연금'])
+        if '행복플러스up' in prod.lower():
+            search_keys.update(['행복플러스up연금', '행복플러스업연금', 'up연금', '업연금', '더행복플러스up연금',
+                                '더행복플러스업연금', '행복플러스up연금보험', '행복플러스업연금보험'])
+
+        search_keys = {normalize_text(k) for k in search_keys if k}
+        # 'Plus/플러스'를 빼고 부르는 현장 표기 대응 (예: 변액연금 동행 2종 사망보장형)
+        for k in list(search_keys):
+            for token in ['플러스', 'plus']:
+                if token in k:
+                    search_keys.add(k.replace(token, ''))
         if '더블업' in prod:
-            search_keys.update([
+            search_keys.update([normalize_text(k) for k in [
                 '더블업', '더블업암', '더블업암치료', '더블업암치료보장', '더블업암치료보장간편포함', '더블업보장',
                 '더블암', '더블암치료', '더블암보장', '더블암치료보장', '더블암암치료보장', '더블암암치료',
                 '디비더블암', '디비더블업', 'db더블암', 'db더블업',
                 '백년친구더블업', '백년친구더블업암치료보장', '백년친구더블암', '백년친구더블암보장'
-            ])
+            ]])
 
         LIFE_CATALOG[key] = {
             'sheet': sheet,
@@ -1227,6 +1245,130 @@ def extract_gubun_from_query(query: str) -> Optional[str]:
         if normalize_text(g) in q_norm:
             return g
     return None
+
+
+# ==========================================
+# 상품군(카테고리) 판정 — 연금/종신/건강/암/치매간병/어린이 (v3.8.13)
+# ==========================================
+# 현장에서는 상품명 대신 '연금보험', '종신보험', '변액연금'처럼 상품군만 말하는 경우가 많다.
+# 이때 같은 회사의 다른 상품군(예: 연금 질의 → 종신 상품)으로 새는 것을 막기 위해
+# 질의에서 상품군을 먼저 판정하고 그 상품군 안에서만 매칭한다.
+CATEGORY_KEYWORDS = {
+    '연금': ['연금보험', '연금저축', '변액연금', '연금'],
+    '종신': ['종신보험', '종신'],
+    '정기': ['정기보험'],
+    '치매간병': ['치매보험', '치매간병', '간병보험', '치매', '간병'],
+    '어린이': ['어린이보험', '어린이', '쑥쑥'],
+    '암': ['암보험', '암'],
+    '건강': ['건강보험', '건강'],
+}
+
+# '연금보험'처럼 상품군 단어에 붙은 '보험'은 상품명에 없을 수 있으므로 매칭 전에 떼어 낸다.# 상품군만 달랑 입력된 질의(예: 'KDB 연금', '신한 종신')로 볼 단어들
+CATEGORY_BARE_WORDS = {
+    '연금': ['연금', '연금보험', '변액연금'],
+    '종신': ['종신', '종신보험'],
+    '정기': ['정기보험'],
+    '치매간병': ['치매', '치매보험', '간병', '간병보험', '치매간병'],
+    '어린이': ['어린이', '어린이보험'],
+    '암': ['암', '암보험'],
+    '건강': ['건강', '건강보험'],
+}
+
+CATEGORY_SUFFIX_STRIP = [
+    ('연금보험', '연금'), ('종신보험', '종신'), ('정기보험', '정기'),
+    ('치매보험', '치매'), ('간병보험', '간병'), ('어린이보험', '어린이'), ('암보험', '암'), ('건강보험', '건강'),
+]
+
+
+def strip_company_tokens(text: str, company: str = "") -> str:
+    """상품군 판정 전에 회사명을 지운다 (IBK연금·KDB생명 같은 회사명 속 단어 오인 방지)."""
+    t = text or ""
+    tokens = set()
+    if company:
+        info = ALL_COMPANIES.get(company) or {}
+        tokens.add(company)
+        for a in info.get('aliases', []):
+            tokens.add(a)
+    for tok in sorted([x for x in tokens if x], key=len, reverse=True):
+        t = re.sub(re.escape(tok), ' ', t, flags=re.IGNORECASE)
+    t = re.sub(r'\b(kdb|kb|db|abl|im|ibk)\b', ' ', t, flags=re.IGNORECASE)
+    return t
+
+
+def detect_product_category(utterance: str, company: str = "") -> str:
+    """발화에 담긴 상품군 키워드 하나를 돌려준다 (없으면 '')."""
+    u = strip_company_tokens(utterance, company)
+    for cat, keys in CATEGORY_KEYWORDS.items():
+        for k in keys:
+            if k in u:
+                return cat
+    return ""
+
+
+def product_category_of(product_name: str) -> str:
+    n = (product_name or '').replace(' ', '')
+    if '연금' in n:
+        return '연금'
+    if '종신' in n:
+        return '종신'
+    if '정기' in n or '경영인' in n:
+        return '정기'
+    if '치매' in n or '간병' in n:
+        return '치매간병'
+    if '어린이' in n or '쑥쑥' in n:
+        return '어린이'
+    if '암' in n:
+        return '암'
+    if '건강' in n:
+        return '건강'
+    return ''
+
+
+def matches_category(product_name: str, cat: str) -> bool:
+    """상품명에 해당 상품군 단어가 들어 있는지 (종신이면서 '건강'이 들어간 상품도 건강 질의에 포함)."""
+    if not cat:
+        return True
+    n = (product_name or '').replace(' ', '')
+    tokens = {
+        '연금': ['연금'],
+        '종신': ['종신'],
+        '정기': ['정기', '경영인'],
+        '치매간병': ['치매', '간병'],
+        '어린이': ['어린이', '쑥쑥'],
+        '암': ['암'],
+        '건강': ['건강'],
+    }.get(cat)
+    if not tokens:
+        return True
+    return any(t in n for t in tokens)
+
+
+def merge_identical_candidates(cands: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """납기·구분·S환산이 완전히 같은 상품군은 하나로 합쳐 보여 준다.
+
+    조견표에서 같은 칸에 병기된 상품(예: KDB 연금보험 3종)은 환산율이 동일하므로
+    현장에서 '연금보험'이라고만 물어도 상품 선택 없이 바로 계산되게 한다.
+    """
+    if len(cands) <= 1:
+        return cands
+
+    def sig(p):
+        return tuple(sorted((it.get('term', ''), it.get('gubun', ''), round(float(it.get('s_factor') or 0), 4))
+                            for it in p.get('items', [])))
+
+    if len({sig(p) for p in cands}) != 1:
+        return cands
+    base = dict(cands[0])
+    base['items'] = list(cands[0]['items'])
+    short_names = [clean_prod_short_name(p['full_product']) for p in cands]
+    cat = product_category_of(cands[0]['full_product'])
+    label = f"{cat}{len(cands)}종" if cat else "병기상품"
+    base['full_product'] = f"{label} (" + " · ".join(short_names) + ")"
+    base['merged_group'] = [p['full_product'] for p in cands]
+    base['search_keys'] = set().union(*[set(p.get('search_keys') or []) for p in cands])
+    base['terms'] = list(cands[0].get('terms', []))
+    base['gubuns'] = list(cands[0].get('gubuns', []))
+    return [base]
 
 
 COMPANY_PRIORITY_PRODUCTS = {
@@ -1275,7 +1417,36 @@ def sort_major_products_first(comp_clean: str, sheet_prods: List[Dict[str, Any]]
 
     return sorted(sheet_prods, key=get_sort_index)
 
+def _sheet_matches_company(sheet: str, comp_clean: str, company: str) -> bool:
+    """조견표 시트와 회사명 매칭 — 짧은 코드('DB' vs 'KDB')가 서로 섞이지 않도록 한다 (v3.8.13).
+
+    기존에는 'db' in 'kdb'가 참이라 KDB 질의에 DB 생보 상품이 함께 후보로 올라왔다.
+    """
+    s = (sheet or '').strip().lower()
+    c = (comp_clean or '').strip().lower()
+    com = (company or '').strip().lower()
+    if not s or not c:
+        return False
+    if s == c:
+        return True
+    # 짧은 코드('DB' vs 'KDB')가 서로 섞이지 않도록 '접두' 관계만 인정한다
+    if len(s) >= 2 and c.startswith(s):
+        return True
+    if len(c) >= 2 and s.startswith(c):
+        return True
+    return False
+
+
 def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]]:
+    """상품 후보 검색 — 상품군(연금/종신 등)이 지정된 질의는 같은 환산율끼리 하나로 합쳐 바로 계산되게 한다 (v3.8.13)."""
+    cands = _find_candidate_products_core(company, utterance)
+    query_category = detect_product_category(utterance, company)
+    if query_category and len(cands) > 1:
+        cands = merge_identical_candidates(cands)
+    return cands
+
+
+def _find_candidate_products_core(company: str, utterance: str) -> List[Dict[str, Any]]:
     comp_clean = company.replace('생명', '').replace('라이프', '').replace('화재', '').replace('손보', '').replace('연금', '').strip().lower()
     if comp_clean in ['kb', '케이비']: comp_clean = 'KB'
     elif comp_clean in ['디비', 'db']: comp_clean = 'DB'
@@ -1285,16 +1456,35 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
 
     sheet_prods = [
         p for (s, _), p in LIFE_CATALOG.items()
-        if s.lower() == comp_clean.lower() or s.lower() in comp_clean.lower() or comp_clean.lower() in s.lower() or comp_clean.lower() in p['company'].lower()
+        if _sheet_matches_company(s, comp_clean, p.get('company', ''))
     ]
     if not sheet_prods:
         return []
 
-    # 1. 원본 쿼리 정제 (회사명, 납기, 금액, 계산어만 제거)
+    # [상품군 가드] '연금', '종신', '건강'처럼 상품군만 지정된 질의는 그 상품군 안에서만 매칭한다.
+    # (연금 질의가 종신 상품으로 새는 것을 막는 1차 관문)
+    query_category = detect_product_category(utterance, company)
+    category_pool = None
+    if query_category:
+        cat_pool = [p for p in sheet_prods if matches_category(p['full_product'], query_category)]
+        if cat_pool:
+            sheet_prods = cat_pool
+            category_pool = cat_pool
+
+    # 1. 원본 쿼리 정제 (회사명, 상품군 접미 '보험', 납기, 금액, 계산어만 제거)
     cleaned_raw = utterance
-    for comp_token in [comp_clean, '생명', '라이프', '화재', '손보']:
-        cleaned_raw = re.sub(rf'\b{comp_token}\b|{comp_token}', ' ', cleaned_raw, flags=re.IGNORECASE)
-    cleaned_raw = re.sub(r'(\d+)\s*년\s*납?|전기납', ' ', cleaned_raw)
+    comp_tokens = {comp_clean, '생명', '라이프', '화재', '손보'}
+    # '미래에셋생명'처럼 긴 회사명을 먼지 지우고 짧은 별칭을 지우면 '에셋' 같은 조각이 남는다
+    info_aliases = (ALL_COMPANIES.get(company) or {}).get('aliases', [])
+    comp_tokens.add(company)
+    for a in info_aliases:
+        if len(a) > len(comp_clean):
+            comp_tokens.add(a)
+    for comp_token in sorted([t for t in comp_tokens if t], key=len, reverse=True):
+        cleaned_raw = re.sub(re.escape(comp_token), ' ', cleaned_raw, flags=re.IGNORECASE)
+    for full_word, core_word in CATEGORY_SUFFIX_STRIP:
+        cleaned_raw = cleaned_raw.replace(full_word, core_word)
+    cleaned_raw = re.sub(r'(\d+)\s*년\s*납?\s*(?:이상|미만|이하|만기)?|전기납', ' ', cleaned_raw)
     cleaned_raw = re.sub(r'(\d+[\d,]*)\s*(?:만원|만|원)', ' ', cleaned_raw)
     cleaned_raw = re.sub(r'계산|시책|얼마|수수료|알려줘|비교|안내|문의|설계|상품', ' ', cleaned_raw)
     double_aliases = [
@@ -1308,6 +1498,13 @@ def find_candidate_products(company: str, utterance: str) -> List[Dict[str, Any]
     cleaned_raw = re.sub(r'\b\d{5,}\b', ' ', cleaned_raw)  # 금액 성격의 5자리 이상 숫자만 제거
 
     q_norm_raw = normalize_text(cleaned_raw)
+
+    # [상품군만 지정된 질의] '연금', '연금보험', '종신'처럼 상품군만 말하면 그 상품군 전체로 바로 간다
+    # (같은 환산율 병기 상품은 wrapper에서 합쳐져 상품 선택 없이 계산된다 — v3.8.13)
+    if category_pool:
+        cat_words = {normalize_text(w) for w in CATEGORY_BARE_WORDS.get(query_category, [])}
+        if q_norm_raw in cat_words:
+            return sort_major_products_first(comp_clean, sheet_prods)
 
     # [0단계 우선 검증] 원본 정제 텍스트 그대로 정확히 일치하는 단일 상품이 있으면 즉시 반환 (루프 방지)
     if q_norm_raw:
@@ -1466,6 +1663,9 @@ def match_gubun_in_text(prod_group: Optional[Dict[str, Any]], utterance: str) ->
         return ""
     gubuns = prod_group.get('gubuns', [])
     if not gubuns:
+        # 조견표에 구분 열이 없어도 시책지가 일반형/간편심사형을 나누는 상품이 있다 (v3.8.13 KDB 서포트100건강종신)
+        if '간편' in utterance:
+            return '간편'
         return ""
     if len(gubuns) == 1:
         return gubuns[0]
@@ -1750,36 +1950,80 @@ def get_sky_health_bonus(comp: str, prod: str, premium: int) -> Tuple[float, str
             
     return 0.0, ""
 
+
+def resolve_kdb_pension_week_bonus(now: Optional[datetime.datetime] = None) -> Tuple[str, float]:
+    """KDB 더!행복플러스UP연금 출시기념 추가시상 주차 판정 (v3.8.13).
+
+    11월 시책지: 1주차(11/1~7) 월납초회×70%, 2주차(8~14) ×50%, 3주차(15~20) ×30%,
+    10년납 이상 한함 · 13회차 지급 · 신상품(더!행복플러스UP연금) 한정.
+    반환: (주차 라벨, 요율) — 해당 주차가 없으면 요율 0.
+    """
+    if now is None:
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    if now.month != 11 or now.year != 2026:
+        return "11월 시책 기간 외", 0.0
+    d = now.day
+    if 1 <= d <= 7:
+        return "11월 1주차(11/1~7)", 0.7
+    if 8 <= d <= 14:
+        return "11월 2주차(11/8~14)", 0.5
+    if 15 <= d <= 20:
+        return "11월 3주차(11/15~20)", 0.3
+    return "11월 4주차 이후(11/21~)", 0.0
+
+
 def get_life_incentive(comp_name: str, product_name: str, term: str = "", premium: int = 200000, incentive_type: str = "전략", continuous_mode: str = "none", contract_type: str = "개인", gubun: str = "") -> Dict[str, Any]:
     """17개 생보사 11월 공식 시책표 정밀 판정 (메트라이프 납기별 차이, 흥국 2종 연속, 신한 3~7번 연계, 라이나, 미래에셋 완벽 반영)"""
     comp = comp_name.replace('생명', '').replace('라이프', '').strip().lower()
     prod = product_name.replace(" ", "").lower()
     
-    # 1. 메트라이프생명 (사용자 지시: 납입기간에 따라 s환산차이 크고 시책도 상이)
+    # 1. 메트라이프생명 (11월 시책지 기준 · 연금/종신/정기/건강 분리, v3.8.13)
     if '메트' in comp:
-        if '달러' in prod or '백만인' in prod or '종신' in prod:
-            m_y = re.search(r'(\d+)\s*년', term)
-            years = int(m_y.group(1)) if m_y else 10
-            if years <= 5:
-                return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (달러종신Plus 5년납 250%)", "cont_bonus": 0.0, "cont_desc": ""}
-            elif years in [7, 10]:
-                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": f"익월 400% (달러종신Plus {years}년납 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-            elif '3년내고' in prod or years == 3:
-                return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (3년내고 만족하는 달러종신 250%)", "cont_bonus": 0.0, "cont_desc": ""}
-            else:
-                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": f"익월 400% (달러종신Plus {years}년납 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '정기' in prod or '변액리치' in prod:
-            return {"next_month": 2.0, "split": 2.5, "total": 4.5, "basis": "익월 200% + 15차월 250% (변액리치 정기 450%)", "cont_bonus": 0.3, "cont_desc": "전략상품 1건 이상 가동 시 15차월 추가 +30%"}
-        elif '연금' in prod:
-            return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (오로지연금을위한 달러연금 300%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '무해약' in prod or '해약' in prod:
-            return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": "익월 400% (간편 360 종합 무해약환급형 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '암' in prod:
+        m_y = re.search(r'(\d+)\s*년', term)
+        years = int(m_y.group(1)) if m_y else None
+
+        # ── 연금 (종신 판정보다 먼지) ──
+        if '연금' in prod:
+            if '동행' in prod:
+                if '사망보장' in prod:
+                    return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (변액연금 동행Plus 사망보장형 · 전기납)", "cont_bonus": 0.0, "cont_desc": ""}
+                return {"next_month": 0.7, "split": 0.0, "total": 0.7, "basis": "익월 70% (변액연금 동행Plus 고도해지해형 · 전기납)", "cont_bonus": 0.0, "cont_desc": ""}
+            if '달러' in prod:
+                return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (오로지 연금을 위한 달러연금보험 · 전기납)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (메트 연금보험 · 11월 시책표 미수록 상품은 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # ── 정기/변액리치 ──
+        if '변액리치' in prod:
+            return {"next_month": 2.0, "split": 2.5, "total": 4.5, "basis": "익월 200% + 15차월 250% (변액리치 정기보험 450%)", "cont_bonus": 0.3, "cont_desc": "전략상품 1건 이상 가동 시 15차월 추가 +30%"}
+        if '경영인정기' in prod:
+            if '달러' in prod:
+                return {"next_month": 1.0, "split": 1.0, "total": 2.0, "basis": "익월 100% + 15차월 100% (The Classic 달러경영인정기보험)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (The Classic 원화경영인정기보험)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '더해주고채워주는' in prod or '미리받는' in prod:
+            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (11월 시책표 미수록 상품 — 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # ── 종신 ──
+        if '3년내고' in prod:
+            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (3년내고 만족하는 달러종신보험)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '모두의달러종신' in prod:
+            return {"next_month": 3.0, "split": 0.0, "total": 3.0, "basis": "익월 300% (모두의 달러종신)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '백만인' in prod:
+            if '달러' in prod:
+                if years is not None and years <= 5:
+                    return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (백만인을 위한 달러종신 Plus 5년납)", "cont_bonus": 0.0, "cont_desc": ""}
+                return {"next_month": 4.0, "split": 0.0, "total": 4.0, "basis": f"익월 400% (백만인을 위한 달러종신 Plus {term} 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (원화 백만인 종신 Plus — 11월 시책표 미수록, 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '오늘의종신' in prod or 'vip' in prod or '모두의상속' in prod or '모두의종신' in prod:
+            return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (종신보험 100%)", "cont_bonus": 0.0, "cont_desc": ""}
+
+        # ── 보장성 ──
+        if '무해약' in prod and '종합' in prod:
+            return {"next_month": 0.0, "split": 4.0, "total": 4.0, "basis": "13차월 400% (간편가입 360 종합보장보험 무해약환급형)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '암' in prod:
             return {"next_month": 1.0, "split": 0.0, "total": 1.0, "basis": "익월 100% (360 암보험 100%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif '간편' in prod or '종합' in prod or '360' in prod:
-            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (간편 360 종합 갱신형 200%)", "cont_bonus": 0.0, "cont_desc": ""}
-        else:
-            return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (메트라이프 전략 250%)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '360' in prod or '종합' in prod or '간편' in prod:
+            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (간편가입 360 종합보장보험 갱신형 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+        return {"next_month": 2.5, "split": 0.0, "total": 2.5, "basis": "익월 250% (메트라이프 전략 250%)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 2. 흥국생명 (10~11월 연속가동 & 핑크멤버스 2종 연속시상)
     elif '흥국' in comp:
@@ -2464,8 +2708,24 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 "cont_desc": ""
             }
 
-    # 10. 푸본현대생명
+    # 10. 푸본현대생명 (11월: MAX연금다운 연금보험은 연금 분기로 먼지 판정, v3.8.13)
     elif '푸본' in comp:
+        if '연금' in prod:
+            if '연금다운' in prod:
+                if '2형' in prod or '미부과' in prod:
+                    return {"next_month": 0.0, "split": 0.0, "total": 0.0,
+                            "basis": "MAX 연금다운 연금보험 2형(보증비용미부과형)은 11월 시책 없음",
+                            "cont_bonus": 0.0, "cont_desc": ""}
+                if '20년' in term:
+                    return {"next_month": 4.0, "split": 3.0, "total": 7.0,
+                            "basis": "MAX 연금다운 연금보험 20년납 총 700% (익월 400% + 13회차 300%)",
+                            "cont_bonus": 0.0, "cont_desc": ""}
+                return {"next_month": 3.0, "split": 3.0, "total": 6.0,
+                        "basis": "MAX 연금다운 연금보험 10년납 총 600% (익월 300% + 13회차 300%)",
+                        "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 0.0, "split": 0.0, "total": 0.0,
+                    "basis": "11월 푸본현대 시책지 미수록 연금 상품 (시상 미적용 — 원수사 확인)",
+                    "cont_bonus": 0.0, "cont_desc": ""}
         if '원픽' in prod:
             base_next = 3.5
             base_split = 1.5
@@ -2488,28 +2748,63 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         else:
             return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (마이픽 건강 600%)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 11. KDB생명
+    # 11. KDB생명 (11월 시책지: 연금보험 2종 / 종신보험 4종 / 건강보험 2종 — 연금과 종신을 먼지 분리, v3.8.13)
     elif 'kdb' in comp:
-        if '행복세븐' in prod:
+        # ── 연금보험 ─────────────────────────────────────────────
+        # 반드시 종신 판정보다 먼저 본다. '더!행복플러스UP연금'에 '행복플러스'가 들어 있어
+        # 종신 800% 분기로 새떤 버그가 있었다(2026-11-18 정우 님 지적).
+        if '연금' in prod or '행복드림' in prod or '행복플러스up' in prod:
+            years = None
+            m_y = re.search(r'(\d+)\s*년', term)
+            if m_y:
+                years = int(m_y.group(1))
+            if years is not None and years < 10:
+                return {"next_month": 1.5, "split": 0.0, "total": 1.5,
+                        "basis": "연금보험 10년납 미만: 익월 150% (13회차 시상 없음)",
+                        "cont_bonus": 0.0, "cont_desc": ""}
+            # 10년납 이상: 총 450% (익월 350% + 13회차 100%)
+            next_rate, split_rate = 3.5, 1.0
+            basis = "연금보험 10년납 이상 총 450% (익월 350% + 13회차 100%)"
+            is_up_new = ('행복플러스up' in prod) and ('영리한' not in prod) and ('행복드림' not in prod)
+            week_label, week_rate = resolve_kdb_pension_week_bonus()
+            if is_up_new:
+                if week_rate > 0:
+                    split_rate += week_rate
+                    basis += f" + {week_label} 출시기념 추가시상 {int(round(week_rate*100))}% (월납초회 기준·13회차 지급·10년납 이상 한함)"
+                else:
+                    basis += f" (출시기념 주차 추가시상 {week_label} 적용 없음)"
+            elif '행복플러스up' in prod:
+                # 병기(연금 3종) 그룹: UP연금 지정이 아니므로 추가시상은 합산하지 않고 안내만
+                if week_rate > 0:
+                    basis += f" / 더!행복플러스UP연금 선택 시 {week_label} 추가 +{int(round(week_rate*100))}% (월납초회 기준·13회차 지급)"
+            elif '행복드림' in prod:
+                basis += " (출시기념 주차 추가시상은 더!행복플러스UP연금 한정)"
+            elif '영리한' in prod:
+                basis += " (영리한 변액연금: 11월 시책지 연금보험 2종 미표기 상품)"
+            return {"next_month": next_rate, "split": split_rate, "total": next_rate + split_rate,
+                    "basis": basis, "cont_bonus": 0.0, "cont_desc": ""}
+        # ── 종신보험 ─────────────────────────────────────────────
+        elif '행복세븐' in prod:
             return {"next_month": 4.0, "split": 2.0, "total": 6.0, "basis": "원수사 600% (익월 400% + 13회차 200% · 20년납 전용)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '행복플러스' in prod:
-            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "총 800% (익월 400% + 13회차 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "종신 총 800% (익월 400% + 13회차 400% · 10/20년납 일반·간편)", "cont_bonus": 0.0, "cont_desc": ""}
         elif '서포트100' in prod:
+            is_ganpyeon = '간편' in gubun or '간편' in prod
             if '20년' in term:
-                return {"next_month": 4.0, "split": 6.0, "total": 10.0, "basis": "총 1,000% (익월 400% + 13회차 600%)", "cont_bonus": 0.0, "cont_desc": ""}
-            else:
-                return {"next_month": 3.0, "split": 4.0, "total": 7.0, "basis": "총 700% (익월 300% + 13회차 400%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif any(k in prod for k in ['더블찬스', '버팀목']):
-            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200%", "cont_bonus": 0.0, "cont_desc": ""}
+                if is_ganpyeon:
+                    return {"next_month": 4.0, "split": 4.0, "total": 8.0, "basis": "서포트100건강종신 간편심사형 20년납 총 800% (익월 400% + 13회차 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+                return {"next_month": 4.0, "split": 6.0, "total": 10.0, "basis": "서포트100건강종신 일반형 20년납 총 1,000% (익월 400% + 13회차 600%)", "cont_bonus": 0.0, "cont_desc": ""}
+            if is_ganpyeon:
+                return {"next_month": 3.0, "split": 2.0, "total": 5.0, "basis": "서포트100건강종신 간편심사형 10/15년납 총 500% (익월 300% + 13회차 200%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.0, "split": 4.0, "total": 7.0, "basis": "서포트100건강종신 일반형 10/15년납 총 700% (익월 300% + 13회차 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['더블찬스', '무심사버팀목']):
+            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "종신 익월 200% (5/7/10년납)", "cont_bonus": 0.0, "cont_desc": ""}
         elif any(k in prod for k in ['라이프핏', '암만생각해도', '암보험']):
-            return {"next_month": 5.0, "split": 7.0, "total": 12.0, "basis": "총 1,200% (익월 500% + 13회차 700%)", "cont_bonus": 0.0, "cont_desc": ""}
-        elif any(k in prod for k in ['행복드림', '행복플러스up', '연금']):
-            if any(t in term for t in ['10년미만', '10년납 미만', '미만']):
-                return {"next_month": 1.5, "split": 0.0, "total": 1.5, "basis": "익월 150% (10년납 미만 150%)", "cont_bonus": 0.0, "cont_desc": ""}
-            else:
-                return {"next_month": 3.5, "split": 1.0, "total": 4.5, "basis": "총 450% (익월 350% + 13회차 100%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 5.0, "split": 7.0, "total": 12.0, "basis": "건강보험 총 1,200% (익월 500% + 13회차 700%)", "cont_bonus": 0.0, "cont_desc": ""}
+        elif any(k in prod for k in ['버팀목']):
+            return {"next_month": 2.0, "split": 0.0, "total": 2.0, "basis": "익월 200% (11월 시책지 미수록 상품 — 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
         else:
-            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (버팀목종신 400%)", "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 3.0, "split": 1.0, "total": 4.0, "basis": "익월 300% + 13회차 100% (11월 시책지 미수록 상품 — 원수사 확인)", "cont_bonus": 0.0, "cont_desc": ""}
 
     # 12. ABL생명
     elif 'abl' in comp:
@@ -2591,9 +2886,27 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
         else:
             return {"next_month": 3.0, "split": 3.0, "total": 6.0, "basis": "익월 300% + 13회차 300% (교보 보장성 기본 600% · 일반/간편 동일)", "cont_bonus": 0.0, "cont_desc": ""}
 
-    # 15. 하나생명
+    # 15. 하나생명 (11월 시책지: THE연결된 종신 + 건강 전상품 — 연금 상품은 시책 없음, v3.8.13)
     elif '하나' in comp:
-        return {"next_month": 5.0, "split": 19.0, "total": 24.0, "basis": "익월 500% + 13회차 1,900% (하나로라이트 최대 2,400%)", "cont_bonus": 0.0, "cont_desc": ""}
+        if '연금' in prod:
+            return {"next_month": 0.0, "split": 0.0, "total": 0.0,
+                    "basis": "11월 하나생명 시책지에 연금 상품 없음 (시상 미적용 — 원수사 확인)",
+                    "cont_bonus": 0.0, "cont_desc": ""}
+        if 'the연결된' in prod or '연결된종신' in prod:
+            if '15년' in term or '20년' in term:
+                return {"next_month": 2.5, "split": 1.5, "total": 4.0,
+                        "basis": "THE연결된 종신 15/20년납 익월 250% + 13회차 150%",
+                        "cont_bonus": 0.0, "cont_desc": ""}
+            return {"next_month": 4.5, "split": 0.5, "total": 5.0,
+                    "basis": "THE연결된 종신 5/7/10년납 익월 450% + 13회차 50%",
+                    "cont_bonus": 0.0, "cont_desc": ""}
+        if '라이트' in prod or '누리는' in prod:
+            return {"next_month": 5.0, "split": 19.0, "total": 24.0,
+                    "basis": "건강 전상품 익월 500% + 13회차 1,900% (하나로라이트·누리는건강, 판매활성화·릴레이·연속가동 포함 최대 2,400%)",
+                    "cont_bonus": 0.0, "cont_desc": ""}
+        return {"next_month": 0.0, "split": 0.0, "total": 0.0,
+                "basis": "11월 하나생명 시책지 미수록 상품 (시상 미적용 — 원수사 확인)",
+                "cont_bonus": 0.0, "cont_desc": ""}
 
     # 16. IM라이프
     elif 'im' in comp or '아이엠' in comp:
@@ -3352,6 +3665,43 @@ def build_ask_contract_type_response(comp: str, prod_name: str, premium: int, te
                 }
             ]
         }
+    }
+
+
+def list_company_products(comp: str) -> List[Dict[str, Any]]:
+    """해당 생보사의 조견표 상품군 전체 (상품군 없음 안내용)."""
+    comp_clean = comp.replace('생명', '').replace('라이프', '').replace('연금', '').strip().lower()
+    return [p for (s, _), p in LIFE_CATALOG.items() if _sheet_matches_company(s, comp_clean, comp)]
+
+
+def build_no_category_response(comp: str, cat: str, all_products: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """해당 상품군 상품이 조견표에 없을 때 — 다른 상품군으로 엉뚱하게 계산하지 않고 안내한다 (v3.8.13)."""
+    groups: List[str] = []
+    examples: List[str] = []
+    for p in all_products:
+        g = product_category_of(p['full_product'])
+        if g and g not in groups:
+            groups.append(g)
+            examples.append(clean_prod_short_name(p['full_product']))
+    order = ['연금', '종신', '정기', '건강', '암', '치매간병', '어린이']
+    groups = sorted(groups, key=lambda x: order.index(x) if x in order else 99)
+    ex = sorted(examples, key=len)[:1]
+    ex_txt = f"\n(예: `{comp} {ex[0]} 20만원`)" if ex else ""
+    text = (
+        f"🔍 {comp}은(는) 11월 조견표에 {cat} 상품이 없습니다.\n\n"
+        f"{comp}에서 조회 가능한 상품군: {', '.join(groups) if groups else '없음'}"
+        f"{ex_txt}\n\n"
+        "다른 상품군으로 바꿔 계산하시거나, 상품명을 정확히 입력해 주세요."
+    )
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [{"simpleText": {"text": text}}],
+            "quickReplies": [
+                {"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"},
+                {"messageText": "계산초기화", "action": "message", "label": "🔄 계산초기화"},
+            ],
+        },
     }
 
 
@@ -4422,6 +4772,24 @@ async def kakao_skill_calculate(request: Request):
         # 3. 2개 또는 3개 회사 비교 처리 (총합만 비교하는 카드)
         if is_compare_query:
             target_comps = matched_comps[:3]
+            # 상품군 비교에서 특정 회사에 그 상품군이 없으면 엉뚱한 상품으로 비교되지 않도록 안내 (v3.8.13)
+            req_cat = detect_product_category(utterance, target_comps[0]) if target_comps else ''
+            if req_cat:
+                missing = []
+                for c in target_comps:
+                    if ALL_COMPANIES.get(c, {}).get('category') == '손해보험':
+                        continue
+                    prods = list_company_products(c)
+                    if prods and not any(matches_category(p['full_product'], req_cat) for p in prods):
+                        missing.append(c)
+                if missing:
+                    have = [c for c in target_comps if c not in missing]
+                    msg = (f"🔍 {', '.join(missing)}은(는) 11월 조견표에 {req_cat} 상품이 없어 비교할 수 없습니다.")
+                    if have:
+                        msg += f"\n{req_cat} 상품이 있는 {', '.join(have)}만으로 비교하시려면 회사명을 다시 말씀해 주세요."
+                    msg += "\n(상품명을 정확히 입력하시면 상품 단건 비교는 가능합니다.)"
+                    return {"version": "2.0", "template": {"outputs": [{"simpleText": {"text": msg}}],
+                                                          "quickReplies": [{"messageText": "도움말", "action": "message", "label": "💡 사용법 안내"}]}}
             comp_prem = premium or 200000
             comp_results = []
             for c in target_comps:
@@ -4432,7 +4800,16 @@ async def kakao_skill_calculate(request: Request):
         # 4. 단일 회사 처리
         if len(matched_comps) == 1:
             comp = matched_comps[0]
-            
+
+            # [상품군 없음 안내] '연금'을 물었는데 그 회사에 연금 상품이 없을 때 종신 등 다른 상품으로
+            # 엉뚱하게 계산되는 것을 막는다 (v3.8.13)
+            if ALL_COMPANIES.get(comp, {}).get('category') != '손해보험':
+                req_cat = detect_product_category(utterance, comp)
+                if req_cat:
+                    comp_products = list_company_products(comp)
+                    if comp_products and not any(matches_category(p['full_product'], req_cat) for p in comp_products):
+                        return build_no_category_response(comp, req_cat, comp_products)
+
             cleaned = utterance
             for alias in ALL_COMPANIES[comp]['aliases']:
                 cleaned = re.sub(re.escape(alias), '', cleaned, flags=re.IGNORECASE)
