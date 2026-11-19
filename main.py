@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.18")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.19")
 
 app.add_middleware(
     CORSMiddleware,
@@ -4409,17 +4409,27 @@ def _top10_years(term_text: str) -> Optional[int]:
     return int(m.group(1)) if m else None
 
 
+# 상품명에 '종신'이 없어도 종신보험으로 분류하는 상품 (정우 님 지시 2026-11-19, v3.8.19)
+#   "10년납 종신에서 DB생명 더블업 암보장이 총 수수료1등인데 상품명에 종신이 없어서 누락했나봐.
+#    종신으로 분류해줘. / 한화생명 밸류플러스2.0도 종신으로 분류해줘."
+#   - DB생명 '백년친구 더블업 암치료보장 (간편포함)': 이름은 암치료보장이지만 S환산 조견표상
+#     종신 계열 행(1/2종 10·20년납, 3종 10년납)만 있고, 10년납 종신 총수령 1위 상품이다.
+#   - 한화생명 '밸류플러스보장보험2.0': 종신 보장보험2.0 (5·7·10년납, 시책 450%).
+TOP10_WHOLELIFE_ALIASES = ('더블업암치료보장', '밸류플러스보장보험')
+
+
 def is_wholelife_product(product_name: str) -> bool:
     """종신보험 상품군 판정 — 이름에 '종신'이 있으면 종신(암종신·건강종신 포함).
 
-    연금·건강·암·치매간병 등 다른 상품군은 이름에 종신이 없어 자동 제외된다.
+    연금·건강·암·치매간병 등 다른 상품군은 이름에 종신이 없어 자동 제외되지만,
+    정우 님이 종신으로 확정한 상품(TOP10_WHOLELIFE_ALIASES)은 이름과 무관하게 포함한다.
     """
     p = (product_name or "").replace(" ", "")
-    if '종신' not in p:
-        return False
     if '연금' in p:
         return False
-    return True
+    if any(alias in p for alias in TOP10_WHOLELIFE_ALIASES):
+        return True
+    return '종신' in p
 
 
 TOP10_EXACT_TERM_RE = re.compile(r'^\d{1,2}년$')
@@ -4500,11 +4510,70 @@ def _top10_prod_label(prod_full: str, gubun: str = "") -> str:
     return p + suffix
 
 
+TOP10_FAMILY_BRACKET_RE = re.compile(r'\([^()]*\)|\[[^\[\]]*\]')
+
+
+def top10_family_key(product_name: str) -> str:
+    """같은 회사의 '같은 기본 상품'을 묶는 키 — 형/종 표기를 모두 지운 이름 (v3.8.19).
+
+    정우 님 지시(2026-11-19):
+      "그리고 체증형,기본형이나 일반가입,간편가입이 나뉘어서 순위상에 동일회사가 여러번
+       들어가지 않도록 1개 회사의 유사상품은 그중에 가장 총수수료가 높은형만 순위에 넣어줘."
+    → 상품명의 괄호 표기((기본형)·(체증형)·(간편)·(해약환급금 일부지급형)·(2501)·
+      (베이직,프라임형)·(100%형) 등)는 '형·종' 구분일 뿐이므로 모두 지운다.
+      '뉴-올케어 암종신'과 '뉴-알행플종신', '모두의 종신보험'과 '모두의 달러종신'처럼
+      이름 자체가 다른 상품은 괄호를 지워도 이름이 남아 절대 합쳐지지 않는다.
+    """
+    p = product_name or ""
+    prev = None
+    while prev != p:              # 중첩 괄호('(해약환급금 일부(50%)지급형)')까지 안쪽부터 지운다
+        prev = p
+        p = TOP10_FAMILY_BRACKET_RE.sub(' ', p)
+    p = re.sub(r'[\(\)\[\]]', ' ', p)   # 짝이 맞지 않는 괄호 잔여분
+    return re.sub(r'\s+', '', p)
+
+
+def _top10_variant_rank(row: Dict[str, Any]) -> Tuple:
+    """유사상품 중 대표 1개를 고르는 기준 — 총수령액(수수료+시책) 우선.
+
+    금액이 완전히 동점이면 일반가입(일반심사형) → 기본형(평준형) 순으로 안정적으로 고른다.
+    """
+    c = row.get("calc") or {}
+    g = row.get("gubun") or ""
+    return (
+        c.get("grand_total", 0),
+        c.get("total_next_month", 0),
+        1 if '일반' in g else 0,
+        1 if '기본' in g else 0,
+        -len(row.get("label") or ""),
+    )
+
+
+def dedup_wholelife_variants(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """같은 회사·같은 기본 상품의 형/종 변형 중 총수령액이 가장 높은 1개만 남긴다 (v3.8.19).
+
+    체증형/기본형, 일반가입/간편가입, 1/2종/3종, 해약환급금 미지급형/일부지급형,
+    (2501)/(2509)처럼 한 회사가 유사상품으로 순위를 여러 번 차지하지 않게 한다.
+    """
+    best: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    order: List[Tuple[str, str]] = []
+    for row in results:
+        key = (row.get("company", ""), top10_family_key(row.get("prod_full") or ""))
+        cur = best.get(key)
+        if cur is None:
+            best[key] = row
+            order.append(key)
+        elif _top10_variant_rank(row) > _top10_variant_rank(cur):
+            best[key] = row
+    return [best[k] for k in order]
+
+
 def collect_wholelife_top10(term_label: str, premium: int = TOP10_DEFAULT_PREMIUM) -> List[Dict[str, Any]]:
     """전 생보사 종신보험을 라이브 정산 엔진으로 계산해 총수령액 내림차순으로 돌려준다.
 
     상품(구분/형) 하나당 한 줄로 집계하며, 조견표 term에 해당 납기가 **정확히 명시된**
     상품만 대상이다 (v3.8.16 — resolve_top10_term 참조).
+    같은 회사의 유사상품(형/종만 다른 상품)은 총수령액이 가장 높은 1개만 남긴다 (v3.8.19).
     """
     groups: Dict[Tuple[str, str, str], List[Dict[str, Any]]] = {}
     for row in LIFE_PRODUCTS:
@@ -4550,11 +4619,13 @@ def collect_wholelife_top10(term_label: str, premium: int = TOP10_DEFAULT_PREMIU
         results.append({
             "company": company,
             "label": label,
+            "prod_full": prod_full,
             "gubun": gubun_label,
             "master_term": matched_term,
             "s_factor": s_factor,
             "calc": calc,
         })
+    results = dedup_wholelife_variants(results)
     results.sort(key=lambda r: (r["calc"].get("grand_total", 0), r["calc"].get("total_next_month", 0)),
                  reverse=True)
     return results
