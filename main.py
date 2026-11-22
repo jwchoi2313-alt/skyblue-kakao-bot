@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.19")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.20")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2327,35 +2327,62 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 basis_parts.append(sky_desc)
             return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": " + ".join(basis_parts), "cont_bonus": 0.0, "cont_desc": ""}
 
-        # 6) 건강보험 4종 (생활비암 · 내가고른 · 건강100 · 초경증 간편 내가고른)
-        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '초경증', '7대질병', '6대질병', '실속n']):
+        # 6) 건강보험 6종 (생활비암 · 내가고른 · 건강100 · 초경증 간편 내가고른 · 실속N · 당신곁에 치매간병)
+        #    11월 DB 시책지 '기본 현금시상 ◆건강보험◆' 수록 상품:
+        #      생활비 암보험 / 내가고른 건강(초경증 포함) / 건강100 내가고른 통합보험 / 당신곁에 치매간병
+        #      → 1,000%(익월 400% + 2차년 600%) — 납기 구분 없이 동일 (v3.8.20)
+        elif any(k in prod for k in ['생활비암', '내가고른', '건강100', '초경증', '7대질병', '6대질병', '실속n', '치매', '간병']):
             base_next = 4.0
             base_split = 6.0
             basis_desc = "원수사 1,000%(익월400+13회600)"
-            
-            # 건강보험 구간 시상 (2차년 13회차, 500% 정률)
+
+            # 건강보험 구간 시상 (2차년·13회차): 5만↑25만 / 10만↑50만 / 20만↑100만 / 30만↑150만
+            # 시책지 각주 '건강 최대 인정금액 30만원' → 계약 1건은 30만원까지만 인정(그 위 구간은 누적 실적용)
+            eff_p = min(premium, 300000)
             high_bonus = 0
-            if premium >= 1000000: high_bonus = 5000000
-            elif premium >= 500000: high_bonus = 2500000
-            elif premium >= 300000: high_bonus = 1500000
-            elif premium >= 200000: high_bonus = 1000000
-            elif premium >= 100000: high_bonus = 500000
-            elif premium >= 50000: high_bonus = 250000
+            if eff_p >= 300000: high_bonus = 1500000
+            elif eff_p >= 200000: high_bonus = 1000000
+            elif eff_p >= 100000: high_bonus = 500000
+            elif eff_p >= 50000: high_bonus = 250000
             high_split_rate = (high_bonus / premium) if (premium > 0 and high_bonus > 0) else 0.0
-            
+
+            # 주차별 가동 시상 (2차년·13회차): 대상 건강보험, 11/1~15·11/16~30 각 기간 5만↑
+            # 1회 달성 20만 / 2회 달성 40만(월 최대 40만) → 단건 계산은 1회 달성분 20만 반영
+            week_bonus = 200000 if premium >= 50000 else 0
+            week_split_rate = (week_bonus / premium) if (premium > 0 and week_bonus > 0) else 0.0
+
+            # 연속 가동 팬클럽 시상 (2차년·13회차): 대상 건강보험
+            #   11~12월 연속 — 11월 5만↑→12월 10만↑ 50만 / 11월 10만↑→12월 20만↑ 100만 /
+            #                    11월 20만↑→12월 30만↑ 150만
+            #   (10~11월 연속 표는 같은 보상에 11월 기준이 5·10·20만으로 더 높아, 11~12월이 항상 이상)
+            fan_amount = 0
+            if premium >= 200000: fan_amount = 1500000
+            elif premium >= 100000: fan_amount = 1000000
+            elif premium >= 50000: fan_amount = 500000
+            fan_rate = (fan_amount / premium) if premium > 0 else 0.0
+            applied_fan = fan_rate if (continuous_mode and continuous_mode != "none") else 0.0
+
             sky_rate, sky_desc = get_sky_health_bonus("DB생명", prod, premium)
             basis_parts = [basis_desc]
             if high_bonus > 0:
                 basis_parts.append(f"건강구간 {high_bonus//10000}만(13회)")
+            if week_bonus > 0:
+                basis_parts.append(f"주차별가동 {week_bonus//10000}만(1회·최대40만, 13회)")
+            if applied_fan > 0:
+                basis_parts.append(f"연속팬클럽 {fan_amount//10000}만(11~12월연속, 13회)")
             if sky_desc:
                 basis_parts.append(sky_desc)
-                
+            if '표준형' in (gubun or ""):
+                basis_parts.append("표준형은 구간 실적 50% 인정(시책지 각주)")
+
             tot_next = base_next + sky_rate
-            tot_split = base_split + high_split_rate
-            return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split, "basis": " + ".join(basis_parts), "cont_bonus": 0.0, "cont_desc": ""}
+            tot_split = base_split + high_split_rate + week_split_rate + applied_fan
+            return {"next_month": tot_next, "split": tot_split, "total": tot_next + tot_split,
+                    "basis": " + ".join(basis_parts), "cont_bonus": fan_rate,
+                    "cont_desc": f"연속가동 팬클럽 11~12월 연속 달성 시 +{fan_amount//10000}만 원(13회차)"}
 
         # 7) 그 밖의 DB생명 상품 — 11월 시책지에 이름이 없으면 시책 0원
-        #    (10년더드림플러스유니버셜종신·백년친구 당신곁에 치매간병 등)
+        #    (10년더드림플러스유니버셜종신 등)
         else:
             return no_life_incentive(comp_name, product_name)
 
@@ -4940,7 +4967,7 @@ def build_kakao_response(calc_result: Dict[str, Any]) -> Dict[str, Any]:
     elif is_heungkuk and c_mode == "none":
         basis_text += f"\n(※ 10~11월 연속가동 또는 핑크멤버스 연속 시책은 아래 퀵버튼을 눌러 합산하실 수 있습니다)"
     elif not is_heungkuk and c_mode == "none" and cont_bonus_rate > 0:
-        basis_text += f"\n(※ 전월 연속가동 시상은 아래 [🔥 연속포함] 버튼을 누르면 즉시 합산됩니다)"
+        basis_text += f"\n(※ 연속가동 시상은 아래 [🔥 연속포함] 버튼을 누르면 즉시 합산됩니다)"
 
     if cat == "손해보험":
         if is_fallback:
