@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.20")
+app = FastAPI(title="스카이블루에셋 정산 챗봇", version="3.8.21")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2207,10 +2207,11 @@ def get_life_incentive(comp_name: str, product_name: str, term: str = "", premiu
                 mult_note = "(3종150%인정)" if is_3jong else ""
                 basis_parts.append(f"고능률 {high_bonus//10000}만{mult_note}(13회)")
 
-            # SKY 본사 건강종신 추가지원안: 10년납 (30만 이하 100%, 30만 초과 150% 15회차 지급)
+            # SKY 본사 건강종신 추가지원안: 10년납 (30만↓ 100%, 30만↑ 150% 15회차 지급)
+            #   시책지 표기 '30만↓' / '30만↑' → 딱 30만 원은 '30만↑' 구간(150%)이다. (v3.8.21 경계값 수정)
             sky_split_rate = 0.0
             if '10년' in term or not term:
-                if premium > 300000:
+                if premium >= 300000:
                     sky_split_rate = 1.5
                     basis_parts.append("SKY 10년납 150%(15회)")
                 elif premium > 0:
